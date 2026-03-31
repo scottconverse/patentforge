@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FeasibilityService } from './feasibility.service';
@@ -31,9 +32,20 @@ export class FeasibilityController {
     @Param('id') projectId: string,
     @Body() body: { narrative?: string },
   ) {
+    // Enforce cost cap before starting a new run
+    const settings = await this.settingsService.getSettings();
+    if (settings.costCapUsd > 0) {
+      const spent = await this.feasibilityService.getProjectCumulativeCost(projectId);
+      if (spent >= settings.costCapUsd) {
+        throw new BadRequestException(
+          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
+          `Increase the cost cap in Settings to continue.`,
+        );
+      }
+    }
+
     const run = await this.feasibilityService.startRun(projectId);
     // Kick off prior art search in background (non-blocking)
-    const settings = await this.settingsService.getSettings();
     if (settings.anthropicApiKey && body?.narrative) {
       this.priorArtService.startSearch(
         projectId,

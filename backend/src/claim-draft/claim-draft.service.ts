@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 
@@ -27,6 +27,24 @@ export class ClaimDraftService {
     const settings = await this.settingsService.getSettings();
     if (!settings.anthropicApiKey) {
       throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
+    }
+
+    // Enforce cost cap before starting claim drafting
+    if (settings.costCapUsd > 0) {
+      const stages = await this.prisma.feasibilityStage.findMany({
+        where: {
+          feasibilityRun: { projectId },
+          estimatedCostUsd: { not: null },
+        },
+        select: { estimatedCostUsd: true },
+      });
+      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+      if (spent >= settings.costCapUsd) {
+        throw new BadRequestException(
+          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
+          `Increase the cost cap in Settings to continue.`,
+        );
+      }
     }
 
     // Get latest feasibility run

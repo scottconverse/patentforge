@@ -166,6 +166,21 @@ export const STAGE_NAMES = [
 export class FeasibilityService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Calculate total cost across all completed feasibility stages for a project.
+   * Used for server-side cost cap enforcement.
+   */
+  async getProjectCumulativeCost(projectId: string): Promise<number> {
+    const stages = await this.prisma.feasibilityStage.findMany({
+      where: {
+        feasibilityRun: { projectId },
+        estimatedCostUsd: { not: null },
+      },
+      select: { estimatedCostUsd: true },
+    });
+    return stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+  }
+
   async startRun(projectId: string) {
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) {

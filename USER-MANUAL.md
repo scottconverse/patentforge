@@ -260,7 +260,7 @@ Access settings via the gear icon in the navigation bar.
 | **Max Tokens** | Maximum length of each stage's response | 32,000 |
 | **Inter-Stage Delay** | Seconds to wait between stages (prevents rate limiting) | 5 |
 | **Export Path** | Folder where reports are saved | Your Desktop |
-| **Cost Cap (USD)** | Shows a warning before running if estimated cost exceeds this amount | $5.00 |
+| **Cost Cap (USD)** | Enforced server-side: blocks new analysis or claim drafting runs when cumulative project cost reaches this amount. Set to 0 to disable. | $5.00 |
 
 **Model choices:**
 - **Sonnet** (default) — good balance of quality and cost
