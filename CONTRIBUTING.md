@@ -7,9 +7,10 @@ Thank you for your interest in contributing to PatentForge! This guide will help
 ### Prerequisites
 
 - **Node.js** 18+ (recommended: 20 LTS)
+- **Python** 3.11+ (for the claim-drafter service)
 - **npm** 9+
 - **Git**
-- **Anthropic API key** (for running the feasibility pipeline)
+- **Anthropic API key** (for running the feasibility and claim drafting pipelines)
 
 Optional:
 - **Docker** and **Docker Compose** (for containerized deployment)
@@ -23,10 +24,11 @@ Optional:
    cd patentforge
    ```
 
-2. **Install dependencies** (all three services)
+2. **Install dependencies** (all four services)
    ```bash
    cd backend && npm install && cd ..
    cd services/feasibility && npm install && cd ../..
+   cd services/claim-drafter && pip install -e ".[dev]" && cd ../..
    cd frontend && npm install && cd ..
    ```
 
@@ -79,8 +81,12 @@ patentforge/
 │   ├── prisma/           # Database schema and migrations
 │   └── src/              # Controllers, services, modules
 ├── services/
-│   └── feasibility/      # Express feasibility pipeline service (port 3001)
-│       └── src/prompts/  # Stage prompt templates (markdown)
+│   ├── feasibility/      # Express feasibility pipeline service (port 3001)
+│   │   └── src/prompts/  # Stage prompt templates (markdown)
+│   └── claim-drafter/    # Python + LangGraph claim drafting service (port 3002)
+│       ├── src/agents/   # Planner, Writer, Examiner agents
+│       ├── src/prompts/  # Agent prompt templates (CC BY-SA 4.0)
+│       └── tests/        # pytest test suite
 ├── frontend/             # React + Vite + Tailwind frontend (port 8080)
 │   └── src/
 │       ├── pages/        # Route-level page components
@@ -93,11 +99,14 @@ patentforge/
 PatentForge has 169 automated tests across three layers. **GitHub Actions CI** runs all tests automatically on every push and PR.
 
 ```bash
-# Backend unit tests (Jest — 117 tests)
+# Backend unit tests (Jest — 140 tests)
 cd backend && npm test
 
 # Frontend unit tests (Vitest — 31 tests)
 cd frontend && npm test
+
+# Claim drafter tests (pytest — 40 tests)
+cd services/claim-drafter && python -m pytest tests/
 
 # Browser E2E tests (Playwright — 21 tests, requires services running)
 cd frontend && npx playwright test
@@ -146,7 +155,8 @@ We use conventional commit prefixes:
 
 ## Code Style
 
-- **TypeScript** throughout (backend, feasibility service, frontend)
+- **TypeScript** for backend, feasibility service, and frontend
+- **Python** for the claim-drafter service (FastAPI, LangGraph, pytest)
 - **Tailwind CSS** for styling (no custom CSS files unless necessary)
 - **NestJS conventions** for backend (controllers, services, modules, DTOs)
 - **React functional components** with hooks

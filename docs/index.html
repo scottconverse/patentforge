@@ -401,13 +401,13 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       <div class="arch-card">
         <h4>React Frontend</h4>
         <div class="port">:8080</div>
-        <p>Invention intake form, real-time streaming output, stage progress indicators, report viewer with export buttons.</p>
+        <p>Invention intake form, real-time streaming output, stage progress indicators, report viewer, claims tab with editable drafts.</p>
         <div class="tech">React 18 &bull; TypeScript &bull; Vite &bull; Tailwind CSS</div>
       </div>
       <div class="arch-card">
         <h4>NestJS Backend</h4>
         <div class="port">:3000</div>
-        <p>Project CRUD, settings management, feasibility run tracking, SSE event forwarding, prior art search via USPTO ODP, Word export generation. API keys encrypted at rest. Optional Bearer token auth.</p>
+        <p>Project CRUD, settings management, feasibility run tracking, claim draft orchestration, SSE event forwarding, prior art search via USPTO ODP, Word export. API keys encrypted at rest. Optional Bearer token auth.</p>
         <div class="tech">NestJS &bull; Prisma ORM &bull; SQLite (dev) / PostgreSQL (Docker)</div>
       </div>
       <div class="arch-card">
@@ -415,6 +415,12 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <div class="port">:3001</div>
         <p>6-stage sequential AI analysis pipeline. Each stage uses a markdown prompt template with the Anthropic Claude API. Streams tokens in real time via SSE.</p>
         <div class="tech">Express &bull; Anthropic SSE &bull; 6 prompt templates (CC BY-SA 4.0)</div>
+      </div>
+      <div class="arch-card">
+        <h4>Claim Drafter</h4>
+        <div class="port">:3002</div>
+        <p>3-agent claim drafting pipeline: Planner (strategy), Writer (claims), Examiner (review). LangGraph state machine with conditional revision loop. Generates up to 20 claims per draft.</p>
+        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK</div>
       </div>
     </div>
 

@@ -16,6 +16,7 @@ PatentForge is a self-hosted web application that helps inventors organize their
 - **Cost transparency** — pre-run cost estimate with per-stage token tracking so you know what the AI processing will cost before you start
 - **Resume from interruption** — pick up where you left off if a run stops mid-pipeline
 - **Multiple export formats** — HTML, Word (.docx), and Markdown for sharing with your attorney or team
+- **AI-assisted claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates patent claim drafts informed by your feasibility analysis and prior art, with per-claim examiner review
 - **Self-hosted** — runs on your machine; invention data stays local except for Anthropic API calls
 - **Configurable** — choose your model (Sonnet, Opus, Haiku), set max tokens, adjust inter-stage delays
 
@@ -34,6 +35,7 @@ PatentForge is a **research and preparation tool**, not a legal service. It does
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+ (recommended: 20 LTS)
+- [Python](https://python.org/) 3.11+ (for claim drafting service)
 - [Anthropic API key](https://console.anthropic.com/)
 
 ### Install and Run
@@ -45,6 +47,7 @@ cd patentforge
 # Install all dependencies
 cd backend && npm install && cd ..
 cd services/feasibility && npm install && cd ../..
+cd services/claim-drafter && pip install . && cd ../..
 cd frontend && npm install && cd ..
 
 # Set up the database (SQLite, zero config)
@@ -55,9 +58,10 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
 **Manual start** (any OS) — run each in a separate terminal:
 ```bash
-cd backend && npm run build && npm run start          # port 3000
-cd services/feasibility && npm run build && npm run start  # port 3001
-cd frontend && npm run dev                             # port 8080
+cd backend && npm run build && npm run start                         # port 3000
+cd services/feasibility && npm run build && npm run start             # port 3001
+cd services/claim-drafter && python -m uvicorn src.server:app --port 3002  # port 3002
+cd frontend && npm run dev                                            # port 8080
 ```
 
 Open http://localhost:8080, go to Settings, enter your Anthropic API key, and create your first project.
@@ -95,17 +99,25 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  React Frontend │────▶│  NestJS Backend  │────▶│  Feasibility    │
-│  (Vite, TW CSS) │     │  (Prisma, SQLite)│     │  Service        │
+│  (Vite, TW CSS) │     │  (Prisma, SQLite)│     │  Service (TS)   │
 │  port 8080      │◀────│  port 3000       │◀────│  port 3001      │
 └─────────────────┘ SSE └─────────────────┘ SSE └─────────────────┘
-                                                        │
-                                                        ▼
-                                                 Anthropic Claude API
+                                │                       │
+                                │                       ▼
+                                │                Anthropic Claude API
+                                ▼
+                        ┌─────────────────┐
+                        │  Claim Drafter  │
+                        │  (Python/       │
+                        │   LangGraph)    │
+                        │  port 3002      │
+                        └─────────────────┘
 ```
 
 - **Frontend** — React 18, TypeScript, Tailwind CSS, Vite
 - **Backend** — NestJS, Prisma ORM, SQLite (dev) / PostgreSQL (Docker)
 - **Feasibility Service** — Express, Anthropic SSE streaming, 6 prompt templates
+- **Claim Drafter** — Python, FastAPI, LangGraph, 3-agent pipeline (Planner/Writer/Examiner)
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
 

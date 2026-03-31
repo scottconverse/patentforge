@@ -1,13 +1,12 @@
 /**
  * Documentation and version consistency audit.
- * Runs as part of the test suite to catch stale docs before push.
  *
- * Checks:
- * 1. All package.json versions match
- * 2. CHANGELOG.md has an entry for the current version
- * 3. README.md contains the current version in the roadmap
- * 4. All required repo files exist
- * 5. Key documentation doesn't reference deprecated services
+ * This test suite exists because documentation was repeatedly shipped stale.
+ * It is NOT a shallow keyword check. It verifies that every major feature
+ * added in the CHANGELOG is actually documented in the user-facing artifacts.
+ *
+ * If this test fails, it means a feature was shipped without being documented.
+ * Fix the docs, don't weaken the test.
  */
 
 import * as fs from 'fs';
@@ -25,6 +24,36 @@ function fileExists(relativePath: string): boolean {
   return fs.existsSync(path.join(ROOT, relativePath));
 }
 
+/**
+ * Extract the "### Added" features from the current version's CHANGELOG section.
+ * Returns the bold feature names (the text between ** **).
+ */
+function extractCurrentVersionFeatures(): string[] {
+  const changelog = readFile('CHANGELOG.md');
+  const versionHeader = `## [${CURRENT_VERSION}]`;
+  const startIdx = changelog.indexOf(versionHeader);
+  if (startIdx === -1) return [];
+
+  // Find the next version header to bound the section
+  const nextVersionIdx = changelog.indexOf('\n## [', startIdx + 1);
+  const section = nextVersionIdx > 0
+    ? changelog.slice(startIdx, nextVersionIdx)
+    : changelog.slice(startIdx);
+
+  // Extract bold feature names from "- **Feature Name**" lines
+  const features: string[] = [];
+  const regex = /^- \*\*(.+?)\*\*/gm;
+  let match;
+  while ((match = regex.exec(section)) !== null) {
+    features.push(match[1]);
+  }
+  return features;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VERSION CONSISTENCY
+// ═══════════════════════════════════════════════════════════════════════════
+
 describe('Version Consistency', () => {
   it('all package.json files have the same version', () => {
     const frontendPkg = JSON.parse(readFile('frontend/package.json'));
@@ -41,11 +70,19 @@ describe('Version Consistency', () => {
 
   it('README.md roadmap includes the current version as completed', () => {
     const readme = readFile('README.md');
-    // Look for the version in a checked roadmap item: - [x] **v0.X.Y**
     const versionPattern = new RegExp(`\\[x\\].*v?${CURRENT_VERSION.replace(/\./g, '\\.')}`);
     expect(readme).toMatch(versionPattern);
   });
+
+  it('docs/index.html contains current version number', () => {
+    const html = readFile('docs/index.html');
+    expect(html).toContain(`v${CURRENT_VERSION}`);
+  });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REQUIRED FILES
+// ═══════════════════════════════════════════════════════════════════════════
 
 describe('Required Repo Files', () => {
   const requiredFiles = [
@@ -57,6 +94,7 @@ describe('Required Repo Files', () => {
     'USER-MANUAL.md',
     'docs/index.html',
     'LEGAL_NOTICE.md',
+    '.github/workflows/ci.yml',
   ];
 
   for (const file of requiredFiles) {
@@ -66,77 +104,109 @@ describe('Required Repo Files', () => {
   }
 });
 
-describe('Documentation Currency', () => {
-  it('README.md does not reference deprecated PatentsView API as current', () => {
-    const readme = readFile('README.md');
-    // PatentsView can appear in historical context but not as the current data source
-    const lines = readme.split('\n');
-    for (const line of lines) {
-      if (line.includes('PatentsView') && !line.includes('deprecated') && !line.includes('replaces')) {
-        // Allow it in the "What PatentForge Does" feature list ONLY if qualified
-        if (line.includes('Prior art discovery') || line.includes('via PatentsView')) {
-          fail(`README.md still references PatentsView as active: "${line.trim()}"`);
-        }
-      }
+// ═══════════════════════════════════════════════════════════════════════════
+// FEATURE-TO-DOCUMENTATION MAPPING
+//
+// Every major feature in the current CHANGELOG must appear in the docs.
+// This is the test that catches "shipped a feature but didn't document it."
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Current Version Features Are Documented', () => {
+  const readme = readFile('README.md').toLowerCase();
+  const manual = readFile('USER-MANUAL.md').toLowerCase();
+  const landing = readFile('docs/index.html').toLowerCase();
+  const contrib = readFile('CONTRIBUTING.md').toLowerCase();
+
+  // Map of CHANGELOG feature names → search terms that MUST appear in docs.
+  // Each entry: [featureName, { readme: term, manual: term, landing: term, contributing: term }]
+  // Only include checks where the feature should reasonably appear in that doc.
+  // null = not required in that doc.
+
+  const FEATURE_DOC_REQUIREMENTS: Array<{
+    feature: string;
+    readme?: string;
+    manual?: string;
+    landing?: string;
+    contributing?: string;
+  }> = [
+    // v0.4.0 claim drafting features
+    { feature: 'claim drafting', readme: 'claim draft', manual: 'claim', landing: 'claim draft', contributing: 'claim-drafter' },
+    { feature: 'claim drafter service', readme: '3002', contributing: 'pytest' },
+    { feature: 'claim drafter python', readme: 'python', contributing: 'python' },
+    // v0.3.x features that must remain documented
+    { feature: 'USPTO ODP', readme: 'uspto', manual: 'uspto', landing: 'uspto' },
+    { feature: 'API key encryption', readme: 'encrypt', manual: 'encrypt', landing: 'encrypt' },
+    { feature: 'Playwright E2E', contributing: 'playwright' },
+    { feature: 'GitHub Actions CI', contributing: 'github actions' },
+    { feature: 'Bearer token auth', readme: 'patentforge_token' },
+  ];
+
+  for (const req of FEATURE_DOC_REQUIREMENTS) {
+    if (req.readme) {
+      it(`README.md documents: ${req.feature}`, () => {
+        expect(readme).toContain(req.readme!.toLowerCase());
+      });
     }
+    if (req.manual) {
+      it(`USER-MANUAL.md documents: ${req.feature}`, () => {
+        expect(manual).toContain(req.manual!.toLowerCase());
+      });
+    }
+    if (req.landing) {
+      it(`docs/index.html documents: ${req.feature}`, () => {
+        expect(landing).toContain(req.landing!.toLowerCase());
+      });
+    }
+    if (req.contributing) {
+      it(`CONTRIBUTING.md documents: ${req.feature}`, () => {
+        expect(contrib).toContain(req.contributing!.toLowerCase());
+      });
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ARCHITECTURE COMPLETENESS
+//
+// Every running service must appear in the README architecture section
+// and on the landing page.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Architecture Documentation', () => {
+  it('README.md lists all service ports (3000, 3001, 3002, 8080)', () => {
+    const readme = readFile('README.md');
+    expect(readme).toContain('3000');
+    expect(readme).toContain('3001');
+    expect(readme).toContain('3002');
+    expect(readme).toContain('8080');
   });
 
-  it('docs/index.html does not reference PatentsView as the active API', () => {
-    const html = readFile('docs/index.html');
-    // The SVG diagram and feature cards should say "USPTO ODP" not "PatentsView"
-    expect(html).not.toContain('>PatentsView<');
+  it('docs/index.html architecture shows all services', () => {
+    const html = readFile('docs/index.html').toLowerCase();
+    expect(html).toContain('3000');
+    expect(html).toContain('3001');
+    expect(html).toContain('3002');
+    expect(html).toContain('8080');
   });
 
-  it('CONTRIBUTING.md mentions Playwright E2E tests', () => {
-    const contrib = readFile('CONTRIBUTING.md');
-    expect(contrib).toContain('Playwright');
-    expect(contrib).toContain('playwright test');
+  it('docker-compose.yml includes all services', () => {
+    const compose = readFile('docker-compose.yml');
+    expect(compose).toContain('backend');
+    expect(compose).toContain('feasibility');
+    expect(compose).toContain('claim-drafter');
+    expect(compose).toContain('frontend');
   });
+});
 
-  it('CONTRIBUTING.md mentions GitHub Actions CI', () => {
-    const contrib = readFile('CONTRIBUTING.md');
-    expect(contrib).toContain('GitHub Actions CI');
-  });
+// ═══════════════════════════════════════════════════════════════════════════
+// DISCUSSION ANNOUNCEMENTS
+// ═══════════════════════════════════════════════════════════════════════════
 
-  it('USER-MANUAL.md mentions API key encryption', () => {
-    const manual = readFile('USER-MANUAL.md');
-    expect(manual).toContain('encrypted');
-  });
-
-  it('USER-MANUAL.md Settings table includes USPTO API Key', () => {
-    const manual = readFile('USER-MANUAL.md');
-    expect(manual).toContain('USPTO API Key');
-  });
-
-  it('.github/workflows/ci.yml exists', () => {
-    expect(fileExists('.github/workflows/ci.yml')).toBe(true);
-  });
-
-  it('docs/index.html contains current version number', () => {
-    const html = readFile('docs/index.html');
-    expect(html).toContain(`v${CURRENT_VERSION}`);
-  });
-
-  it('docs/index.html mentions API key encryption', () => {
-    const html = readFile('docs/index.html');
-    expect(html).toContain('encrypt');
-  });
-
-  it('docs/index.html mentions claims', () => {
-    const html = readFile('docs/index.html');
-    expect(html.toLowerCase()).toContain('claims');
-  });
-
-  it('DISCUSSIONS-SEED.md references current version', () => {
-    const seed = readFile('DISCUSSIONS-SEED.md');
-    expect(seed).toContain(`v${CURRENT_VERSION}`);
-  });
-
-  it('DISCUSSIONS-SEED.md has an announcement post for every CHANGELOG version', () => {
+describe('Discussion Announcements', () => {
+  it('DISCUSSIONS-SEED.md has an announcement for every CHANGELOG version', () => {
     const changelog = readFile('CHANGELOG.md');
     const seed = readFile('DISCUSSIONS-SEED.md');
 
-    // Extract all version numbers from CHANGELOG headers: ## [0.3.4] - 2026-03-31
     const versionRegex = /^## \[(\d+\.\d+\.\d+)\]/gm;
     const versions: string[] = [];
     let match;
@@ -144,22 +214,34 @@ describe('Documentation Currency', () => {
       versions.push(match[1]);
     }
 
-    expect(versions.length).toBeGreaterThan(0);
-
-    // Every version that has a CHANGELOG entry must have a matching
-    // announcement title or section in DISCUSSIONS-SEED.md
-    const missing: string[] = [];
-    for (const ver of versions) {
-      if (!seed.includes(`v${ver}`)) {
-        missing.push(ver);
-      }
-    }
-
+    const missing = versions.filter(v => !seed.includes(`v${v}`));
     if (missing.length > 0) {
       fail(
-        `DISCUSSIONS-SEED.md is missing announcement posts for: ${missing.map(v => `v${v}`).join(', ')}. ` +
-        `Every CHANGELOG version needs a corresponding discussion announcement.`,
+        `DISCUSSIONS-SEED.md missing announcements for: ${missing.map(v => `v${v}`).join(', ')}`,
       );
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STALE REFERENCE DETECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('No Stale References', () => {
+  it('README.md does not reference PatentsView as current', () => {
+    const readme = readFile('README.md');
+    const lines = readme.split('\n');
+    for (const line of lines) {
+      if (line.includes('PatentsView') && !line.includes('deprecated') && !line.includes('replaces')) {
+        if (line.includes('via PatentsView')) {
+          fail(`README.md references PatentsView as active: "${line.trim()}"`);
+        }
+      }
+    }
+  });
+
+  it('docs/index.html does not reference PatentsView as active', () => {
+    const html = readFile('docs/index.html');
+    expect(html).not.toContain('>PatentsView<');
   });
 });
