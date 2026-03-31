@@ -7,12 +7,13 @@
 #
 # What it does:
 #   1. Nukes the SQLite dev database
-#   2. Fresh npm install in all 3 services
+#   2. Fresh npm install in all 3 Node services + pip install claim-drafter
 #   3. Runs Prisma migrate + generate
-#   4. Builds all 3 services
-#   5. Runs the full backend test suite (Jest)
-#   6. Runs the full frontend test suite (Vitest)
-#   7. Starts all 3 services and waits for healthy endpoints
+#   4. Builds all Node services (backend, feasibility, frontend)
+#   5. Runs backend unit tests (Jest)
+#   5b. Runs claim-drafter unit tests (pytest)
+#   6. Runs frontend unit tests (Vitest)
+#   7. Starts backend + feasibility and waits for healthy endpoints
 #   8. Runs API smoke tests against live services
 #   9. Tears down services
 #  10. Reports pass/fail summary
@@ -24,6 +25,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
 FEASIBILITY="$ROOT/services/feasibility"
+CLAIM_DRAFTER="$ROOT/services/claim-drafter"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -74,6 +76,11 @@ for svc in "$BACKEND" "$FRONTEND" "$FEASIBILITY"; do
   (cd "$svc" && npm install --no-audit --no-fund 2>&1 | tail -1)
   pass "npm install: $svc_name"
 done
+
+# Install claim-drafter Python dependencies
+log "  pip install in services/claim-drafter ..."
+(cd "$CLAIM_DRAFTER" && python3 -m pip install -e ".[dev]" --quiet 2>&1 | tail -1)
+pass "pip install: services/claim-drafter"
 
 # ============================================================================
 # Phase 2: Prisma migrate + generate
@@ -162,6 +169,25 @@ if [ $VITEST_EXIT -eq 0 ]; then
   pass "Frontend tests passed"
 else
   fail "Frontend tests FAILED (exit code $VITEST_EXIT)"
+fi
+
+# ============================================================================
+# Phase 5b: Claim drafter unit tests (pytest)
+# ============================================================================
+log "=== Phase 5b: Claim drafter unit tests (pytest) ==="
+
+cd "$CLAIM_DRAFTER"
+set +e
+PYTEST_OUTPUT=$(python3 -m pytest tests/ -v 2>&1)
+PYTEST_EXIT=$?
+set -e
+
+echo "$PYTEST_OUTPUT"
+
+if [ $PYTEST_EXIT -eq 0 ]; then
+  pass "Claim drafter tests passed"
+else
+  fail "Claim drafter tests FAILED (exit code $PYTEST_EXIT)"
 fi
 
 # ============================================================================
