@@ -1,11 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PatchStageDto } from './dto/patch-stage.dto';
+import { PatchRunDto } from './dto/patch-run.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { marked } from 'marked';
-import { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } from 'docx';
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, LevelFormat, AlignmentType } from 'docx';
 
 function resolveExportDir(customExportPath?: string): string {
   if (customExportPath && customExportPath.trim()) {
@@ -20,9 +22,45 @@ function resolveExportDir(customExportPath?: string): string {
 const THIN_BORDER = { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' };
 const TABLE_BORDERS = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER, insideH: THIN_BORDER, insideV: THIN_BORDER };
 
-function parseBoldRuns(text: string): TextRun[] {
-  const parts = text.split(/\*\*(.*?)\*\*/g);
-  return parts.map((part, i) => new TextRun({ text: part, bold: i % 2 === 1 }));
+/**
+ * Parse inline markdown formatting into docx TextRuns.
+ * Handles: **bold**, *italic* / _italic_, and `inline code`.
+ */
+export function parseInlineRuns(text: string): TextRun[] {
+  // Regex matches: **bold**, *italic*, _italic_, `code`, or plain text
+  const TOKEN_RE = /(\*\*.*?\*\*|\*[^*]+?\*|_[^_]+?_|`[^`]+?`)/g;
+  const runs: TextRun[] = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(TOKEN_RE)) {
+    // Add plain text before this match
+    if (match.index! > lastIndex) {
+      runs.push(new TextRun({ text: text.slice(lastIndex, match.index!) }));
+    }
+
+    const token = match[0];
+    if (token.startsWith('**') && token.endsWith('**')) {
+      runs.push(new TextRun({ text: token.slice(2, -2), bold: true }));
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      runs.push(new TextRun({ text: token.slice(1, -1), font: { name: 'Consolas' }, size: 18 }));
+    } else if ((token.startsWith('*') && token.endsWith('*')) || (token.startsWith('_') && token.endsWith('_'))) {
+      runs.push(new TextRun({ text: token.slice(1, -1), italics: true }));
+    }
+
+    lastIndex = match.index! + token.length;
+  }
+
+  // Trailing plain text
+  if (lastIndex < text.length) {
+    runs.push(new TextRun({ text: text.slice(lastIndex) }));
+  }
+
+  // If no formatting found, return the whole string as a plain run
+  if (runs.length === 0) {
+    runs.push(new TextRun({ text }));
+  }
+
+  return runs;
 }
 
 function parseTableLines(tableLines: string[]): Table {
@@ -39,7 +77,7 @@ function parseTableLines(tableLines: string[]): Table {
       children: cells.map(cellText => new TableCell({
         borders: TABLE_BORDERS,
         shading: isHeader ? { type: ShadingType.SOLID, color: '2D3748' } : undefined,
-        children: [new Paragraph({ children: parseBoldRuns(cellText.replace(/\*\*(.*?)\*\*/g, '$1').replace(/`(.*?)`/g, '$1')) })],
+        children: [new Paragraph({ children: parseInlineRuns(cellText.replace(/`(.*?)`/g, '$1')) })],
         width: { size: Math.floor(9000 / cells.length), type: WidthType.DXA },
       })),
     }));
@@ -47,7 +85,24 @@ function parseTableLines(tableLines: string[]): Table {
   return new Table({ rows, width: { size: 9000, type: WidthType.DXA }, borders: TABLE_BORDERS });
 }
 
-function parseMarkdownToDocxParagraphs(markdown: string): (Paragraph | Table)[] {
+/** Numbering config for ordered lists (used in Document constructor). */
+export const ORDERED_LIST_NUMBERING = {
+  config: [{
+    reference: 'ordered-list',
+    levels: [{
+      level: 0,
+      format: LevelFormat.DECIMAL,
+      text: '%1.',
+      alignment: AlignmentType.START,
+    }],
+  }],
+};
+
+/**
+ * Parse a full markdown string into docx Paragraph and Table elements.
+ * Handles: headers, bold, italic, inline code, bullets (nested), numbered lists, tables.
+ */
+export function parseMarkdownToDocxParagraphs(markdown: string): (Paragraph | Table)[] {
   const lines = markdown.split('\n');
   const elements: (Paragraph | Table)[] = [];
   let tableBuffer: string[] = [];
@@ -75,12 +130,23 @@ function parseMarkdownToDocxParagraphs(markdown: string): (Paragraph | Table)[] 
       elements.push(new Paragraph({ text: line.slice(4), heading: HeadingLevel.HEADING_3 }));
     } else if (line.startsWith('#### ')) {
       elements.push(new Paragraph({ text: line.slice(5), heading: HeadingLevel.HEADING_4 }));
+    } else if (/^\s{2,}[-*]\s/.test(line)) {
+      // Nested bullet (2+ spaces before - or *)
+      const text = line.replace(/^\s+[-*]\s/, '');
+      elements.push(new Paragraph({ children: parseInlineRuns(text), bullet: { level: 1 } }));
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      elements.push(new Paragraph({ text: line.slice(2), bullet: { level: 0 } }));
+      elements.push(new Paragraph({ children: parseInlineRuns(line.slice(2)), bullet: { level: 0 } }));
+    } else if (/^\d+\.\s/.test(line)) {
+      // Numbered list item
+      const text = line.replace(/^\d+\.\s/, '');
+      elements.push(new Paragraph({
+        children: parseInlineRuns(text),
+        numbering: { reference: 'ordered-list', level: 0 },
+      }));
     } else if (line.trim() === '' || line.startsWith('---')) {
       elements.push(new Paragraph({ text: '' }));
     } else {
-      elements.push(new Paragraph({ children: parseBoldRuns(line) }));
+      elements.push(new Paragraph({ children: parseInlineRuns(line) }));
     }
   }
   flushTable();
@@ -274,7 +340,7 @@ export class FeasibilityService {
       throw new NotFoundException(`Stage ${stageNumber} not found`);
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.FeasibilityStageUpdateInput = {};
     if (dto.status !== undefined) updateData.status = dto.status;
     if (dto.outputText !== undefined) updateData.outputText = dto.outputText;
     if (dto.model !== undefined) updateData.model = dto.model;
@@ -292,7 +358,7 @@ export class FeasibilityService {
     });
   }
 
-  async patchRun(projectId: string, dto: { status?: string; finalReport?: string; startedAt?: string; completedAt?: string }) {
+  async patchRun(projectId: string, dto: PatchRunDto) {
     const run = await this.prisma.feasibilityRun.findFirst({
       where: { projectId },
       orderBy: { version: 'desc' },
@@ -302,7 +368,7 @@ export class FeasibilityService {
       throw new NotFoundException(`No feasibility runs found for project ${projectId}`);
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.FeasibilityRunUpdateInput = {};
     if (dto.status !== undefined) {
       updateData.status = dto.status;
       if (dto.status === "COMPLETE" || dto.status === "ERROR" || dto.status === "CANCELLED") {
@@ -457,6 +523,7 @@ ${bodyHtml}
     const doc = new Document({
       creator: 'PatentForge',
       title: `${project.title} — Feasibility Report`,
+      numbering: ORDERED_LIST_NUMBERING,
       sections: [{ properties: {}, children: paragraphs }],
     });
 

@@ -15,6 +15,7 @@ import { FeasibilityService } from './feasibility.service';
 import { SettingsService } from '../settings/settings.service';
 import { PriorArtService } from '../prior-art/prior-art.service';
 import { PatchStageDto } from './dto/patch-stage.dto';
+import { PatchRunDto } from './dto/patch-run.dto';
 
 @Controller('projects/:id/feasibility')
 export class FeasibilityController {
@@ -75,9 +76,9 @@ export class FeasibilityController {
   @HttpCode(HttpStatus.OK)
   patchRun(
     @Param('id') projectId: string,
-    @Body() dto: { status?: string; finalReport?: string; startedAt?: string; completedAt?: string },
+    @Body() dto: PatchRunDto,
   ) {
-    return this.feasibilityService.patchRun(projectId, dto as any);
+    return this.feasibilityService.patchRun(projectId, dto);
   }
 
   @Patch('stages/:stageNumber')

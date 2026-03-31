@@ -5,6 +5,24 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-03-31
+
+### Added
+- **Playwright E2E test suite** — 12 browser tests covering navigation, project lifecycle, invention form, settings, and prior art panel states. Tests run against live services with Chromium.
+- **DOCX parser improvements** — italic (`*text*`, `_text_`), inline code (`` `code` ``), numbered lists (`1.`, `2.`), and nested bullets now render correctly in Word exports
+- **17 new DOCX parser unit tests** — comprehensive coverage of all markdown-to-DOCX formatting
+- **PatchRunDto** — typed DTO with class-validator decorators for the feasibility run patch endpoint
+- **139 automated tests** — 96 backend (Jest) + 31 frontend (Vitest) + 12 E2E (Playwright)
+
+### Fixed
+- **Type safety**: replaced `any`-typed update objects in `patchStage` and `patchRun` with proper `Prisma.FeasibilityStageUpdateInput` / `Prisma.FeasibilityRunUpdateInput` types. Removed `as any` cast in controller.
+- **Interleaved-thinking header**: no longer sent on Haiku model requests (only Sonnet/Opus). Prevents sending an unsupported beta feature header to models that ignore it.
+- **CORS restriction**: feasibility service now only accepts requests from `localhost:3000` (the backend), not all origins
+- **Cleanroom E2E**: fixed `grep -P` incompatibility on Windows, fixed dev.db path detection
+
+### Security
+- Feasibility service CORS locked to backend origin only (`localhost:3000`, `127.0.0.1:3000`)
+
 ## [0.3.2] - 2026-03-31
 
 ### Added

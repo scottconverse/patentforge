@@ -49,8 +49,11 @@ export async function streamMessage(params: {
     'Content-Type': 'application/json',
     'x-api-key': apiKey,
     'anthropic-version': API_VERSION,
-    'anthropic-beta': 'interleaved-thinking-2025-05-14',
   };
+  // Extended thinking is only available on Sonnet/Opus, not Haiku
+  if (!model.includes('haiku')) {
+    headers['anthropic-beta'] = 'interleaved-thinking-2025-05-14';
+  }
 
   const requestBody: Record<string, unknown> = {
     model,
