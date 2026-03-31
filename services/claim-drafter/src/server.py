@@ -1,0 +1,142 @@
+"""
+PatentForge Claim Drafter — FastAPI server.
+
+Endpoints:
+  GET  /health          — Service health check with prompt hashes
+  POST /draft           — Run the claim drafting pipeline (SSE stream)
+"""
+
+from __future__ import annotations
+import json
+import hashlib
+from pathlib import Path
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from sse_starlette.sse import EventSourceResponse
+
+from .models import ClaimDraftRequest, ClaimDraftResult
+from .graph import run_claim_pipeline
+
+app = FastAPI(title="PatentForge Claim Drafter", version="0.4.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# ── Prompt integrity hashes ───────────────────────────────────────────────────
+
+PROMPTS_DIR = Path(__file__).parent / "prompts"
+
+
+def _compute_prompt_hashes() -> dict[str, str]:
+    hashes = {}
+    if PROMPTS_DIR.exists():
+        for f in sorted(PROMPTS_DIR.glob("*.md")):
+            content = f.read_text(encoding="utf-8")
+            h = hashlib.sha256(content.encode()).hexdigest()[:16]
+            hashes[f.name] = h
+    return hashes
+
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "ok",
+        "service": "patentforge-claim-drafter",
+        "promptHashes": _compute_prompt_hashes(),
+    }
+
+
+# ── Claim drafting endpoint ──────────────────────────────────────────────────
+
+@app.post("/draft")
+async def draft_claims(request: ClaimDraftRequest):
+    """
+    Run the claim drafting pipeline. Returns SSE stream with progress events.
+    Final event contains the complete ClaimDraftResult.
+    """
+    # Build prior art context string
+    prior_art_parts = []
+    for pa in request.prior_art_results:
+        part = f"**{pa.patent_number}** — {pa.title}"
+        if pa.abstract:
+            part += f"\nAbstract: {pa.abstract[:400]}"
+        if pa.claims_text:
+            part += f"\nClaims:\n{pa.claims_text[:2000]}"
+        prior_art_parts.append(part)
+    prior_art_context = "\n\n".join(prior_art_parts) if prior_art_parts else "(No prior art results available)"
+
+    async def event_stream():
+        steps_seen = []
+
+        def on_step(step_name: str, state):
+            steps_seen.append(step_name)
+
+        try:
+            result = await run_claim_pipeline(
+                invention_narrative=request.invention_narrative,
+                feasibility_stage_5=request.feasibility_stage_5,
+                feasibility_stage_6=request.feasibility_stage_6,
+                prior_art_context=prior_art_context,
+                api_key=request.settings.api_key,
+                default_model=request.settings.default_model,
+                research_model=request.settings.research_model,
+                max_tokens=request.settings.max_tokens,
+                on_step=on_step,
+            )
+
+            # Emit step events for each completed step
+            for step in steps_seen:
+                yield {"event": "step", "data": json.dumps({"step": step})}
+
+            # Emit final result
+            yield {
+                "event": "complete",
+                "data": result.model_dump_json(),
+            }
+        except Exception as e:
+            yield {
+                "event": "error",
+                "data": json.dumps({"error": str(e)}),
+            }
+
+    return EventSourceResponse(event_stream())
+
+
+# ── Synchronous draft endpoint (for simpler integration) ─────────────────────
+
+@app.post("/draft/sync", response_model=ClaimDraftResult)
+async def draft_claims_sync(request: ClaimDraftRequest):
+    """
+    Run the claim drafting pipeline synchronously. Returns the complete result.
+    Use /draft for SSE streaming in production.
+    """
+    prior_art_parts = []
+    for pa in request.prior_art_results:
+        part = f"**{pa.patent_number}** — {pa.title}"
+        if pa.abstract:
+            part += f"\nAbstract: {pa.abstract[:400]}"
+        if pa.claims_text:
+            part += f"\nClaims:\n{pa.claims_text[:2000]}"
+        prior_art_parts.append(part)
+    prior_art_context = "\n\n".join(prior_art_parts) if prior_art_parts else "(No prior art results available)"
+
+    return await run_claim_pipeline(
+        invention_narrative=request.invention_narrative,
+        feasibility_stage_5=request.feasibility_stage_5,
+        feasibility_stage_6=request.feasibility_stage_6,
+        prior_art_context=prior_art_context,
+        api_key=request.settings.api_key,
+        default_model=request.settings.default_model,
+        research_model=request.settings.research_model,
+        max_tokens=request.settings.max_tokens,
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=3002)

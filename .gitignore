@@ -41,6 +41,13 @@ desktop.ini
 # TypeScript build info
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+*.egg
+
 # Playwright test artifacts
 frontend/e2e-screenshots/
 frontend/e2e-results/

@@ -58,6 +58,14 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
+  claim-drafter:
+    build: ./services/claim-drafter
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     ports:
