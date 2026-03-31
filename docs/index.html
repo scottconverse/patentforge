@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PatentForge — AI Patent Research &amp; Preparation Tool</title>
-  <meta name="description" content="Open-source, self-hosted AI patent research tool. Structure your invention analysis, discover prior art, and prepare for your patent attorney consultation.">
+  <meta name="description" content="Open-source, self-hosted AI patent landscape research tool. Explore your invention's patent landscape, discover prior art, and prepare for your patent attorney consultation.">
   <style>
     :root {
       --bg: #0f172a;
@@ -162,10 +162,11 @@
   <section class="hero">
     <h1>Prepare for your patent attorney<br>with <span class="highlight">AI-powered research</span></h1>
     <p class="subtitle">
-      PatentForge is an open-source, self-hosted research tool that helps inventors
-      organize their thinking before consulting a patent professional. Six-stage
-      AI analysis structures your invention, discovers related prior art, and
-      identifies the questions worth exploring with qualified counsel.
+      PatentForge is an open-source, self-hosted patent landscape research tool
+      that helps inventors explore the patent landscape for their ideas before
+      consulting a patent professional. Six-stage AI analysis structures your
+      invention, discovers related prior art, and identifies the questions
+      worth exploring with qualified counsel.
     </p>
     <div class="hero-cta">
       <a href="https://github.com/scottconverse/patentforge" class="btn btn-primary">Get Started</a>
@@ -247,13 +248,15 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 4rem;">
     <div class="disclaimer">
-      <strong>PatentForge is a research and preparation tool, not a legal service.</strong><br>
-      It does not provide legal advice, patent opinions, or attorney services. The output is
-      designed to help you prepare for a consultation with a registered patent attorney or
-      patent agent — not to replace one. Always seek qualified legal counsel before making
-      patent filing decisions.<br><br>
+      <strong>PatentForge is a research tool, not a legal service.</strong> The author of this tool is not a lawyer.
+      The AI systems that execute these prompts are not lawyers. No attorney-client relationship is created
+      by using this tool. The output is intended for informational and educational purposes only — to help
+      you prepare for a consultation with a registered patent attorney, not to replace one.<br><br>
+      AI-generated analysis may contain errors, omissions, or hallucinated references. Always consult
+      qualified legal counsel before making patent filing decisions.<br><br>
       <strong>Legal guardrails built in:</strong> first-run clickwrap agreement, API key usage disclosure,
-      and persistent disclaimers on every generated report.
+      embedded disclaimers on every stage output, and persistent disclaimer watermarks on every
+      generated report. See <a href="https://github.com/scottconverse/patentforge/blob/master/LEGAL_NOTICE.md">LEGAL_NOTICE.md</a> for full details.
     </div>
   </section>
 
@@ -279,12 +282,13 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       <a href="https://github.com/scottconverse/patentforge/blob/master/ARCHITECTURE.md">Architecture</a>
       <a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Changelog</a>
       <a href="https://github.com/scottconverse/patentforge/blob/master/CONTRIBUTING.md">Contributing</a>
+      <a href="https://github.com/scottconverse/patentforge/blob/master/LEGAL_NOTICE.md">Legal Notice</a>
       <a href="https://github.com/scottconverse/patentforge/blob/master/LICENSE">MIT License</a>
     </div>
   </section>
 
   <footer class="footer">
-    PatentForge is a research tool, not a legal service. Always consult a patent attorney before making filing decisions.<br>
+    PatentForge is a research tool, not a legal service. The author is not a lawyer. Always consult a patent attorney before making filing decisions.<br>
     &copy; 2026 Scott Converse. Released under the MIT License.
   </footer>
 

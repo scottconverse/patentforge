@@ -6,11 +6,11 @@ A step-by-step guide for using PatentForge to research and prepare for a patent 
 
 ## What Is PatentForge?
 
-PatentForge is a web application that runs on your computer. You describe your invention, and it uses artificial intelligence (Anthropic's Claude) to perform structured technical research — searching for related patents, identifying potential issues under patent law, and organizing findings into a readable report.
+PatentForge is a web application that runs on your computer. You describe your invention, and it uses artificial intelligence (Anthropic's Claude) to explore the patent landscape — searching for related patents, identifying potential issues under patent law, and organizing findings into a readable report.
 
 **The goal:** Help you walk into a meeting with a patent attorney prepared — with your invention clearly described, related prior art identified, and the right questions already on the table. PatentForge does the homework so you can make the most of your attorney's time.
 
-**What it is not:** PatentForge is not a lawyer, does not provide legal advice, and does not replace consultation with a registered patent attorney or patent agent. Patent law is complex, and decisions about whether and how to file should always be made with qualified legal counsel.
+**What it is not:** PatentForge is not a lawyer, not a legal service, and does not provide legal advice. The author of this tool is not a lawyer. The AI systems that generate the analysis are not lawyers. No attorney-client relationship is created by using this tool. AI-generated analysis may contain errors, omissions, or hallucinated references. Patent law is complex, and decisions about whether and how to file should always be made with a registered patent attorney or patent agent.
 
 **What it costs:** Each analysis run costs approximately $0.75 to $3.00 in Anthropic API fees (the cost of the AI processing).
 
@@ -129,9 +129,9 @@ The analysis runs through 6 stages sequentially. You'll see:
 
 1. **Technical Intake & Restatement** — Restates your invention in precise technical language
 2. **Prior Art Research** — Searches the web for existing patents, papers, and products
-3. **Patentability Review** — Identifies potential issues under the main patent law requirements (35 USC 101, 102, 103, 112)
-4. **Deep Dive Analysis** — Detailed examination of AI/ML and 3D printing aspects
-5. **Strategy Notes** — Summarizes filing considerations, cost factors, and open questions
+3. **Patentability Assessment** — Maps your invention against the main patent law requirements (35 USC 101, 102, 103, 112)
+4. **Deep Dive Analysis** — Detailed examination of domain-specific patent dynamics
+5. **IP Landscape Assessment** — Presents filing indicators, cost factors, and open questions
 6. **Consolidated Report** — Assembles all findings into a single structured document
 
 ### Step 4: Review the Results
@@ -141,7 +141,7 @@ When the analysis completes, you'll see:
 - **Individual stage outputs** accessible by clicking each stage in the sidebar
 - **Total API cost** shown below the stage list
 
-**Remember:** This output is structured research to help you prepare for a conversation with a patent professional. It is not a legal opinion, and the AI's findings should be verified by a qualified patent attorney before making any decisions.
+**Remember:** This output is structured research to help you prepare for a conversation with a patent professional. It is not a legal opinion. The AI's findings may contain errors, omissions, or hallucinated references — including fabricated patent numbers and inaccurate legal citations. All findings should be verified by a qualified patent attorney before making any decisions.
 
 ### Step 5: Export Your Report
 
@@ -243,4 +243,4 @@ If you used `PatentForge.bat`, check that the terminal windows are open and not 
 
 ---
 
-*PatentForge is a research and preparation tool. It does not provide legal advice. Always consult a registered patent attorney or patent agent before making patent filing decisions.*
+*PatentForge is a research tool, not a legal service. The author of this tool is not a lawyer. The AI systems that generate the analysis are not lawyers. No attorney-client relationship is created by using this tool. It does not provide legal advice. Always consult a registered patent attorney or patent agent before making patent filing decisions.*

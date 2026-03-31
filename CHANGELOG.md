@@ -5,6 +5,25 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-03-30
+
+### Changed
+- **Prompt role language** — all 6 stage prompts now identify the AI as a "patent landscape research assistant" instead of role-playing as a patent attorney; each prompt includes explicit "not a lawyer" and "not legal advice" disclaimers
+- **Embedded per-stage disclaimer** — common-rules.md now instructs the AI to begin every stage output with an italic disclaimer notice (survives copy-paste of individual stages)
+- **Section titles softened** — "File or Don't File" → "Filing Indicators", "Bottom-Line Recommendation" → "Overall Assessment", "Examiner Rejection Simulation" → "Anticipated Examiner Concerns"
+- **Assessment labels revised** — "FILE NOW" / "DO NOT PURSUE PATENT" replaced with evidence-framed labels ("INDICATORS FAVOR FILING" / "INDICATORS SUGGEST NOT FILING")
+- **Stage 6 closing disclaimer strengthened** — now explicitly states "The author of this tool is not a lawyer" and "The AI system that generated this analysis is not a lawyer", warns about hallucinated references
+- **Report exporter hardcoded disclaimer** — HTML export now includes a styled disclaimer footer outside the AI-generated content div (survives truncation)
+- **All disclaimer watermarks updated** — HTML export, Word (.docx) export, on-screen report viewer, and frontend HTML download all use the stronger disclaimer language
+- **README subtitle** — changed from "patent research and preparation tool" to "patent landscape research tool" with prominent blockquote disclaimer
+- **Landing page** — updated disclaimer section with stronger language and link to LEGAL_NOTICE.md
+- **User manual** — updated disclaimers, stage descriptions, and closing notice
+
+### Added
+- **LEGAL_NOTICE.md** — standalone legal notice file covering what PatentForge is and is not, user responsibilities, and derivative work requirements
+- **LICENSE-PROMPTS** — CC BY-SA 4.0 license for prompt content (ensures disclaimers survive forks via ShareAlike requirement)
+- **Dual license structure** — MIT for code, CC BY-SA 4.0 for prompts; README license section updated accordingly
+
 ## [0.2.1] - 2026-03-31
 
 ### Added

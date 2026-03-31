@@ -1,6 +1,10 @@
 # PatentForge
 
-**AI-powered patent research and preparation tool for inventors.**
+**AI-powered patent landscape research tool for inventors.**
+
+> **PatentForge is a research tool, not a legal service.** The author of this tool is not a lawyer. This tool does not provide legal advice. It helps inventors explore the patent landscape for their ideas using AI — the same way a book about patents helps you understand the process without replacing an attorney.
+>
+> By using PatentForge, you are running prompts on your own AI account and generating your own research output. The output is for your personal educational use. It is not a substitute for professional legal counsel.
 
 PatentForge is a self-hosted web application that helps inventors organize their thinking about an invention before consulting a patent attorney. It uses Claude AI to structure a technical analysis, search for related patents, and highlight the questions a patent professional would explore — so you walk into that first meeting prepared, not cold.
 
@@ -131,4 +135,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and guidelines.
 
 ## License
 
-[MIT](LICENSE)
+**Code** (backend, frontend, services): [MIT](LICENSE)
+
+**Prompt content** (`services/feasibility/src/prompts/`): [CC BY-SA 4.0](LICENSE-PROMPTS)
+
+See [LEGAL_NOTICE.md](LEGAL_NOTICE.md) for important information about this tool's limitations and your responsibilities.
