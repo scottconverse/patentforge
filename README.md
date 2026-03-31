@@ -11,7 +11,8 @@ PatentForge is a self-hosted web application that helps inventors organize their
 ## What PatentForge Does
 
 - **Structured technical analysis** — 6-stage AI pipeline that restates your invention in patent terminology, searches for related prior art, identifies potential issues under patent law, and organizes findings into a readable report
-- **Prior art discovery** — automated patent search via PatentsView API with relevance scoring, plus AI-powered web search for related patents, papers, and products
+- **Prior art discovery** — automated patent search via USPTO Open Data Portal with improved relevance scoring (stop-word filtering, title weighting), plus AI-powered web search for related patents, papers, and products
+- **Patent claims viewer** — lazy-loads actual patent claims text from the USPTO Documents API when you click a prior art result (requires free ODP API key)
 - **Cost transparency** — pre-run cost estimate with per-stage token tracking so you know what the AI processing will cost before you start
 - **Resume from interruption** — pick up where you left off if a run stops mid-pipeline
 - **Multiple export formats** — HTML, Word (.docx), and Markdown for sharing with your attorney or team
@@ -114,18 +115,28 @@ All settings are configurable via the Settings page in the UI:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Anthropic API Key | — | Required. Your Claude API key |
-| Default Model | claude-sonnet-4-20250514 | Model for most pipeline stages |
-| Research Model | — | Optional cheaper model for Stage 2 (e.g., Haiku) |
+| Anthropic API Key | — | Required. Your Claude API key. Encrypted at rest (AES-256-GCM). |
+| USPTO API Key | — | Optional. Free key from [data.uspto.gov](https://data.uspto.gov/myodp) for enhanced patent search and claims viewing. Encrypted at rest. |
+| Default Model | claude-haiku-4-5-20251001 | Model for most pipeline stages |
+| Research Model | — | Optional separate model for Stage 2 (e.g., Haiku for cost savings) |
 | Max Tokens | 32,000 | Maximum tokens per stage response |
 | Inter-Stage Delay | 5 seconds | Pause between stages for rate limit protection |
+| Cost Cap (USD) | 5.00 | Warning threshold before running analysis |
+| Export Path | Desktop | Folder for saved reports |
+
+### Authentication (Optional)
+
+For network deployments, set the `PATENTFORGE_TOKEN` environment variable to require Bearer token auth on all API requests. When not set, auth is disabled (single-user local mode).
 
 ## Roadmap
 
 - [x] **v0.1** — 6-stage AI analysis pipeline with streaming
 - [x] **v0.2** — Prior art search, cost tracking, Word export, resume from interruption
-- [x] **v0.3** — USPTO patent detail enrichment, individual stage re-run, CSV export
-- [ ] **v0.3.1** — Prosecution timeline, Office Action viewing
+- [x] **v0.3.0** — USPTO patent detail enrichment, individual stage re-run, CSV export
+- [x] **v0.3.1** — USPTO Open Data Portal integration (replaces deprecated PatentsView API)
+- [x] **v0.3.2** — Lazy-load patent claims from USPTO Documents API
+- [x] **v0.3.3** — Playwright E2E tests, DOCX parser improvements, type safety, CORS hardening
+- [x] **v0.3.4** — Scoring improvements, API key encryption, prompt integrity, CI pipeline, auth skeleton
 - [ ] **v0.4** — AI-assisted claim drafting
 - [ ] **v0.5** — Compliance review tooling
 - [ ] **v0.6** — Full application document assembly

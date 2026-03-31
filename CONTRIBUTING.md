@@ -90,15 +90,31 @@ patentforge/
 
 ## Running Tests
 
+PatentForge has 169 automated tests across three layers. **GitHub Actions CI** runs all tests automatically on every push and PR.
+
 ```bash
-# Backend tests
+# Backend unit tests (Jest — 117 tests)
 cd backend && npm test
 
-# All services build cleanly
-cd backend && npm run build
-cd services/feasibility && npm run build
-cd frontend && npm run build
+# Frontend unit tests (Vitest — 31 tests)
+cd frontend && npm test
+
+# Browser E2E tests (Playwright — 21 tests, requires services running)
+cd frontend && npx playwright test
+
+# Cleanroom E2E (full nuke-and-rebuild + API smoke tests)
+bash scripts/cleanroom-e2e.sh
 ```
+
+### Playwright E2E Setup
+
+The E2E tests launch all three services automatically via Playwright's `webServer` config. First run requires Chromium:
+
+```bash
+cd frontend && npx playwright install chromium
+```
+
+E2E tests capture screenshots to `frontend/e2e-screenshots/` (gitignored), check browser console for errors, and test at both desktop and mobile viewports.
 
 ## Making Changes
 

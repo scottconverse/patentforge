@@ -77,7 +77,7 @@ Before you can run any analysis, you need to enter your Anthropic API key:
 3. Leave the other settings at their defaults (they work well for most runs)
 4. Click **Save Settings**
 
-You only need to do this once. The key is saved in your local database.
+You only need to do this once. The key is encrypted (AES-256-GCM) and saved in your local database — it is never stored as plain text.
 
 ---
 
@@ -157,7 +157,7 @@ Files are saved to your browser's Downloads folder.
 
 ## Prior Art Discovery
 
-When you run an analysis, PatentForge automatically searches for related patents using the PatentsView API. Results appear in a **Prior Art panel** on the project detail page.
+When you run an analysis, PatentForge automatically searches for related patents using the USPTO Open Data Portal (ODP). Results appear in a **Prior Art panel** on the project detail page.
 
 Each result shows:
 - **Patent title** and number
@@ -167,9 +167,9 @@ Each result shows:
 
 The prior art results are also provided as context to Stage 2, so the AI considers them during its research.
 
-**Note:** This is a keyword-based search of U.S. patents. It is not exhaustive. A patent attorney will typically conduct a more thorough professional search using specialized databases.
+**Note:** This is an automated search of U.S. patents with improved relevance scoring (common patent stop-words are filtered, title matches are weighted higher than abstract matches). It is not exhaustive. A patent attorney will typically conduct a more thorough professional search using specialized databases.
 
-**Note (v0.3.1):** Structured prior art search now uses the USPTO Open Data Portal (ODP). To enable it, add your ODP API key in Settings. The key is optional — without it, the AI analysis still uses web search for prior art research in Stage 2. To get an ODP API key (free), register at [data.uspto.gov](https://data.uspto.gov/myodp). This requires a USPTO.gov account with ID.me identity verification.
+**USPTO API key (optional but recommended):** Add a free ODP API key in Settings to enable structured patent search and patent claims viewing. Without it, the AI analysis still uses web search for prior art research in Stage 2. To get an ODP API key (free), register at [data.uspto.gov](https://data.uspto.gov/myodp). This requires a USPTO.gov account with ID.me identity verification.
 
 ### Clicking a Prior Art Result
 
@@ -211,11 +211,14 @@ Access settings via the gear icon in the navigation bar.
 
 | Setting | What It Does | Default |
 |---------|-------------|---------|
-| **Anthropic API Key** | Your Claude API key (required) | — |
-| **Default Model** | Which AI model to use for most stages | claude-sonnet-4-20250514 |
-| **Research Model** | Optional cheaper model for the research stage | — |
+| **Anthropic API Key** | Your Claude API key (required). Encrypted at rest. | — |
+| **USPTO API Key** | Free key from data.uspto.gov for enhanced patent search and claims viewing. Encrypted at rest. | — |
+| **Default Model** | Which AI model to use for most stages | claude-haiku-4-5-20251001 |
+| **Research Model** | Optional separate model for the research stage | — |
 | **Max Tokens** | Maximum length of each stage's response | 32,000 |
 | **Inter-Stage Delay** | Seconds to wait between stages (prevents rate limiting) | 5 |
+| **Export Path** | Folder where reports are saved | Your Desktop |
+| **Cost Cap (USD)** | Shows a warning before running if estimated cost exceeds this amount | $5.00 |
 
 **Model choices:**
 - **Sonnet** (default) — good balance of quality and cost
