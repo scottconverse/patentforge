@@ -41,6 +41,11 @@ desktop.ini
 # TypeScript build info
 *.tsbuildinfo
 
+# Playwright test artifacts
+frontend/e2e-screenshots/
+frontend/e2e-results/
+frontend/test-results/
+
 # Reference source (private repo — not part of PatentForge)
 reference/
 

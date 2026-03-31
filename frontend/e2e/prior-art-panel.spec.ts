@@ -1,11 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, screenshot } from './fixtures';
 import { createProject, deleteProject } from './helpers';
-
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('patentforge_disclaimer_accepted', new Date().toISOString());
-  });
-});
 
 test.describe('Prior Art Panel', () => {
   let projectId: string;
@@ -18,9 +12,10 @@ test.describe('Prior Art Panel', () => {
     await deleteProject(projectId);
   });
 
-  test('project detail page loads without errors', async ({ page }) => {
+  test('project detail page loads with clean console', async ({ page, consoleErrors }) => {
     await page.goto(`/projects/${projectId}`);
     await page.waitForLoadState('networkidle');
     await expect(page.locator('text=E2E Prior Art Test')).toBeVisible({ timeout: 10_000 });
+    await screenshot(page, 'project-detail-with-prior-art-panel');
   });
 });

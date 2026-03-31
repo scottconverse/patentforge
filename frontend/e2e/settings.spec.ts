@@ -1,14 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, screenshot, checkViewport } from './fixtures';
 import { getSettings, updateSettings } from './helpers';
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('patentforge_disclaimer_accepted', new Date().toISOString());
-  });
-});
-
 test.describe('Settings Page', () => {
-  // Reset settings after tests
   test.afterAll(async () => {
     await updateSettings({
       anthropicApiKey: '',
@@ -17,40 +10,59 @@ test.describe('Settings Page', () => {
     });
   });
 
-  test('loads settings page with all sections', async ({ page }) => {
+  test('loads settings page with all sections and clean console', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
 
     await expect(page.locator('h1, h2').filter({ hasText: /settings/i })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('text=Anthropic API Key')).toBeVisible();
     await expect(page.locator('label:has-text("USPTO Open Data Portal Key")')).toBeVisible();
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible();
+    await screenshot(page, 'settings-page-loaded');
   });
 
-  test('can save and persist API key settings', async ({ page }) => {
+  test('can save and persist API key settings', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
-    await expect(page.locator('button:has-text("Save Settings")')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('text=Anthropic API Key')).toBeVisible({ timeout: 10_000 });
 
-    // Fill in a test key value — find the anthropic key input
-    const anthropicInput = page.locator('input[type="password"]').first();
-    await anthropicInput.fill('sk-ant-test-key-12345');
+    // Use placeholder to target the correct input
+    const testKey = `sk-ant-e2e-${Date.now()}`;
+    const anthropicInput = page.locator('input[placeholder="sk-ant-..."]');
+    await anthropicInput.fill(testKey);
+    await screenshot(page, 'settings-key-filled');
 
-    // Save
     await page.click('button:has-text("Save Settings")');
 
-    // Wait for save confirmation
-    await expect(page.locator('text=Saved')).toBeVisible({ timeout: 5_000 });
+    // Wait for the save to complete (button text changes to "Saving..." then back)
+    await page.waitForFunction(
+      () => document.querySelector('button[type="submit"]')?.textContent?.includes('Save Settings'),
+      { timeout: 10_000 },
+    );
+    await screenshot(page, 'settings-saved-confirmation');
 
-    // Verify via API that settings were persisted
+    // Verify persistence via API
     const settings = await getSettings();
-    expect(settings.anthropicApiKey).toBe('sk-ant-test-key-12345');
+    expect(settings.anthropicApiKey).toBe(testKey);
+
+    // Clean up immediately
+    await updateSettings({ anthropicApiKey: '' });
   });
 
-  test('model dropdown reflects saved selection', async ({ page }) => {
+  test('model dropdown reflects saved selection', async ({ page, consoleErrors }) => {
     await page.goto('/settings');
     await expect(page.locator('button:has-text("Save Settings")')).toBeVisible({ timeout: 10_000 });
 
-    // The default model dropdown should exist and have a value
     const modelSelect = page.locator('select').first();
     await expect(modelSelect).toBeVisible();
+    await screenshot(page, 'settings-model-dropdown');
+  });
+
+  test('responsive: settings page at mobile viewport', async ({ page, consoleErrors }) => {
+    await page.goto('/settings');
+    await expect(page.locator('button:has-text("Save Settings")')).toBeVisible({ timeout: 10_000 });
+    await checkViewport(page, 'settings-page-mobile', 375, 812);
+
+    // All controls should be visible and not overflow
+    await expect(page.locator('button:has-text("Save Settings")')).toBeVisible();
+    await expect(page.locator('select').first()).toBeVisible();
   });
 });

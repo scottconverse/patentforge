@@ -4,12 +4,25 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: 0,
+  outputDir: './e2e-results',
   use: {
     baseURL: 'http://localhost:8080',
     headless: true,
+    screenshot: 'on',
+    viewport: { width: 1280, height: 800 },
+    trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    {
+      name: 'desktop-chromium',
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 800 } },
+    },
+    {
+      name: 'mobile-chromium',
+      use: { browserName: 'chromium', viewport: { width: 375, height: 812 } },
+      // Only run navigation and layout tests on mobile — skip form-heavy tests
+      testMatch: /navigation\.spec\.ts/,
+    },
   ],
   webServer: [
     {
