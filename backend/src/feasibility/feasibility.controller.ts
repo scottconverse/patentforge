@@ -20,6 +20,8 @@ const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
 import { PriorArtService } from '../prior-art/prior-art.service';
 import { PatchStageDto } from './dto/patch-stage.dto';
 import { PatchRunDto } from './dto/patch-run.dto';
+import { StartRunDto } from './dto/start-run.dto';
+import { RerunFromStageDto } from './dto/rerun-from-stage.dto';
 
 @Controller('projects/:id/feasibility')
 export class FeasibilityController {
@@ -33,7 +35,7 @@ export class FeasibilityController {
   @HttpCode(HttpStatus.CREATED)
   async startRun(
     @Param('id') projectId: string,
-    @Body() body: { narrative?: string },
+    @Body() body: StartRunDto,
   ) {
     // Enforce cost cap before starting a new run
     const settings = await this.settingsService.getSettings();
@@ -194,9 +196,9 @@ export class FeasibilityController {
   @HttpCode(HttpStatus.CREATED)
   async rerunFromStage(
     @Param('id') projectId: string,
-    @Body() body: { fromStage: number },
+    @Body() dto: RerunFromStageDto,
   ) {
-    return this.feasibilityService.rerunFromStage(projectId, body.fromStage);
+    return this.feasibilityService.rerunFromStage(projectId, dto.fromStage);
   }
 
   @Post('cancel')
