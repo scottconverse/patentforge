@@ -129,12 +129,12 @@ All settings are configurable via the Settings page in the UI:
 |---------|---------|-------------|
 | Anthropic API Key | — | Required. Your Claude API key. Encrypted at rest (AES-256-GCM). |
 | USPTO API Key | — | Optional. Free key from [data.uspto.gov](https://data.uspto.gov/myodp) for enhanced patent search and claims viewing. Encrypted at rest. |
-| Default Model | claude-haiku-4-5-20251001 | Model for most pipeline stages |
+| Default Model | — | Required. Choose Sonnet, Opus, or Haiku before running analysis. No silent fallback. |
 | Research Model | — | Optional separate model for Stage 2 (e.g., Haiku for cost savings) |
 | Max Tokens | 32,000 | Maximum tokens per stage response |
 | Inter-Stage Delay | 5 seconds | Pause between stages for rate limit protection |
-| Cost Cap (USD) | 5.00 | Warning threshold before running analysis |
-| Export Path | Desktop | Folder for saved reports |
+| Cost Cap (USD) | 5.00 | Enforced server-side. Blocks new runs when cumulative project cost exceeds this amount. Mid-pipeline cancellation when a stage pushes cost over the cap. Set to 0 to disable. |
+| Export Path | Desktop | Folder for saved reports. Must be within your home directory. |
 
 ### Authentication (Optional)
 

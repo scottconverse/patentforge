@@ -23,10 +23,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Backend claim-draft module** — POST/GET/PUT API endpoints, Prisma ClaimDraft + Claim models with new fields
 - **40 Python tests** (pytest) — models, parser, graph structure, routing, all 3 agents with mocked Anthropic calls
 
+### Fixed
+- **Cost cap enforced server-side** (#1) — `costCapUsd` is now checked before starting feasibility runs and claim drafting. Mid-pipeline enforcement: `patchStage` returns `costCapExceeded` flag so the frontend cancels the pipeline when cumulative cost exceeds the cap. Claim drafter agents now track per-call cost.
+- **Internal service authentication** (#2) — feasibility and claim-drafter services require `INTERNAL_SERVICE_SECRET` header. Frontend no longer calls the feasibility service directly — SSE streams are proxied through the backend. Docker Compose no longer exposes internal service ports (3001, 3002) to the host.
+- **API key removed from frontend requests** (#3) — the Anthropic API key is no longer sent from the browser in pipeline request bodies. The backend SSE proxy injects it server-side from encrypted settings. Claim drafter prefers `ANTHROPIC_API_KEY` env var. GraphState scrubs the key after all agents finish.
+- **Path traversal prevention** (#4) — `resolveExportDir` validates that custom export paths resolve within `os.homedir()`. Rejects `../../../etc` traversal attempts with an actionable error.
+- **HTML injection prevention** (#5) — exported HTML report title is now escaped with `htmlEscape()` before interpolation into `<title>` tag.
+- **Claim edit ownership check** (#6) — `updateClaim` verifies the claim belongs to the project via a join through `ClaimDraft` before allowing the update. `UpdateClaimDto` with `@MaxLength(10000)` prevents oversized writes.
+- **Concurrent draft guard** (#7) — `startDraft` checks for an existing RUNNING draft before creating a new one. Returns 409 Conflict to prevent multiple concurrent Claude sessions.
+- **Stuck draft cleanup on startup** (#8) — `ClaimDraftService.onModuleInit` marks any RUNNING drafts from a previous crash as ERROR, preventing permanently stuck drafts.
+- **Structured examiner verdict** (#9) — examiner agent now requests a JSON verdict block instead of relying on fragile `REVISION_NEEDED: YES` string matching. Parser tries JSON code block, raw JSON, old sentinel, and defaults to false.
+- **Timing-safe token comparison** (#10) — `AuthGuard` uses `crypto.timingSafeEqual` instead of direct string comparison to prevent timing side-channel attacks.
+- **Per-installation encryption salt** (#11) — PBKDF2 salt stored in the `AppSettings.encryptionSalt` database column (generated on first run), replacing the hardcoded constant. Salt travels with the database on backup/restore.
+- **No silent model defaults** (#12) — removed inconsistent model fallbacks across three services. Feasibility service returns 400 if model is missing. Prisma default is empty string. Frontend requires explicit model selection before running analysis.
+- **LangGraph dict/Pydantic crash** — `run_claim_pipeline` now handles dict state from LangGraph's `astream` correctly, fixing a crash on every real pipeline call.
+
 ### Security
 - All claim drafting prompts licensed CC BY-SA 4.0 (disclaimers survive forks)
 - Per-project UPL acknowledgment with checkbox before claim generation
 - "DRAFT — NOT FOR FILING" watermark on all claim displays
+- Internal services authenticated via shared secret (`INTERNAL_SERVICE_SECRET`)
+- API key never sent from browser — injected server-side
+- API keys encrypted at rest with per-installation random salt
+- Timing-safe Bearer token comparison
+- Path traversal prevention in export path
+- HTML injection prevention in report exports
+- Claim edit ownership verification
 
 ## [0.3.4] - 2026-03-31
 

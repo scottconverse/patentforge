@@ -74,10 +74,10 @@ Before you can run any analysis, you need to enter your Anthropic API key:
 
 1. Click the **gear icon** (Settings) in the top navigation bar
 2. In the **Anthropic API Key** field, paste your API key (it starts with `sk-ant-`)
-3. Leave the other settings at their defaults (they work well for most runs)
+3. In the **Default Model** dropdown, select which AI model to use (Sonnet is recommended for most users)
 4. Click **Save Settings**
 
-You only need to do this once. The key is encrypted (AES-256-GCM) and saved in your local database — it is never stored as plain text.
+You must configure both an API key and a model before running any analysis. The key is encrypted (AES-256-GCM with a per-installation random salt) and saved in your local database — it is never stored as plain text. The encryption salt is stored in the same database, so it travels with your data on backup/restore.
 
 ---
 
@@ -255,15 +255,15 @@ Access settings via the gear icon in the navigation bar.
 |---------|-------------|---------|
 | **Anthropic API Key** | Your Claude API key (required). Encrypted at rest. | — |
 | **USPTO API Key** | Free key from data.uspto.gov for enhanced patent search and claims viewing. Encrypted at rest. | — |
-| **Default Model** | Which AI model to use for most stages | claude-haiku-4-5-20251001 |
+| **Default Model** | Required. Which AI model to use. Must be selected before running analysis. | — |
 | **Research Model** | Optional separate model for the research stage | — |
 | **Max Tokens** | Maximum length of each stage's response | 32,000 |
 | **Inter-Stage Delay** | Seconds to wait between stages (prevents rate limiting) | 5 |
-| **Export Path** | Folder where reports are saved | Your Desktop |
-| **Cost Cap (USD)** | Enforced server-side: blocks new analysis or claim drafting runs when cumulative project cost reaches this amount. Set to 0 to disable. | $5.00 |
+| **Export Path** | Folder where reports are saved. Must be within your home directory. | Your Desktop |
+| **Cost Cap (USD)** | Enforced server-side: blocks new analysis or claim drafting runs when cumulative project cost reaches this amount. Also checked mid-pipeline — if a stage pushes cost over the cap, the pipeline is cancelled. Set to 0 to disable. | $5.00 |
 
 **Model choices:**
-- **Sonnet** (default) — good balance of quality and cost
+- **Sonnet** (recommended) — good balance of quality and cost
 - **Opus** — highest quality, slowest, most expensive
 - **Haiku** — fastest and cheapest, lower quality
 

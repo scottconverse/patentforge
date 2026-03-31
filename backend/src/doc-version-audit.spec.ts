@@ -139,6 +139,11 @@ describe('Current Version Features Are Documented', () => {
     { feature: 'Playwright E2E', contributing: 'playwright' },
     { feature: 'GitHub Actions CI', contributing: 'github actions' },
     { feature: 'Bearer token auth', readme: 'patentforge_token' },
+    // v0.4.0 hardening fixes that affect user-facing behavior
+    { feature: 'cost cap enforcement', readme: 'enforced server-side', manual: 'enforced server-side' },
+    { feature: 'model selection required', readme: 'required', manual: 'required' },
+    { feature: 'internal service auth', readme: 'internal_service_secret' },
+    { feature: 'export path restriction', readme: 'home directory', manual: 'home directory' },
   ];
 
   for (const req of FEATURE_DOC_REQUIREMENTS) {
