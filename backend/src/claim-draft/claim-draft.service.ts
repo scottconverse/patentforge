@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 
@@ -24,6 +24,14 @@ export class ClaimDraftService {
     });
     if (!project) throw new NotFoundException(`Project ${projectId} not found`);
     if (!project.invention) throw new NotFoundException('No invention form — fill it in first');
+
+    // Prevent concurrent drafts — only one RUNNING draft per project
+    const running = await this.prisma.claimDraft.findFirst({
+      where: { projectId, status: 'RUNNING' },
+    });
+    if (running) {
+      throw new ConflictException('A claim draft is already running for this project. Wait for it to complete or try again later.');
+    }
 
     const settings = await this.settingsService.getSettings();
     if (!settings.anthropicApiKey) {

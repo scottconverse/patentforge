@@ -2,7 +2,7 @@
  * Tests for ClaimDraftService — ownership checks, validation, concurrency guards.
  */
 
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { ClaimDraftService } from './claim-draft.service';
 
 const mockPrisma = {
@@ -13,6 +13,7 @@ const mockPrisma = {
   claimDraft: {
     findFirst: jest.fn(),
     create: jest.fn(),
+    update: jest.fn().mockResolvedValue({}),
   },
   feasibilityStage: { findMany: jest.fn() },
   feasibilityRun: { findFirst: jest.fn() },
@@ -69,6 +70,54 @@ describe('ClaimDraftService', () => {
 
       await expect(service.updateClaim('project-1', 'nonexistent', 'text'))
         .rejects.toThrow(/not found/);
+    });
+  });
+
+  describe('startDraft concurrency guard', () => {
+    it('rejects when a draft is already RUNNING for the project', async () => {
+      mockPrisma.project.findUnique.mockResolvedValue({
+        id: 'project-1',
+        invention: { title: 'Test', description: 'Test' },
+      });
+      // A draft is already running
+      mockPrisma.claimDraft.findFirst.mockResolvedValue({
+        id: 'draft-1',
+        status: 'RUNNING',
+      });
+
+      await expect(service.startDraft('project-1'))
+        .rejects.toThrow(ConflictException);
+      await expect(service.startDraft('project-1'))
+        .rejects.toThrow(/already running/);
+    });
+
+    it('allows starting when no draft is RUNNING', async () => {
+      mockPrisma.project.findUnique.mockResolvedValue({
+        id: 'project-1',
+        invention: { title: 'Test', description: 'Test' },
+      });
+      // First findFirst: no running draft
+      // Second findFirst: last draft for version numbering
+      mockPrisma.claimDraft.findFirst
+        .mockResolvedValueOnce(null) // concurrency check
+        .mockResolvedValueOnce(null); // version check
+
+      mockPrisma.feasibilityRun.findFirst.mockResolvedValue({
+        stages: [
+          { stageNumber: 5, outputText: 'Stage 5' },
+          { stageNumber: 6, outputText: 'Stage 6' },
+        ],
+      });
+      mockPrisma.priorArtSearch.findFirst.mockResolvedValue(null);
+      mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
+      mockPrisma.claimDraft.create.mockResolvedValue({
+        id: 'new-draft',
+        version: 1,
+        status: 'RUNNING',
+      });
+
+      const result = await service.startDraft('project-1');
+      expect(result.id).toBe('new-draft');
     });
   });
 });
