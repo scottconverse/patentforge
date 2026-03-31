@@ -20,9 +20,11 @@ async def finalize(state: GraphState) -> GraphState:
     """
     Parse the final claims text into structured Claim objects.
     Uses revised claims if available, otherwise the original draft.
+    Scrubs the API key from state so it doesn't persist in checkpoints or tracebacks.
     """
     raw = state.revised_claims_raw or state.draft_claims_raw
     state.claims = parse_claims(raw)
+    state.api_key = ""  # Scrub — no longer needed after all agents have run
     state.step = "finalize_complete"
     return state
 

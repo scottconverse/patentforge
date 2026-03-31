@@ -370,8 +370,8 @@ export default function ProjectDetail() {
 
     try {
       // Map AppSettings → AnalysisSettings (feasibility service field names)
+      // API key is NOT sent from the frontend — the backend injects it server-side
       const settings = {
-        apiKey: appSettings.anthropicApiKey,
         model: appSettings.defaultModel || 'claude-haiku-4-5-20251001',
         researchModel: appSettings.researchModel || undefined,
         maxTokens: appSettings.maxTokens || 32000,

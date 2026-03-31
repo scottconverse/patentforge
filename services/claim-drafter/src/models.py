@@ -21,7 +21,7 @@ class PriorArtItem(BaseModel):
 
 class DraftSettings(BaseModel):
     """User settings forwarded from the backend."""
-    api_key: str
+    api_key: str = ""  # Prefer ANTHROPIC_API_KEY env var; request body is fallback
     default_model: str = "claude-sonnet-4-20250514"
     research_model: str = ""
     max_tokens: int = 16000

@@ -132,6 +132,21 @@ export class FeasibilityController {
     @Body() body: any,
     @Res() res: Response,
   ) {
+    // Inject the API key server-side — never trust the frontend to send it
+    const settings = await this.settingsService.getSettings();
+    if (!settings.anthropicApiKey) {
+      res.status(400).json({ error: 'No Anthropic API key configured. Add one in Settings.' });
+      return;
+    }
+
+    const forwardBody = {
+      ...body,
+      settings: {
+        ...(body.settings || {}),
+        apiKey: settings.anthropicApiKey,
+      },
+    };
+
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (INTERNAL_SECRET) {
       headers['X-Internal-Secret'] = INTERNAL_SECRET;
@@ -141,7 +156,7 @@ export class FeasibilityController {
       const upstream = await fetch(`${FEASIBILITY_URL}/analyze`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify(forwardBody),
       });
 
       if (!upstream.ok) {

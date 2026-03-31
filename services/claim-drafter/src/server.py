@@ -26,6 +26,15 @@ app = FastAPI(title="PatentForge Claim Drafter", version="0.4.0")
 # Set INTERNAL_SERVICE_SECRET env var to enable. When not set, auth is disabled (dev mode).
 INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
 
+# API key: prefer environment variable over request body.
+# This prevents the key from flowing through HTTP request bodies.
+ANTHROPIC_API_KEY_ENV = os.environ.get("ANTHROPIC_API_KEY", "")
+
+
+def resolve_api_key(request_key: str) -> str:
+    """Use env var if set, otherwise fall back to request body value."""
+    return ANTHROPIC_API_KEY_ENV or request_key
+
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
 
 
@@ -99,7 +108,7 @@ async def draft_claims(request: ClaimDraftRequest):
                 feasibility_stage_5=request.feasibility_stage_5,
                 feasibility_stage_6=request.feasibility_stage_6,
                 prior_art_context=prior_art_context,
-                api_key=request.settings.api_key,
+                api_key=resolve_api_key(request.settings.api_key),
                 default_model=request.settings.default_model,
                 research_model=request.settings.research_model,
                 max_tokens=request.settings.max_tokens,
