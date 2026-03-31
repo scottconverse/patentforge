@@ -465,13 +465,18 @@ export class FeasibilityService {
     return { folderPath, mdFile, htmlFile };
   }
 
+  private htmlEscape(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   private buildHtmlDoc(bodyHtml: string, title: string): string {
+    const safeTitle = this.htmlEscape(title);
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title}</title>
+<title>${safeTitle}</title>
 <style>
   :root { --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a; --text: #e2e8f0; --muted: #94a3b8; --accent: #3b82f6; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
