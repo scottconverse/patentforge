@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 
@@ -6,11 +6,25 @@ const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:300
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
 
 @Injectable()
-export class ClaimDraftService {
+export class ClaimDraftService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
   ) {}
+
+  /**
+   * On service startup, mark any RUNNING drafts from a previous crash as ERROR.
+   * Prevents permanently stuck drafts that block new runs via the concurrency guard.
+   */
+  async onModuleInit() {
+    const { count } = await this.prisma.claimDraft.updateMany({
+      where: { status: 'RUNNING' },
+      data: { status: 'ERROR', completedAt: new Date() },
+    });
+    if (count > 0) {
+      console.warn(`[ClaimDraft] Cleaned up ${count} stuck RUNNING draft(s) from previous session`);
+    }
+  }
 
   /**
    * Start a new claim draft for a project.
