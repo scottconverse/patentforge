@@ -96,19 +96,19 @@ patentforge/
 
 ## Running Tests
 
-PatentForge has 169 automated tests across three layers. **GitHub Actions CI** runs all tests automatically on every push and PR.
+**GitHub Actions CI** runs backend, frontend, and claim-drafter tests automatically on every push and PR.
 
 ```bash
-# Backend unit tests (Jest — 140 tests)
+# Backend unit tests (Jest)
 cd backend && npm test
 
-# Frontend unit tests (Vitest — 31 tests)
+# Frontend unit tests (Vitest)
 cd frontend && npm test
 
-# Claim drafter tests (pytest — 40 tests)
+# Claim drafter tests (pytest)
 cd services/claim-drafter && python -m pytest tests/
 
-# Browser E2E tests (Playwright — 21 tests, requires services running)
+# Browser E2E tests (Playwright — requires services running)
 cd frontend && npx playwright test
 
 # Cleanroom E2E (full nuke-and-rebuild + API smoke tests)
