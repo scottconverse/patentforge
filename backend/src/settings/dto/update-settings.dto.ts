@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateSettingsDto {
@@ -28,9 +28,12 @@ export class UpdateSettingsDto {
 
   @IsOptional()
   @IsString()
-  pqaiApiToken?: string;
+  exportPath?: string;
 
   @IsOptional()
-  @IsString()
-  pqaiMode?: string;
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  costCapUsd?: number;
+
 }

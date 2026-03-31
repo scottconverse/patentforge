@@ -14,21 +14,15 @@ const RESEARCH_MODELS = [
   { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
 ];
 
-const PQAI_MODES = [
-  { value: 'api', label: 'API' },
-  { value: 'mock', label: 'Mock (no API calls)' },
-  { value: 'disabled', label: 'Disabled' },
-];
-
 export default function Settings() {
   const [settings, setSettings] = useState<Partial<AppSettings>>({
     anthropicApiKey: '',
-    defaultModel: 'claude-sonnet-4-20250514',
+    defaultModel: 'claude-haiku-4-5-20251001',
     researchModel: '',
     maxTokens: 16000,
     interStageDelaySeconds: 2,
-    pqaiApiToken: '',
-    pqaiMode: 'api',
+    exportPath: '',
+    costCapUsd: 5.00,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -113,20 +107,11 @@ export default function Settings() {
                 {showApiKey ? 'Hide' : 'Show'}
               </button>
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              You are connecting to your own Anthropic API account. AI processing is performed by Anthropic's servers under their <a href="https://www.anthropic.com/policies/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">terms of service</a>. Review their data privacy policies before submitting invention details.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              PQAI API Token
-            </label>
-            <input
-              type="text"
-              value={settings.pqaiApiToken || ''}
-              onChange={e => update('pqaiApiToken', e.target.value)}
-              placeholder="Your PQAI token"
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
-            />
-          </div>
         </div>
 
         {/* Models */}
@@ -197,17 +182,33 @@ export default function Settings() {
             <p className="text-xs text-gray-500 mt-1">Pause between pipeline stages. Range: 0–60 seconds.</p>
           </div>
 
+        </div>
+
+        {/* Export & Cost */}
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Export & Cost</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">PQAI Mode</label>
-            <select
-              value={settings.pqaiMode || 'api'}
-              onChange={e => update('pqaiMode', e.target.value)}
+            <label className="block text-sm font-medium text-gray-300 mb-1">Output Folder</label>
+            <input
+              type="text"
+              value={settings.exportPath || ''}
+              onChange={e => update('exportPath', e.target.value)}
+              placeholder="Leave blank to use Desktop"
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+            />
+            <p className="text-xs text-gray-500 mt-1">Folder where reports are saved. Leave blank to use your Desktop.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Cost Cap (USD)</label>
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              value={settings.costCapUsd ?? 5.00}
+              onChange={e => update('costCapUsd', parseFloat(e.target.value) || 0)}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
-            >
-              {PQAI_MODES.map(m => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
+            />
+            <p className="text-xs text-gray-500 mt-1">Show a warning before running if estimated cost exceeds this amount. Set 0 to disable.</p>
           </div>
         </div>
 

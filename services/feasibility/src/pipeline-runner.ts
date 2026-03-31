@@ -4,6 +4,7 @@ import {
   STAGE_DEFINITIONS,
   InventionInput,
   toNarrative,
+  estimateCost,
 } from './models';
 import { streamMessage } from './anthropic-client';
 import { loadSystemPrompt } from './prompts/loader';
@@ -12,7 +13,7 @@ export type PipelineEvent =
   | { type: 'stage_start'; stage: number; name: string }
   | { type: 'token'; text: string }
   | { type: 'status'; message: string }
-  | { type: 'stage_complete'; stage: number; output: string; model: string; webSearchUsed: boolean }
+  | { type: 'stage_complete'; stage: number; output: string; model: string; webSearchUsed: boolean; inputTokens: number; outputTokens: number; estimatedCostUsd: number }
   | { type: 'pipeline_complete'; finalReport: string; stages: StageResult[] }
   | { type: 'error'; stage: number; message: string };
 
@@ -38,6 +39,7 @@ function buildUserMessage(
   stageNumber: number,
   input: InventionInput,
   previousOutputs: Map<number, string>,
+  settings?: AnalysisSettings,
 ): string {
   const narrative = input.rawNarrative || toNarrative(input);
   const stage1 = previousOutputs.get(1) ?? '';
@@ -49,11 +51,16 @@ function buildUserMessage(
     case 1:
       return `Analyze this invention:\n\n${narrative}`;
 
-    case 2:
+    case 2: {
+      const priorArtSection = settings?.priorArtContext
+        ? `\n\n---\n\n## PatentsView Prior Art Results\n\nThe following patents were retrieved from the USPTO PatentsView database and are relevant to this invention. Reference them by patent number in your analysis.\n\n${settings.priorArtContext}`
+        : '';
       return (
         `## Invention (Technical Restatement from Stage 1)\n\n${stage1}` +
-        `\n\n## Original Inventor Description\n\n${narrative}`
+        `\n\n## Original Inventor Description\n\n${narrative}` +
+        priorArtSection
       );
+    }
 
     case 3:
       return (
@@ -126,7 +133,7 @@ async function* runStage(
       : settings.model;
 
   const systemPrompt = loadSystemPrompt(stageDef.number);
-  const userMessage = buildUserMessage(stageDef.number, input, previousOutputs);
+  const userMessage = buildUserMessage(stageDef.number, input, previousOutputs, settings);
 
   // Kick off the stream in the background
   const streamPromise = streamMessage({
@@ -177,6 +184,8 @@ async function* runStage(
   const result = await streamPromise;
   if (!result) return null;
 
+  const estimatedCostUsd = estimateCost(modelToUse, result.inputTokens, result.outputTokens);
+
   return {
     stageNumber: stageDef.number,
     stageName: stageDef.name,
@@ -186,6 +195,9 @@ async function* runStage(
     startedAt,
     completedAt: new Date(),
     webSearchUsed: result.webSearchUsed,
+    inputTokens: result.inputTokens,
+    outputTokens: result.outputTokens,
+    estimatedCostUsd,
   } satisfies StageResult;
 }
 
@@ -193,19 +205,27 @@ export async function* runPipeline(
   input: InventionInput,
   settings: AnalysisSettings,
   signal?: AbortSignal,
+  startFromStage = 1,
+  seedOutputs: Map<number, string> = new Map(),
 ): AsyncGenerator<PipelineEvent> {
   const completedStages: StageResult[] = [];
-  const previousOutputs = new Map<number, string>();
+  // Pre-seed outputs from already-completed stages (resume mode)
+  const previousOutputs = new Map<number, string>(seedOutputs);
   let finalReport = '';
 
   for (const stageDef of STAGE_DEFINITIONS) {
+    // Skip stages already completed in a previous run (resume mode)
+    if (stageDef.number < startFromStage) {
+      continue;
+    }
+
     if (signal?.aborted) {
       yield { type: 'error', stage: stageDef.number, message: 'Pipeline cancelled' };
       return;
     }
 
-    // Inter-stage delay (skip before stage 1)
-    if (stageDef.number > 1 && settings.interStageDelaySeconds > 0) {
+    // Inter-stage delay (skip before the first stage being run)
+    if (stageDef.number > startFromStage && settings.interStageDelaySeconds > 0) {
       const delayMs = settings.interStageDelaySeconds * 1000;
       yield {
         type: 'status',
@@ -276,6 +296,9 @@ export async function* runPipeline(
       output: stageResult.outputText,
       model: stageResult.model,
       webSearchUsed: stageResult.webSearchUsed,
+      inputTokens: stageResult.inputTokens ?? 0,
+      outputTokens: stageResult.outputTokens ?? 0,
+      estimatedCostUsd: stageResult.estimatedCostUsd ?? 0,
     };
   }
 

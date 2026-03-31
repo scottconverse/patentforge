@@ -149,6 +149,7 @@ async function parseStream(
 
   let text = '';
   let webSearchUsed = false;
+  let inputTokens = 0;
   let outputTokens = 0;
   let buffer = '';
 
@@ -187,7 +188,12 @@ async function parseStream(
 
         const eventType: string = event.type ?? '';
 
-        if (eventType === 'content_block_delta') {
+        if (eventType === 'message_start') {
+          const usage = event.message?.usage ?? {};
+          if (typeof usage.input_tokens === 'number') {
+            inputTokens = usage.input_tokens;
+          }
+        } else if (eventType === 'content_block_delta') {
           const delta = event.delta ?? {};
           if (delta.type === 'text_delta' && typeof delta.text === 'string') {
             text += delta.text;
@@ -238,5 +244,5 @@ async function parseStream(
     try { reader.cancel(); } catch { /* ignore */ }
   }
 
-  return { text, webSearchUsed, outputTokens };
+  return { text, webSearchUsed, inputTokens, outputTokens };
 }

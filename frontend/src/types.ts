@@ -50,6 +50,9 @@ export interface FeasibilityStage {
   startedAt?: string;
   completedAt?: string;
   errorMessage?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  estimatedCostUsd?: number;
 }
 
 export interface AppSettings {
@@ -59,6 +62,39 @@ export interface AppSettings {
   researchModel: string;
   maxTokens: number;
   interStageDelaySeconds: number;
-  pqaiApiToken: string;
-  pqaiMode: string;
+  exportPath: string;
+  costCapUsd: number;
+}
+
+export interface FeasibilityRunSummary {
+  id: string;
+  version: number;
+  status: RunStatus;
+  startedAt?: string;
+  completedAt?: string;
+  totalCostUsd: number;
+}
+
+export type PriorArtStatus = 'PENDING' | 'RUNNING' | 'COMPLETE' | 'ERROR' | 'NONE';
+
+export interface PriorArtSearch {
+  id: string | null;
+  projectId: string;
+  version: number;
+  status: PriorArtStatus;
+  query: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  results: PriorArtResult[];
+}
+
+export interface PriorArtResult {
+  id: string;
+  searchId: string;
+  patentNumber: string;
+  title: string;
+  abstract: string | null;
+  relevanceScore: number;
+  snippet: string | null;
+  source: string;
 }

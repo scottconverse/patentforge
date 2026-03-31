@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -70,16 +70,15 @@ model FeasibilityStage {
 }
 
 model PriorArtSearch {
-  id               String           @id @default(uuid())
-  projectId        String
-  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  version          Int
-  status           String           @default("PENDING")
-  query            String?
-  startedAt        DateTime?
-  completedAt      DateTime?
-  feasibilityRunId String?
-  results          PriorArtResult[]
+  id          String           @id @default(uuid())
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version     Int
+  status      String           @default("PENDING")
+  query       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  results     PriorArtResult[]
 }
 
 model PriorArtResult {
@@ -92,15 +91,15 @@ model PriorArtResult {
   relevanceScore Float
   snippet        String?
   claimMapping   String?
-  source         String         @default("PatentsView")
+  source         String         @default("PQAI")
 }
 
 model ClaimDraft {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   version     Int
-  status      String   @default("PENDING")
+  status      String    @default("PENDING")
   startedAt   DateTime?
   completedAt DateTime?
   claims      Claim[]

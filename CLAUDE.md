@@ -49,9 +49,8 @@ C:\Users\scott\Downloads\autobe-main.zip
 ### GitHub (Private Repo — Original App)
 ```
 Repo: scottconverse/patent-analyzer-app
-PAT:  REDACTED_GITHUB_PAT
-Note: All needed source files are already in reference/ — you should NOT need to fetch from GitHub.
-      The PAT is here only if you need additional files (e.g., .csproj, stress tests, XAML).
+Note: All needed source files are in the local reference/ directory (git-ignored).
+      If you need additional files from the original repo, ask the user for access.
 ```
 
 ## Build Instructions: v0.1

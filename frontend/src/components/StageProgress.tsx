@@ -1,8 +1,10 @@
 import { FeasibilityStage, RunStatus } from '../types';
+import { formatCost, formatDuration } from '../utils/format';
 
 interface StageProgressProps {
   stages: FeasibilityStage[];
   activeStage?: number;
+  onStageClick?: (stage: FeasibilityStage) => void;
 }
 
 function StatusIcon({ status }: { status: RunStatus }) {
@@ -40,18 +42,8 @@ function StatusIcon({ status }: { status: RunStatus }) {
   );
 }
 
-function formatDuration(start?: string, end?: string): string {
-  if (!start || !end) return '';
-  const ms = new Date(end).getTime() - new Date(start).getTime();
-  if (ms < 1000) return `${ms}ms`;
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  const rem = s % 60;
-  return `${m}m ${rem}s`;
-}
 
-export default function StageProgress({ stages, activeStage }: StageProgressProps) {
+export default function StageProgress({ stages, activeStage, onStageClick }: StageProgressProps) {
   if (!stages || stages.length === 0) {
     return (
       <div className="text-gray-500 text-sm italic">No stages yet.</div>
@@ -62,14 +54,17 @@ export default function StageProgress({ stages, activeStage }: StageProgressProp
     <div className="space-y-2">
       {stages.map((stage) => {
         const isActive = activeStage === stage.stageNumber;
+        const isClickable = stage.status === 'COMPLETE' && !!stage.outputText && !!onStageClick;
         const duration = formatDuration(stage.startedAt, stage.completedAt);
+        const cost = formatCost(stage.estimatedCostUsd);
 
         return (
           <div
             key={stage.stageNumber}
+            onClick={() => isClickable && onStageClick?.(stage)}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
               isActive ? 'bg-blue-950 border border-blue-800' : 'bg-gray-900 border border-gray-800'
-            }`}
+            } ${isClickable ? 'cursor-pointer hover:border-blue-700 hover:bg-blue-950/40' : ''}`}
           >
             <StatusIcon status={stage.status} />
             <div className="flex-1 min-w-0">
@@ -82,10 +77,18 @@ export default function StageProgress({ stages, activeStage }: StageProgressProp
               {stage.errorMessage && (
                 <div className="text-xs text-red-400 mt-0.5 truncate">{stage.errorMessage}</div>
               )}
+              {cost && (
+                <div className="text-xs text-amber-600 mt-0.5">{cost}</div>
+              )}
             </div>
-            {duration && (
-              <span className="text-xs text-gray-500 font-mono shrink-0">{duration}</span>
-            )}
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
+              {duration && (
+                <span className="text-xs text-gray-500 font-mono">{duration}</span>
+              )}
+              {isClickable && (
+                <span className="text-xs text-blue-600">view</span>
+              )}
+            </div>
           </div>
         );
       })}

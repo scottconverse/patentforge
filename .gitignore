@@ -27,12 +27,22 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # IDE
 .vscode/
 .idea/
 *.suo
 *.user
+*.swp
+*.swo
+*~
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Reference source (private repo — not part of PatentForge)
+reference/
+
+# Large binary docs (PDF version is generated and committed instead)
+PatentForge-Architecture.docx

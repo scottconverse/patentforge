@@ -14,9 +14,12 @@ app.get('/health', (_req, res) => {
 
 // ── Main analysis endpoint — SSE stream ───────────────────────────────────────
 app.post('/analyze', async (req, res) => {
-  const { inventionNarrative, settings } = req.body as {
+  const { inventionNarrative, settings, priorArtContext, startFromStage, previousOutputs } = req.body as {
     inventionNarrative: string;
     settings: AnalysisSettings;
+    priorArtContext?: string;
+    startFromStage?: number;
+    previousOutputs?: Record<number, string>;
   };
 
   if (!inventionNarrative || typeof inventionNarrative !== 'string') {
@@ -65,10 +68,25 @@ app.post('/analyze', async (req, res) => {
     maxTokens: settings.maxTokens || 32000,
     interStageDelaySeconds: settings.interStageDelaySeconds ?? 5,
     apiKey: settings.apiKey,
+    priorArtContext: priorArtContext || undefined,
   };
 
+  // Keepalive heartbeat: send an SSE comment every 20s while the pipeline runs.
+  // This prevents the browser and any intermediate proxies from closing an idle
+  // connection (which can happen during long first-token waits, e.g. Stage 6).
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(':keepalive\n\n');
+    }
+  }, 20_000);
+
+  const resumeFromStage = typeof startFromStage === 'number' && startFromStage > 1 ? startFromStage : 1;
+  const seedMap = new Map<number, string>(
+    Object.entries(previousOutputs ?? {}).map(([k, v]) => [Number(k), v])
+  );
+
   try {
-    const generator = runPipeline(input, resolvedSettings, abortController.signal);
+    const generator = runPipeline(input, resolvedSettings, abortController.signal, resumeFromStage, seedMap);
     for await (const event of generator) {
       sendEvent(event.type, event);
     }
@@ -76,6 +94,8 @@ app.post('/analyze', async (req, res) => {
     if (err.name !== 'AbortError') {
       sendEvent('error', { stage: 0, message: err?.message ?? 'Unknown error' });
     }
+  } finally {
+    clearInterval(heartbeat);
   }
 
   if (!res.writableEnded) {

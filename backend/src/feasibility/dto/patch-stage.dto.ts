@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsDateString, IsNumber } from 'class-validator';
 
 export class PatchStageDto {
   @IsOptional()
@@ -28,4 +28,16 @@ export class PatchStageDto {
   @IsOptional()
   @IsDateString()
   completedAt?: string;
+
+  @IsOptional()
+  @IsNumber()
+  inputTokens?: number;
+
+  @IsOptional()
+  @IsNumber()
+  outputTokens?: number;
+
+  @IsOptional()
+  @IsNumber()
+  estimatedCostUsd?: number;
 }

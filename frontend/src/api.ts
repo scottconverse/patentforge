@@ -1,3 +1,5 @@
+import { PriorArtSearch } from './types';
+
 const BASE = '/api';
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -22,14 +24,33 @@ export const api = {
     get: (projectId: string) => req<any>('GET', `/projects/${projectId}/invention`),
     upsert: (projectId: string, data: unknown) => req<any>('PUT', `/projects/${projectId}/invention`, data),
   },
+  priorArt: {
+    get: (projectId: string) => req<PriorArtSearch>('GET', `/projects/${projectId}/prior-art`),
+    status: (projectId: string) =>
+      req<{ status: string; resultCount: number; completedAt: string | null }>(
+        'GET',
+        `/projects/${projectId}/prior-art/status`,
+      ),
+  },
   feasibility: {
-    start: (projectId: string) => req<any>('POST', `/projects/${projectId}/feasibility/run`),
+    start: (projectId: string, body?: { narrative?: string }) =>
+      req<any>('POST', `/projects/${projectId}/feasibility/run`, body ?? {}),
     get: (projectId: string) => req<any>('GET', `/projects/${projectId}/feasibility`),
     cancel: (projectId: string) => req<any>('POST', `/projects/${projectId}/feasibility/cancel`),
     patchRun: (projectId: string, data: { status?: string; finalReport?: string }) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/run`, data),
     patchStage: (projectId: string, stageNumber: number, data: unknown) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/stages/${stageNumber}`, data),
+    exportToDisk: (projectId: string) =>
+      req<{ folderPath: string; mdFile: string; htmlFile: string }>('POST', `/projects/${projectId}/feasibility/export`),
+    exportToDocx: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/feasibility/export/docx`);
+      if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+      return res.blob();
+    },
+    runs: (projectId: string) => req<any[]>('GET', `/projects/${projectId}/feasibility/runs`),
+    getVersion: (projectId: string, version: number) =>
+      req<any>('GET', `/projects/${projectId}/feasibility/${version}`),
   },
   settings: {
     get: () => req<any>('GET', '/settings'),

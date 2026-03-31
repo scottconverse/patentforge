@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
-import { Project, InventionInput, FeasibilityRun, FeasibilityStage, RunStatus, AppSettings } from '../types';
+import { Project, InventionInput, FeasibilityRun, FeasibilityStage, RunStatus, AppSettings, FeasibilityRunSummary, PriorArtSearch } from '../types';
 import InventionForm from './InventionForm';
 import ReportViewer from '../components/ReportViewer';
 import StageProgress from '../components/StageProgress';
 import StreamingOutput from '../components/StreamingOutput';
+import Toast from '../components/Toast';
+import CostConfirmModal from '../components/CostConfirmModal';
+import PriorArtPanel from '../components/PriorArtPanel';
+import { formatCost } from '../utils/format';
 
 // ----- Narrative builder -----
 function toNarrative(inv: InventionInput): string {
@@ -60,7 +64,67 @@ function makePlaceholderStages(): FeasibilityStage[] {
   }));
 }
 
-type ViewMode = 'overview' | 'invention-form' | 'running' | 'report';
+// ----- Cost estimation -----
+// Fallback prices (used if LiteLLM fetch fails)
+// Seed values from Anthropic pricing page — updated whenever a live LiteLLM fetch succeeds,
+// so the fallback is at most as stale as the last successful fetch (days, not months).
+let _fallbackPricing: Record<string, { inputPer1M: number; outputPer1M: number }> = {
+  'claude-haiku-4-5-20251001': { inputPer1M: 0.80,  outputPer1M: 4.00 },
+  'claude-sonnet-4-20250514':  { inputPer1M: 3.00,  outputPer1M: 15.00 },
+  'claude-opus-4-20250514':    { inputPer1M: 15.00, outputPer1M: 75.00 },
+};
+
+// LiteLLM pricing cache (community-maintained, updated within days of Anthropic price changes)
+// Source: https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
+const LITELLM_URL = 'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json';
+let _pricingCache: Record<string, { inputPer1M: number; outputPer1M: number }> | null = null;
+let _pricingCachedAt = 0;
+const PRICING_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+async function fetchLivePricing(): Promise<Record<string, { inputPer1M: number; outputPer1M: number }>> {
+  if (_pricingCache && Date.now() - _pricingCachedAt < PRICING_TTL_MS) return _pricingCache;
+  try {
+    const res = await fetch(LITELLM_URL, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json() as Record<string, any>;
+    const result: Record<string, { inputPer1M: number; outputPer1M: number }> = {};
+    for (const [key, val] of Object.entries(raw)) {
+      if (val?.input_cost_per_token != null && val?.output_cost_per_token != null) {
+        result[key] = {
+          inputPer1M:  val.input_cost_per_token  * 1_000_000,
+          outputPer1M: val.output_cost_per_token * 1_000_000,
+        };
+      }
+    }
+    _pricingCache = result;
+    _pricingCachedAt = Date.now();
+    // Update fallback with latest live data so future failed fetches use recent prices
+    _fallbackPricing = { ..._fallbackPricing, ...result };
+    return result;
+  } catch {
+    return _fallbackPricing;
+  }
+}
+
+// Web search: Anthropic charges $0.01 per search. Stage 2 always searches;
+// other stages occasionally do. Estimate ~15 searches per run.
+const WEB_SEARCH_COST_PER_SEARCH = 0.01;
+const ESTIMATED_SEARCHES_PER_RUN = 15;
+const ESTIMATED_WEB_SEARCH_COST = ESTIMATED_SEARCHES_PER_RUN * WEB_SEARCH_COST_PER_SEARCH;
+
+async function estimateRunCosts(model: string, maxTokens: number): Promise<{ tokenCost: number; webSearchCost: number }> {
+  const pricing = await fetchLivePricing();
+  const p = pricing[model] ?? _fallbackPricing[model] ?? { inputPer1M: 3.00, outputPer1M: 15.00 };
+  const avgInputTokens = 8000;
+  const stages = 6;
+  const tokenCost = stages * (
+    (avgInputTokens / 1_000_000) * p.inputPer1M +
+    (maxTokens / 1_000_000) * p.outputPer1M
+  );
+  return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST };
+}
+
+type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -85,6 +149,26 @@ export default function ProjectDetail() {
   const abortRef = useRef<AbortController | null>(null);
   const runIdRef = useRef<string | null>(null);
 
+  // Stage output viewer
+  const [selectedStage, setSelectedStage] = useState<FeasibilityStage | null>(null);
+
+  // Toast notification
+  const [toast, setToast] = useState<{ message: string; detail?: string; type?: 'success' | 'error' | 'info' } | null>(null);
+
+  // Cost confirmation modal
+  const [costModal, setCostModal] = useState<{
+    tokenCost: number; webSearchCost: number; cap: number; model: string; maxTokens: number; stageCount?: number;
+  } | null>(null);
+  const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
+
+  // Run history (Feature E)
+  const [runHistory, setRunHistory] = useState<FeasibilityRunSummary[]>([]);
+  const [selectedRunVersion, setSelectedRunVersion] = useState<number | null>(null);
+  const [historicalReport, setHistoricalReport] = useState<string | null>(null);
+
+  // Prior art
+  const [priorArtSearch, setPriorArtSearch] = useState<PriorArtSearch | null>(null);
+
   // ----- Load project -----
   const loadProject = useCallback(async () => {
     if (!id) return;
@@ -94,6 +178,9 @@ export default function ProjectDetail() {
       const data = await api.projects.get(id);
       setProject(data);
 
+      // Load prior art search state
+      api.priorArt.get(id).then(pa => setPriorArtSearch(pa)).catch(() => {});
+
       // Determine initial view mode
       const latestRun = getLatestRun(data);
       if (latestRun) {
@@ -101,8 +188,23 @@ export default function ProjectDetail() {
           setStages(latestRun.stages?.length ? latestRun.stages : makePlaceholderStages());
           setViewMode('report');
         } else if (latestRun.status === 'RUNNING') {
-          setStages(latestRun.stages?.length ? latestRun.stages : makePlaceholderStages());
-          setViewMode('running');
+          // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
+          // No active abort controller means nothing is actually streaming. Mark it ERROR
+          // in the backend, load whatever partial stage output exists, and show report view.
+          const partialStages = (latestRun.stages ?? []).map(s =>
+            (s.status === 'RUNNING' || s.status === 'PENDING')
+              ? { ...s, status: 'ERROR' as RunStatus, errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.' }
+              : s
+          );
+          setStages(partialStages.length ? partialStages : makePlaceholderStages());
+          setRunError('Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.');
+          setViewMode('report');
+          // Patch backend so it doesn't stay RUNNING forever
+          try {
+            await api.feasibility.patchRun(data.id, { status: 'ERROR' });
+          } catch {
+            // non-fatal
+          }
         } else {
           setViewMode('overview');
         }
@@ -130,6 +232,30 @@ export default function ProjectDetail() {
     return [...p.feasibility].sort((a, b) => b.version - a.version)[0];
   }
 
+  // ----- History handlers (Feature E) -----
+  async function handleShowHistory() {
+    if (!id) return;
+    try {
+      const summaries = await api.feasibility.runs(id);
+      setRunHistory(summaries);
+      setViewMode('history');
+    } catch (e: any) {
+      setToast({ message: 'Failed to load history', detail: e.message, type: 'error' });
+    }
+  }
+
+  async function handleLoadHistoricalRun(version: number) {
+    if (!id) return;
+    try {
+      const run = await api.feasibility.getVersion(id, version);
+      setHistoricalReport(run.finalReport ?? null);
+      setSelectedRunVersion(version);
+      setViewMode('report');
+    } catch (e: any) {
+      setToast({ message: 'Failed to load run', detail: e.message, type: 'error' });
+    }
+  }
+
   // ----- Run feasibility -----
   async function handleRunFeasibility(invention?: InventionInput) {
     if (!id) return;
@@ -140,60 +266,185 @@ export default function ProjectDetail() {
       return;
     }
 
+    // Load settings first to show cost modal
+    let appSettings: AppSettings;
+    try {
+      appSettings = await api.settings.get();
+    } catch (e: any) {
+      setToast({ message: 'Failed to load settings', detail: e.message, type: 'error' });
+      return;
+    }
+
+    if (!appSettings.anthropicApiKey) {
+      setToast({
+        message: 'No API key configured',
+        detail: 'Add your Anthropic API key in Settings before running.',
+        type: 'error',
+      });
+      return;
+    }
+
+    const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
+    const maxTokens = appSettings.maxTokens || 32000;
+    const cap = appSettings.costCapUsd ?? 5.00;
+    const { tokenCost, webSearchCost } = await estimateRunCosts(model, maxTokens);
+
+    // Store run closure and show modal
+    pendingRunRef.current = async () => {
+      setCostModal(null);
+      await proceedWithRun(appSettings, inv);
+    };
+    setCostModal({ tokenCost, webSearchCost, cap, model, maxTokens });
+  }
+
+  // Resume a failed/interrupted run from the first incomplete stage,
+  // reusing saved outputs from already-completed stages.
+  async function handleResume() {
+    if (!id || !project?.invention) return;
+    const inv = project.invention;
+
+    // Find first stage that didn't complete
+    const completedOutputs: Record<number, string> = {};
+    let resumeFrom = 1;
+    for (const s of displayStages) {
+      if (s.status === 'COMPLETE' && s.outputText) {
+        completedOutputs[s.stageNumber] = s.outputText;
+        resumeFrom = s.stageNumber + 1;
+      } else {
+        break;
+      }
+    }
+    if (resumeFrom > 6) return; // already all done
+
+    let appSettings: AppSettings;
+    try {
+      appSettings = await api.settings.get();
+    } catch (e: any) {
+      setToast({ message: 'Failed to load settings', detail: (e as Error).message, type: 'error' });
+      return;
+    }
+    if (!appSettings.anthropicApiKey) {
+      setToast({ message: 'No API key configured', detail: 'Add your Anthropic API key in Settings.', type: 'error' });
+      return;
+    }
+
+    const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
+    const maxTokens = appSettings.maxTokens || 32000;
+    const cap = appSettings.costCapUsd ?? 5.00;
+    const remainingStages = 6 - resumeFrom + 1;
+    // Estimate cost only for remaining stages
+    const { tokenCost, webSearchCost } = await estimateRunCosts(model, maxTokens);
+    const partialTokenCost = parseFloat((tokenCost * remainingStages / 6).toFixed(3));
+    const partialWebCost = parseFloat((webSearchCost * remainingStages / 6).toFixed(2));
+
+    pendingRunRef.current = async () => {
+      setCostModal(null);
+      await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
+    };
+    setCostModal({ tokenCost: partialTokenCost, webSearchCost: partialWebCost, cap, model, maxTokens, stageCount: remainingStages });
+  }
+
+  async function proceedWithRun(appSettings: AppSettings, inv: InventionInput, startFromStage = 1, previousOutputs: Record<number, string> = {}) {
+    if (!id) return;
+
     setRunError(null);
     setStreamText('');
     setIsStreamComplete(false);
     setActiveStageNum(undefined);
-    setStages(makePlaceholderStages());
+    // When resuming, preserve completed stage display; otherwise reset to placeholders
+    if (startFromStage > 1) {
+      setStages(prev => prev.map(s =>
+        s.stageNumber < startFromStage ? s : { ...s, status: 'PENDING' as RunStatus, outputText: undefined }
+      ));
+    } else {
+      setStages(makePlaceholderStages());
+    }
+    setSelectedRunVersion(null);
+    setHistoricalReport(null);
     setViewMode('running');
 
     try {
-      // 1. Load settings
-      const appSettings: AppSettings = await api.settings.get();
-      if (!appSettings.anthropicApiKey) {
-        setRunError('No Anthropic API key configured. Please go to Settings first.');
-        setViewMode('overview');
-        return;
-      }
-
       // Map AppSettings → AnalysisSettings (feasibility service field names)
       const settings = {
         apiKey: appSettings.anthropicApiKey,
-        model: appSettings.defaultModel || 'claude-sonnet-4-20250514',
+        model: appSettings.defaultModel || 'claude-haiku-4-5-20251001',
         researchModel: appSettings.researchModel || undefined,
         maxTokens: appSettings.maxTokens || 32000,
         interStageDelaySeconds: appSettings.interStageDelaySeconds ?? 5,
       };
 
-      // 2. Create the run record in the backend
-      const run = await api.feasibility.start(id);
-      runIdRef.current = run.id;
-
-      // Update local project state with the new run
-      setProject(prev => {
-        if (!prev) return prev;
-        const existing = prev.feasibility || [];
-        return { ...prev, feasibility: [...existing, run] };
-      });
-
-      // 3. Build narrative
+      // Build narrative
       const narrative = toNarrative(inv);
 
-      // 3b. Mark run as RUNNING in backend
-      try {
-        await api.feasibility.patchRun(id, { status: 'RUNNING' });
-      } catch {
-        // non-fatal
+      // When resuming, reuse the interrupted run (keeps all stage data intact).
+      // When starting fresh, create a new run.
+      let runId: string;
+      if (startFromStage > 1) {
+        const existingRun = getLatestRun(project);
+        if (!existingRun) throw new Error('No existing run to resume');
+        runId = existingRun.id;
+        runIdRef.current = runId;
+        try {
+          await api.feasibility.patchRun(id, { status: 'RUNNING' });
+        } catch { /* non-fatal */ }
+      } else {
+        const run = await api.feasibility.start(id, { narrative });
+        runId = run.id;
+        runIdRef.current = runId;
+        setProject(prev => {
+          if (!prev) return prev;
+          const existing = prev.feasibility || [];
+          return { ...prev, feasibility: [...existing, run] };
+        });
+        try {
+          await api.feasibility.patchRun(id, { status: 'RUNNING' });
+        } catch { /* non-fatal */ }
       }
 
-      // 4. Connect to feasibility service via SSE
+      // Wait up to 45s for prior art to complete before starting pipeline
+      async function waitForPriorArt(projectId: string, maxWaitMs: number): Promise<string | null> {
+        const start = Date.now();
+        while (Date.now() - start < maxWaitMs) {
+          try {
+            const status = await api.priorArt.status(projectId);
+            if (status.status === 'COMPLETE') {
+              const search = await api.priorArt.get(projectId);
+              setPriorArtSearch(search);
+              if (search.results.length > 0) {
+                const rows = search.results.slice(0, 10).map(r =>
+                  `| ${r.patentNumber} | ${r.title.slice(0, 60)} | ${Math.round(r.relevanceScore * 100)}% |`
+                );
+                const table = ['| Patent | Title | Relevance |', '|---|---|---|', ...rows].join('\n');
+                const abstracts = search.results.slice(0, 5).map(r =>
+                  `**${r.patentNumber}** — ${r.title}\n${r.snippet || r.abstract?.slice(0, 250) || ''}`
+                ).join('\n\n');
+                return `${table}\n\n**Key abstracts:**\n\n${abstracts}`;
+              }
+              return null;
+            }
+            if (status.status === 'ERROR' || status.status === 'NONE') return null;
+          } catch { return null; }
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+        return null;
+      }
+
+      // Skip prior art wait when resuming (Stage 2 already completed with prior art context)
+      const priorArtContext = startFromStage <= 2 ? await waitForPriorArt(id, 45_000) : null;
+
+      // Connect to feasibility service via SSE
       const abortController = new AbortController();
       abortRef.current = abortController;
 
       const response = await fetch('http://localhost:3001/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inventionNarrative: narrative, settings }),
+        body: JSON.stringify({
+          inventionNarrative: narrative,
+          settings,
+          priorArtContext: priorArtContext || undefined,
+          ...(startFromStage > 1 ? { startFromStage, previousOutputs } : {}),
+        }),
         signal: abortController.signal,
       });
 
@@ -209,6 +460,24 @@ export default function ProjectDetail() {
       let currentStageNum = 0;
       let currentStageNameLocal = '';
       let currentStageStart: string | null = null;
+      let pipelineCompleted = false;
+
+      // Throttle stream text updates — render at most every 250ms (~4fps).
+      // Even plain-text <pre> re-renders + scrollIntoView crash the browser at 60fps.
+      let streamDirty = false;
+      let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+      function scheduleStreamUpdate() {
+        streamDirty = true;
+        if (throttleTimer !== null) return; // already scheduled
+        throttleTimer = setTimeout(() => {
+          throttleTimer = null;
+          if (streamDirty) {
+            setStreamText(stageOutputAccumulator);
+            streamDirty = false;
+          }
+        }, 250);
+      }
+      let totalActualCost = 0;
 
       const updateStageStatus = (stageNum: number, updates: Partial<FeasibilityStage>) => {
         setStages(prev =>
@@ -256,17 +525,30 @@ export default function ProjectDetail() {
 
             } else if (eventType === 'token') {
               stageOutputAccumulator += data.text || '';
-              setStreamText(stageOutputAccumulator);
+              streamDirty = true;
+              scheduleStreamUpdate();
 
             } else if (eventType === 'stage_complete') {
+              // Flush any pending stream update
+              if (throttleTimer !== null) { clearTimeout(throttleTimer); throttleTimer = null; }
+              setStreamText(stageOutputAccumulator);
+              streamDirty = false;
+
               const completedAt = new Date().toISOString();
               const outputText = data.output || stageOutputAccumulator;
+              const inputTokens: number = data.inputTokens ?? 0;
+              const outputTokens: number = data.outputTokens ?? 0;
+              const estimatedCostUsd: number = data.estimatedCostUsd ?? 0;
+              totalActualCost += estimatedCostUsd;
               updateStageStatus(currentStageNum, {
                 status: 'COMPLETE',
                 outputText,
                 completedAt,
                 webSearchUsed: data.webSearchUsed || false,
                 model: data.model,
+                inputTokens,
+                outputTokens,
+                estimatedCostUsd,
               });
               setIsStreamComplete(true);
 
@@ -275,9 +557,13 @@ export default function ProjectDetail() {
                 await api.feasibility.patchStage(id, currentStageNum, {
                   status: 'COMPLETE',
                   outputText,
+                  ...(currentStageStart ? { startedAt: currentStageStart } : {}),
                   completedAt,
                   webSearchUsed: data.webSearchUsed || false,
                   model: data.model,
+                  inputTokens,
+                  outputTokens,
+                  estimatedCostUsd,
                 });
               } catch {
                 // non-fatal
@@ -292,7 +578,8 @@ export default function ProjectDetail() {
               setRunError(`Stage ${currentStageNum} error: ${data.error || 'Unknown error'}`);
 
             } else if (eventType === 'pipeline_complete') {
-              // Persist finalReport to backend, then reload
+              pipelineCompleted = true;
+              // Persist finalReport to backend
               try {
                 await api.feasibility.patchRun(id, {
                   status: 'COMPLETE',
@@ -300,6 +587,20 @@ export default function ProjectDetail() {
                 });
               } catch {
                 // non-fatal
+              }
+              // Auto-export to desktop
+              try {
+                const exportResult = await api.feasibility.exportToDisk(id);
+                setToast({
+                  message: `Analysis complete · actual cost: ${formatCost(totalActualCost)}`,
+                  detail: exportResult.folderPath,
+                  type: 'success',
+                });
+              } catch {
+                setToast({
+                  message: `Analysis complete · actual cost: ${formatCost(totalActualCost)}`,
+                  type: 'success',
+                });
               }
               await loadProject();
               return;
@@ -325,6 +626,21 @@ export default function ProjectDetail() {
             currentEvent = '';
           }
         }
+      }
+
+      // Stream ended without pipeline_complete — connection dropped or service crashed
+      if (!pipelineCompleted) {
+        setRunError(
+          `Connection to analysis service lost after Stage ${currentStageNum || '?'}. ` +
+          `Check the feasibility service logs and re-run.`
+        );
+        setStages(prev =>
+          prev.map(s =>
+            s.status === 'RUNNING' || s.status === 'PENDING'
+              ? { ...s, status: 'ERROR' as RunStatus }
+              : s
+          )
+        );
       }
 
     } catch (e: any) {
@@ -395,6 +711,11 @@ export default function ProjectDetail() {
     ? stages
     : (latestRun?.stages?.length ? latestRun.stages : makePlaceholderStages());
 
+  const totalRunCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+
+  // Report content to display (historical or latest)
+  const reportContent = historicalReport ?? latestRun?.finalReport ?? null;
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Breadcrumb */}
@@ -452,21 +773,54 @@ export default function ProjectDetail() {
                   Feasibility
                 </span>
               </div>
-              <StageProgress stages={displayStages} activeStage={activeStageNum} />
+              <StageProgress
+                stages={displayStages}
+                activeStage={activeStageNum}
+                onStageClick={(stage) => {
+                  setSelectedStage(stage);
+                  setViewMode('stage-output');
+                }}
+              />
+              {totalRunCost > 0 && (
+                <div className="flex justify-between text-xs text-gray-500 pt-2 px-1 border-t border-gray-800 mt-1">
+                  <span>Total API cost</span>
+                  <span className="text-amber-400 font-mono">{formatCost(totalRunCost)}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Quick actions */}
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions</h3>
-            {project.invention && viewMode !== 'running' && (
-              <button
-                onClick={() => handleRunFeasibility()}
-                className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
-              >
-                Run Feasibility
-              </button>
-            )}
+            {project.invention && viewMode !== 'running' && (() => {
+              // Show Resume button if there are completed stages but the run didn't finish
+              const hasPartial = displayStages.some(s => s.status === 'COMPLETE' && s.outputText) &&
+                displayStages.some(s => s.status === 'ERROR' || s.status === 'PENDING');
+              return hasPartial ? (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleResume()}
+                    className="w-full px-3 py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm font-medium transition-colors"
+                  >
+                    ▶ Resume (from Stage {displayStages.find(s => s.status === 'ERROR' || s.status === 'PENDING')?.stageNumber ?? '?'})
+                  </button>
+                  <button
+                    onClick={() => handleRunFeasibility()}
+                    className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
+                  >
+                    Run from Start
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleRunFeasibility()}
+                  className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+                >
+                  Run Feasibility
+                </button>
+              );
+            })()}
             {viewMode === 'running' && (
               <button
                 onClick={handleCancel}
@@ -484,6 +838,27 @@ export default function ProjectDetail() {
                 View Report
               </button>
             )}
+            {latestRun && viewMode !== 'running' && (
+              <button
+                onClick={handleShowHistory}
+                className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm transition-colors"
+              >
+                History
+              </button>
+            )}
+            <button
+              onClick={() => setViewMode('prior-art')}
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center justify-between ${
+                viewMode === 'prior-art' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+              }`}
+            >
+              <span>Prior Art</span>
+              {priorArtSearch && priorArtSearch.results.length > 0 && (
+                <span className="text-xs bg-gray-600 text-gray-200 px-1.5 py-0.5 rounded-full">
+                  {priorArtSearch.results.length}
+                </span>
+              )}
+            </button>
           </div>
         </aside>
 
@@ -657,7 +1032,9 @@ export default function ProjectDetail() {
 
               {!runError && !streamText && (
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 text-center text-gray-500 text-sm">
-                  Starting analysis...
+                  {activeStageNum
+                    ? `Stage ${activeStageNum} — waiting for first token… (large inputs may take 30–60s)`
+                    : 'Starting analysis…'}
                 </div>
               )}
             </div>
@@ -671,10 +1048,23 @@ export default function ProjectDetail() {
                   {runError}
                 </div>
               )}
-              {latestRun?.finalReport ? (
+              {selectedRunVersion && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                  <span>Viewing</span>
+                  <span className="px-2 py-0.5 bg-gray-800 rounded font-mono text-gray-300">v{selectedRunVersion}</span>
+                  <button
+                    onClick={() => { setSelectedRunVersion(null); setHistoricalReport(null); }}
+                    className="text-blue-400 hover:text-blue-300 ml-2 transition-colors"
+                  >
+                    View latest →
+                  </button>
+                </div>
+              )}
+              {reportContent ? (
                 <ReportViewer
-                  report={latestRun.finalReport}
+                  report={reportContent}
                   projectTitle={project.title}
+                  projectId={project.id}
                 />
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
@@ -689,8 +1079,146 @@ export default function ProjectDetail() {
               )}
             </div>
           )}
+
+          {/* History view (Feature E) */}
+          {viewMode === 'history' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-100">Run History</h2>
+                <button onClick={() => setViewMode('overview')} className="text-sm text-gray-400 hover:text-gray-200 transition-colors">
+                  ← Back
+                </button>
+              </div>
+              {runHistory.length === 0 && (
+                <p className="text-gray-500 text-sm">No runs found.</p>
+              )}
+              {runHistory.map(run => (
+                <div key={run.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-100">Version {run.version}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        run.status === 'COMPLETE' ? 'bg-green-900 text-green-300' :
+                        run.status === 'ERROR' ? 'bg-red-900 text-red-300' :
+                        'bg-gray-700 text-gray-400'
+                      }`}>{run.status}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 space-x-3">
+                      {run.completedAt && <span>{new Date(run.completedAt).toLocaleString()}</span>}
+                      {run.totalCostUsd > 0 && <span className="text-amber-500">{formatCost(run.totalCostUsd)}</span>}
+                    </div>
+                  </div>
+                  {run.status === 'COMPLETE' && (
+                    <button
+                      onClick={() => handleLoadHistoricalRun(run.version)}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                    >
+                      View Report
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Prior art view */}
+          {viewMode === 'prior-art' && (
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-100">Prior Art Search</h2>
+                <button
+                  onClick={() => setViewMode('overview')}
+                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  ← Back
+                </button>
+              </div>
+              <PriorArtPanel
+                projectId={id!}
+                search={priorArtSearch}
+                onUpdate={setPriorArtSearch}
+              />
+            </div>
+          )}
+
+          {/* Stage output viewer */}
+          {viewMode === 'stage-output' && selectedStage && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-100">
+                    Stage {selectedStage.stageNumber}: {selectedStage.stageName}
+                  </h2>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                    {selectedStage.model && <span className="font-mono">{selectedStage.model}</span>}
+                    {selectedStage.webSearchUsed && <span className="text-blue-400">🔍 Web search used</span>}
+                    {selectedStage.inputTokens != null && (
+                      <span>{selectedStage.inputTokens.toLocaleString()} in / {selectedStage.outputTokens?.toLocaleString()} out tokens</span>
+                    )}
+                    {selectedStage.estimatedCostUsd != null && selectedStage.estimatedCostUsd > 0 && (
+                      <span className="text-amber-500">{formatCost(selectedStage.estimatedCostUsd)}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                      const blob = new Blob([selectedStage.outputText || ''], { type: 'text/markdown' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${slug}-stage-${selectedStage.stageNumber}.md`;
+                      a.click();
+                      setTimeout(() => URL.revokeObjectURL(url), 2000);
+                    }}
+                    className="text-sm px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
+                  >
+                    Download
+                  </button>
+                  <button
+                    onClick={() => setViewMode('report')}
+                    className="text-sm px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors"
+                  >
+                    ← Back to Report
+                  </button>
+                </div>
+              </div>
+              <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+                <div className="p-4 max-h-[600px] overflow-y-auto">
+                  <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                    {selectedStage.outputText || 'No output.'}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          detail={toast.detail}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Cost Confirmation Modal (Feature F) */}
+      {costModal && (
+        <CostConfirmModal
+          tokenCost={costModal.tokenCost}
+          webSearchCost={costModal.webSearchCost}
+          cap={costModal.cap}
+          model={costModal.model}
+          maxTokens={costModal.maxTokens}
+          stageCount={costModal.stageCount}
+          onConfirm={() => { pendingRunRef.current?.(); }}
+          onCancel={() => setCostModal(null)}
+        />
+      )}
     </div>
   );
 }

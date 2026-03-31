@@ -1,3 +1,20 @@
+# PatentForge — Docker Compose
+#
+# Usage:
+#   docker compose up --build          # first run (builds all images)
+#   docker compose up                  # subsequent runs
+#   docker compose down                # stop all services
+#   docker compose down -v             # stop and wipe database
+#
+# Optional: set your Anthropic API key in the environment before starting:
+#   export ANTHROPIC_API_KEY=sk-ant-...
+#   docker compose up --build
+#
+# Or set it later via the Settings page at http://localhost:8080/settings
+#
+# Note: The backend uses 'prisma db push' on startup to sync the PostgreSQL schema.
+# Data persists in the 'pgdata' Docker volume between restarts.
+
 version: "3.9"
 
 services:
@@ -37,6 +54,8 @@ services:
     environment:
       PORT: 3001
       NODE_ENV: production
+      # Pass host ANTHROPIC_API_KEY into container if set (optional — can also be set via Settings UI)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
   frontend:
