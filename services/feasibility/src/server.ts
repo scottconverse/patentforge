@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { runPipeline } from './pipeline-runner';
 import { InventionInput, AnalysisSettings } from './models';
+import { getPromptHashes } from './prompts/loader';
 
 const app = express();
 app.use(cors({
@@ -12,7 +13,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'patentforge-feasibility' });
+  res.json({ status: 'ok', service: 'patentforge-feasibility', promptHashes: getPromptHashes() });
 });
 
 // ── Main analysis endpoint — SSE stream ───────────────────────────────────────

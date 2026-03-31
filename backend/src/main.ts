@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { AuthGuard } from './auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +20,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Optional token-based auth — set PATENTFORGE_TOKEN env var to enable
+  app.useGlobalGuards(new AuthGuard());
 
   await app.listen(3000);
   console.log('PatentForge backend running on http://localhost:3000');

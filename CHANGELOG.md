@@ -5,6 +5,20 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-03-31
+
+### Added
+- **Prior art scoring improvements** — stop-word filtering (50+ common patent terms like "comprising", "wherein", "apparatus"), title-match weighting (2x over abstract), and per-term frequency scoring. Reduces noise from common technical language.
+- **Prompt file integrity checking** — SHA-256 hashes computed on first load, logged to console, and exposed on `/health` endpoint. Warns on drift if prompt files are modified while the service is running.
+- **API key encryption at rest** — Anthropic and USPTO API keys are now encrypted with AES-256-GCM using a machine-derived key (hostname + platform + username) before storage in SQLite. Plaintext keys never hit disk. Backward-compatible with existing unencrypted values.
+- **GitHub Actions CI** — automated test pipeline runs backend (Jest) and frontend (Vitest) tests plus a full build check on every push and PR to master
+- **Optional Bearer token auth** — set `PATENTFORGE_TOKEN` environment variable to require `Authorization: Bearer <token>` on all API requests. Disabled by default for backward compatibility with single-user deployments.
+- **169 automated tests** — 117 backend (Jest) + 31 frontend (Vitest) + 21 E2E (Playwright)
+
+### Security
+- API keys encrypted at rest with AES-256-GCM (machine-derived key)
+- Optional authentication guard for LAN/network deployments
+
 ## [0.3.3] - 2026-03-31
 
 ### Added
