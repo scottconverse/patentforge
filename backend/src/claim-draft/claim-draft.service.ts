@@ -230,8 +230,20 @@ export class ClaimDraftService {
 
   /**
    * Update a claim's text (user editing).
+   * Verifies the claim belongs to the given project before updating.
    */
-  async updateClaim(claimId: string, text: string) {
+  async updateClaim(projectId: string, claimId: string, text: string) {
+    // Ownership check: claim → draft → project
+    const claim = await this.prisma.claim.findFirst({
+      where: {
+        id: claimId,
+        draft: { projectId },
+      },
+    });
+    if (!claim) {
+      throw new NotFoundException(`Claim ${claimId} not found in project ${projectId}`);
+    }
+
     return this.prisma.claim.update({
       where: { id: claimId },
       data: { text },

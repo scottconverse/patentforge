@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Param, Body, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
 import { ClaimDraftService } from './claim-draft.service';
+import { UpdateClaimDto } from './dto/update-claim.dto';
 
 @Controller('projects/:id/claims')
 export class ClaimDraftController {
@@ -31,9 +32,10 @@ export class ClaimDraftController {
   @Put('edit/:claimId')
   @HttpCode(HttpStatus.OK)
   updateClaim(
+    @Param('id') projectId: string,
     @Param('claimId') claimId: string,
-    @Body() body: { text: string },
+    @Body() dto: UpdateClaimDto,
   ) {
-    return this.service.updateClaim(claimId, body.text);
+    return this.service.updateClaim(projectId, claimId, dto.text);
   }
 }
