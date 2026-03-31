@@ -22,13 +22,14 @@ class TestInternalAuth:
     def test_draft_accessible_when_no_secret_configured(self):
         """When INTERNAL_SERVICE_SECRET is not set, auth is disabled (dev mode)."""
         from src.server import app
-        client = TestClient(app, raise_server_exceptions=False)
+        client = TestClient(app)
         resp = client.post("/draft/sync", json={
             "invention_narrative": "test",
             "settings": {"api_key": "fake"}
         })
-        # Should get past auth (may fail on pipeline with 500 — that's OK, we're testing auth)
-        assert resp.status_code != 403
+        # Should get past auth. Pipeline returns 200 with status=ERROR (bad API key).
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ERROR"
 
     def test_draft_rejected_when_secret_set_and_not_provided(self):
         """When secret is configured, requests without it get 403."""
@@ -52,7 +53,7 @@ class TestInternalAuth:
         original = srv.INTERNAL_SECRET
         srv.INTERNAL_SECRET = "test-secret-123"
         try:
-            client = TestClient(srv.app, raise_server_exceptions=False)
+            client = TestClient(srv.app)
             resp = client.post(
                 "/draft/sync",
                 json={
@@ -61,8 +62,9 @@ class TestInternalAuth:
                 },
                 headers={"X-Internal-Secret": "test-secret-123"},
             )
-            # Should get past auth (may fail on pipeline with 500 — that's OK)
-            assert resp.status_code != 403
+            # Should get past auth. Pipeline returns 200 with status=ERROR (bad API key).
+            assert resp.status_code == 200
+            assert resp.json()["status"] == "ERROR"
         finally:
             srv.INTERNAL_SECRET = original
 

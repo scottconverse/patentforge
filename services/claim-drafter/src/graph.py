@@ -88,33 +88,47 @@ async def run_claim_pipeline(
         max_tokens=max_tokens,
     )
 
-    state = initial_state
-    async for step_output in claim_pipeline.astream(state):
-        # LangGraph yields {node_name: state} after each step
+    # LangGraph astream yields {node_name: state_dict} — state is a dict, not a Pydantic model
+    state_dict: dict = initial_state.model_dump()
+    async for step_output in claim_pipeline.astream(state_dict):
         for node_name, node_state in step_output.items():
-            state = node_state
+            if isinstance(node_state, dict):
+                state_dict = node_state
+            else:
+                state_dict = node_state.model_dump() if hasattr(node_state, 'model_dump') else dict(node_state)
             if on_step:
-                on_step(node_name, state)
-            if state.error:
+                on_step(node_name, state_dict)
+            if state_dict.get("error"):
                 return ClaimDraftResult(
                     status="ERROR",
-                    error_message=state.error,
-                    planner_strategy=state.planner_strategy,
-                    examiner_feedback=state.examiner_feedback,
-                    total_input_tokens=state.total_input_tokens,
-                    total_output_tokens=state.total_output_tokens,
-                    total_estimated_cost_usd=state.total_estimated_cost_usd,
+                    error_message=state_dict["error"],
+                    planner_strategy=state_dict.get("planner_strategy", ""),
+                    examiner_feedback=state_dict.get("examiner_feedback", ""),
+                    total_input_tokens=state_dict.get("total_input_tokens", 0),
+                    total_output_tokens=state_dict.get("total_output_tokens", 0),
+                    total_estimated_cost_usd=state_dict.get("total_estimated_cost_usd", 0.0),
                 )
 
+    # Convert final state dict back to claims
+    claims = state_dict.get("claims", [])
+    # Claims may be dicts (from LangGraph serialization) — convert to Claim objects
+    from .models import Claim
+    parsed_claims = []
+    for c in claims:
+        if isinstance(c, dict):
+            parsed_claims.append(Claim(**c))
+        else:
+            parsed_claims.append(c)
+
     return ClaimDraftResult(
-        claims=state.claims,
-        claim_count=len(state.claims),
-        specification_language=state.specification_language,
-        planner_strategy=state.planner_strategy,
-        examiner_feedback=state.examiner_feedback,
-        revision_notes=state.revision_notes,
-        total_input_tokens=state.total_input_tokens,
-        total_output_tokens=state.total_output_tokens,
-        total_estimated_cost_usd=state.total_estimated_cost_usd,
+        claims=parsed_claims,
+        claim_count=len(parsed_claims),
+        specification_language=state_dict.get("specification_language", ""),
+        planner_strategy=state_dict.get("planner_strategy", ""),
+        examiner_feedback=state_dict.get("examiner_feedback", ""),
+        revision_notes=state_dict.get("revision_notes", ""),
+        total_input_tokens=state_dict.get("total_input_tokens", 0),
+        total_output_tokens=state_dict.get("total_output_tokens", 0),
+        total_estimated_cost_usd=state_dict.get("total_estimated_cost_usd", 0.0),
         status="COMPLETE",
     )
