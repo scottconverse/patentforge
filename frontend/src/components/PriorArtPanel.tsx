@@ -88,8 +88,16 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
 
   if (search.status === 'ERROR') {
     return (
-      <div className="p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
-        Prior art search failed. The feasibility analysis still ran without patent database context.
+      <div className="p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm space-y-2">
+        <p className="font-semibold">Prior art search unavailable</p>
+        <p>
+          The USPTO PatentsView API has been shut down as part of the migration to the{' '}
+          <a href="https://data.uspto.gov/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            USPTO Open Data Portal
+          </a>.
+          Prior art search will be restored in a future update when ODP integration is complete.
+        </p>
+        <p className="text-gray-400">The feasibility analysis still ran using AI web search for prior art research (Stage 2).</p>
       </div>
     );
   }

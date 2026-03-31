@@ -84,8 +84,21 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
           {loading && <LoadingSkeleton />}
 
           {error && (
-            <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
-              {error}
+            <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm space-y-2">
+              <p className="font-semibold">Patent detail unavailable</p>
+              <p>
+                The USPTO PatentsView API has been shut down. Enriched patent data (claims, assignees, CPC codes) is temporarily unavailable.
+              </p>
+              <p>
+                <a
+                  href={`https://patents.google.com/patent/${patentNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  View this patent on Google Patents &rarr;
+                </a>
+              </p>
             </div>
           )}
 

@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prior art result cards are now clickable (open patent detail drawer)
 - Stage progress sidebar shows "re-run" button on completed stages when pipeline is idle
 - Prior art panel header includes "Export CSV" button when search is complete
+- PatentsView migration error now detected and surfaced with clear user message and link to USPTO ODP
+
+### Known Issues
+- **PatentsView API shut down** — The USPTO PatentsView API was shut down on March 20, 2026 as part of the migration to the [USPTO Open Data Portal](https://data.uspto.gov/). Prior art search via PatentsView and patent detail enrichment are temporarily unavailable. The AI analysis pipeline (Stages 1-6) still works — Stage 2 uses Anthropic web search for prior art research. Full ODP integration is planned for v0.3.1.
 
 ## [0.2.2] - 2026-03-30
 

@@ -16,6 +16,14 @@ const FIELDS = ['patent_id', 'patent_title', 'patent_abstract', 'patent_date', '
 const TIMEOUT_MS = 10_000;
 const DELAY_BETWEEN_QUERIES_MS = 500;
 
+/** Error thrown when PatentsView API has been shut down / migrated */
+export class PatentsViewMigrationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PatentsViewMigrationError';
+  }
+}
+
 async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsViewPatent[]> {
   const body = {
     q: { _text_phrase: { _all: queryStr } },
@@ -34,8 +42,15 @@ async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsVie
       signal: controller.signal as any,
     });
     if (!res.ok) throw new Error(`PatentsView HTTP ${res.status}`);
-    const data = (await res.json()) as PatentsViewResponse;
-    return data.patents ?? [];
+    const data = (await res.json()) as any;
+    // Detect PatentsView migration/shutdown response
+    if (data.error === true && typeof data.message === 'string' && data.message.includes('migrating')) {
+      throw new PatentsViewMigrationError(
+        'The PatentsView API has been shut down and migrated to the USPTO Open Data Portal (data.uspto.gov). ' +
+        'Prior art search is temporarily unavailable. This will be restored in a future update.'
+      );
+    }
+    return (data as PatentsViewResponse).patents ?? [];
   } finally {
     clearTimeout(timer);
   }
@@ -60,6 +75,8 @@ export async function searchPatentsViewMulti(queries: string[]): Promise<Patents
         }
       }
     } catch (err) {
+      // Propagate migration errors — these are not transient and should stop the search
+      if (err instanceof PatentsViewMigrationError) throw err;
       console.warn(`PatentsView query failed for "${queries[i]}":`, (err as Error).message);
     }
   }

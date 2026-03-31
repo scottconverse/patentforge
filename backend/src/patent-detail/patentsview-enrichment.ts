@@ -74,10 +74,18 @@ export async function fetchEnrichedPatent(patentNumber: string): Promise<Enriche
       return null;
     }
 
-    const data = (await res.json()) as PatentsViewEnrichResponse;
-    if (!data.patents || data.patents.length === 0) return null;
+    const data = (await res.json()) as any;
 
-    const p = data.patents[0];
+    // Detect PatentsView migration/shutdown response
+    if (data.error === true && typeof data.message === 'string' && data.message.includes('migrating')) {
+      console.warn('[PatentDetail] PatentsView API has been shut down (migrated to USPTO ODP)');
+      return null;
+    }
+
+    const typedData = data as PatentsViewEnrichResponse;
+    if (!typedData.patents || typedData.patents.length === 0) return null;
+
+    const p = typedData.patents[0];
     return parseEnrichedPatent(patentNumber, p);
   } catch (err) {
     console.warn(`[PatentDetail] Failed to fetch ${patentNumber}:`, (err as Error).message);

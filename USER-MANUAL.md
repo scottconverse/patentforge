@@ -169,6 +169,40 @@ The prior art results are also provided as context to Stage 2, so the AI conside
 
 **Note:** This is a keyword-based search of U.S. patents. It is not exhaustive. A patent attorney will typically conduct a more thorough professional search using specialized databases.
 
+**Temporary note (v0.3.0):** The USPTO PatentsView API was shut down on March 20, 2026 as part of the migration to the USPTO Open Data Portal. Prior art search via PatentsView is temporarily unavailable. The AI analysis pipeline still works — Stage 2 uses Anthropic's web search tool for prior art research. Full integration with the new USPTO Open Data Portal is planned for a future update.
+
+### Clicking a Prior Art Result
+
+When prior art results are available, click any patent card to open a **detail drawer** on the right side of the screen. The drawer shows:
+
+- **Patent number** (linked to Google Patents)
+- **Filing date** and **grant date**
+- **Assignee(s)** — who owns the patent
+- **Inventor(s)**
+- **CPC classifications** — the patent categories assigned by the patent office
+- **Full claims text** — expandable section showing all patent claims
+
+If the patent data service is unavailable, the drawer will show a message with a link to view the patent directly on Google Patents.
+
+### Exporting Prior Art as CSV
+
+When a prior art search is complete, click the **Export CSV** button at the top of the Prior Art panel. This downloads a spreadsheet with columns for patent number, title, dates, assignees, inventors, CPC codes, relevance score, and abstract. You can open this file in Excel or Google Sheets.
+
+---
+
+## Re-running Individual Stages
+
+After a completed analysis, you can re-run any individual stage without restarting the entire pipeline. This is useful if you've updated your invention description and want to see how a specific stage's output changes.
+
+1. Look at the **stage list** in the left sidebar
+2. Each completed stage shows a small **"re-run"** link on the right side
+3. Click "re-run" on the stage you want to re-run
+4. PatentForge creates a new version of the analysis, copies all stages before your selected stage, and re-runs from that point through Stage 6
+
+**Note:** Re-running a stage also re-runs all stages after it, because each stage depends on the output of the stages before it. For example, re-running Stage 3 will also re-run Stages 4, 5, and 6. The cost estimate reflects only the stages being re-run.
+
+Your previous analysis version is preserved — you can view it in the **History** section.
+
 ---
 
 ## Settings
