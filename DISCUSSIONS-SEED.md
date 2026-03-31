@@ -214,6 +214,12 @@ This release is all about quality and reliability — no new features, just maki
 - **CORS restriction** — the internal feasibility service now only accepts requests from the backend, not any origin.
 - **Interleaved-thinking header** — no longer sent to Haiku models that don't support it.
 
+### Title: v0.4.0 — AI-Assisted Claim Drafting
+
+**Body:**
+
+The biggest feature since launch. PatentForge can now generate patent claim drafts using a 3-agent AI pipeline (Planner, Writer, Examiner) built with Python + LangGraph. Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks, collapsible strategy and examiner feedback. 3 independent claims (broad/medium/narrow) plus dependents, capped at 20 total. 40 Python tests.
+
 ### Title: v0.3.4 — Scoring, Encryption, CI, Auth
 
 **Body:**

@@ -5,6 +5,29 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-31
+
+### Added
+- **AI-assisted claim drafting** — new Python + LangGraph service with 3 AI agents (Planner, Writer, Examiner) that generates patent claim drafts from feasibility analysis and prior art
+- **Three independent claims** — broad (method), medium (system), and narrow (apparatus/CRM) scope, informed by prior art avoidance analysis
+- **Dependent claims** — hierarchical claims derived from each independent, capped at 20 total (USPTO fee boundary)
+- **Examiner review cycle** — AI examiner critiques claims for §101/§102/§103/§112 issues; Writer revises based on feedback
+- **Claims tab in UI** — 5 states (no analysis, ready, generating, complete, error) with editable claim text, collapsible strategy/feedback sections
+- **UPL acknowledgment modal** — per-project checkbox acknowledgment required before generating claims, stronger than feasibility clickwrap
+- **"DRAFT — NOT FOR FILING" watermark** — on every claim in UI display
+- **Claim text parser** — extracts structured claims from AI output with independent/dependent/scope/statutory type detection
+- **4 prompt templates** (CC BY-SA 4.0) — planner.md, writer.md, examiner.md, common-rules.md with UPL guardrails
+- **Claim editing** — click any claim to edit text inline, save to database
+- **Planner strategy viewer** — collapsible section showing the AI's claim strategy reasoning
+- **Examiner feedback viewer** — collapsible section showing per-claim critique
+- **Backend claim-draft module** — POST/GET/PUT API endpoints, Prisma ClaimDraft + Claim models with new fields
+- **40 Python tests** (pytest) — models, parser, graph structure, routing, all 3 agents with mocked Anthropic calls
+
+### Security
+- All claim drafting prompts licensed CC BY-SA 4.0 (disclaimers survive forks)
+- Per-project UPL acknowledgment with checkbox before claim generation
+- "DRAFT — NOT FOR FILING" watermark on all claim displays
+
 ## [0.3.4] - 2026-03-31
 
 ### Added

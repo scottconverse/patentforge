@@ -137,7 +137,7 @@ For network deployments, set the `PATENTFORGE_TOKEN` environment variable to req
 - [x] **v0.3.2** — Lazy-load patent claims from USPTO Documents API
 - [x] **v0.3.3** — Playwright E2E tests, DOCX parser improvements, type safety, CORS hardening
 - [x] **v0.3.4** — Scoring improvements, API key encryption, prompt integrity, CI pipeline, auth skeleton
-- [ ] **v0.4** — AI-assisted claim drafting
+- [x] **v0.4.0** — AI-assisted claim drafting (Python + LangGraph, 3-agent pipeline)
 - [ ] **v0.5** — Compliance review tooling
 - [ ] **v0.6** — Full application document assembly
 

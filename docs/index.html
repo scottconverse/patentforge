@@ -289,16 +289,15 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.3.4</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.4.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li>Patent claims lazy-loading from USPTO Documents API (v0.3.2)</li>
-        <li>Playwright E2E browser tests with screenshots and console checks (v0.3.3)</li>
-        <li>DOCX export: italic, inline code, numbered lists, nested bullets (v0.3.3)</li>
-        <li>API key encryption at rest with AES-256-GCM (v0.3.4)</li>
-        <li>Prior art scoring: stop-word filtering, title weighting (v0.3.4)</li>
-        <li>GitHub Actions CI pipeline (v0.3.4)</li>
-        <li>Optional Bearer token authentication for network deployments (v0.3.4)</li>
-        <li>187 automated tests across 3 layers</li>
+        <li><strong>NEW:</strong> AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
+        <li><strong>NEW:</strong> Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks</li>
+        <li>Patent claims lazy-loading from USPTO Documents API</li>
+        <li>API key encryption at rest with AES-256-GCM</li>
+        <li>Prior art scoring: stop-word filtering, title weighting</li>
+        <li>GitHub Actions CI + Playwright E2E with screenshots and responsive testing</li>
+        <li>Optional Bearer token authentication for network deployments</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
