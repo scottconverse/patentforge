@@ -8,6 +8,7 @@ import StageProgress from '../components/StageProgress';
 import StreamingOutput from '../components/StreamingOutput';
 import Toast from '../components/Toast';
 import CostConfirmModal from '../components/CostConfirmModal';
+import ClaimsTab from '../components/ClaimsTab';
 import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import { formatCost } from '../utils/format';
@@ -125,7 +126,7 @@ async function estimateRunCosts(model: string, maxTokens: number): Promise<{ tok
   return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST };
 }
 
-type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art';
+type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -885,6 +886,14 @@ export default function ProjectDetail() {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setViewMode('claims')}
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                viewMode === 'claims' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+              }`}
+            >
+              Claims
+            </button>
           </div>
         </aside>
 
@@ -1164,6 +1173,25 @@ export default function ProjectDetail() {
                 search={priorArtSearch}
                 onUpdate={setPriorArtSearch}
                 onPatentClick={(pn) => setDrawerPatent(pn)}
+              />
+            </div>
+          )}
+
+          {/* Claims tab */}
+          {viewMode === 'claims' && (
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-100">Claim Drafts</h2>
+                <button
+                  onClick={() => setViewMode('overview')}
+                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  ← Back
+                </button>
+              </div>
+              <ClaimsTab
+                projectId={id!}
+                hasFeasibility={!!latestRun && latestRun.status === 'COMPLETE'}
               />
             </div>
           )}
