@@ -13,13 +13,19 @@ import anthropic
 
 from ..models import GraphState
 
-PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "examiner.md"
+PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 
 def _load_prompt() -> str:
-    if PROMPT_PATH.exists():
-        return PROMPT_PATH.read_text(encoding="utf-8")
-    return "You are a critical patent examiner. Review claims for weaknesses."
+    common = ""
+    common_path = PROMPTS_DIR / "common-rules.md"
+    if common_path.exists():
+        common = common_path.read_text(encoding="utf-8") + "\n\n"
+
+    prompt_path = PROMPTS_DIR / "examiner.md"
+    if prompt_path.exists():
+        return common + prompt_path.read_text(encoding="utf-8")
+    return common + "You are a critical patent examiner. Review claims for weaknesses."
 
 
 async def run_examiner(state: GraphState) -> GraphState:

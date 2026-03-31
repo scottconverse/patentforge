@@ -19,16 +19,38 @@ def parse_claims(raw_text: str) -> list[Claim]:
     """
     claims: list[Claim] = []
 
-    # Split on claim numbers at line start: "1." or "1. " or "Claim 1."
-    # Captures the number and everything until the next claim or end
-    claim_pattern = re.compile(
-        r'(?:^|\n)\s*(?:Claim\s+)?(\d+)\.\s*(.*?)(?=\n\s*(?:Claim\s+)?\d+\.\s|\Z)',
-        re.DOTALL,
+    # Try two formats:
+    # Format A: "### CLAIM 1 (metadata)\n\nClaim text..."  (markdown heading)
+    # Format B: "1. (metadata) Claim text..."  (numbered list)
+    heading_pattern = re.compile(
+        r'#{1,4}\s*CLAIM\s+(\d+)\s*\(([^)]+)\)\s*\n+(.*?)(?=\n#{1,4}\s*CLAIM\s+\d+|\n---|\n##\s|\Z)',
+        re.DOTALL | re.IGNORECASE,
     )
 
-    for match in claim_pattern.finditer(raw_text):
-        num = int(match.group(1))
-        body = match.group(2).strip()
+    heading_matches = list(heading_pattern.finditer(raw_text))
+    if heading_matches:
+        # Format A: heading-based claims
+        for match in heading_matches:
+            num = int(match.group(1))
+            meta_raw = match.group(2)
+            body = match.group(3).strip()
+            # Merge meta into body for unified processing below
+            body = f"({meta_raw}) {body}"
+    else:
+        # Format B: numbered claims — use original regex
+        pass
+
+    # Unified pattern for both formats
+    if heading_matches:
+        entries = [(int(m.group(1)), f"({m.group(2)}) {m.group(3).strip()}") for m in heading_matches]
+    else:
+        numbered_pattern = re.compile(
+            r'(?:^|\n)\s*(?:Claim\s+)?(\d+)\.\s*(.*?)(?=\n\s*(?:Claim\s+)?\d+\.\s|\Z)',
+            re.DOTALL,
+        )
+        entries = [(int(m.group(1)), m.group(2).strip()) for m in numbered_pattern.finditer(raw_text)]
+
+    for num, body in entries:
 
         # Extract metadata from parenthetical annotations
         # e.g., "(Independent - Broad - Method)" or "(Dependent on 1)"
