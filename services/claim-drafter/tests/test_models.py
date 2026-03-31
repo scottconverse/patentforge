@@ -36,11 +36,11 @@ class TestClaimDraftRequest:
     def test_minimal_request(self):
         req = ClaimDraftRequest(
             invention_narrative="A widget that does things.",
-            settings=DraftSettings(api_key="test-key"),
+            settings=DraftSettings(api_key="test-key", default_model="claude-haiku-4-5-20251001"),
         )
         assert req.invention_narrative == "A widget that does things."
         assert req.prior_art_results == []
-        assert req.settings.default_model == "claude-sonnet-4-20250514"
+        assert req.settings.default_model == "claude-haiku-4-5-20251001"
 
     def test_request_with_prior_art(self):
         req = ClaimDraftRequest(
@@ -53,7 +53,7 @@ class TestClaimDraftRequest:
                     relevance_score=0.85,
                 ),
             ],
-            settings=DraftSettings(api_key="test-key"),
+            settings=DraftSettings(api_key="test-key", default_model="claude-haiku-4-5-20251001"),
         )
         assert len(req.prior_art_results) == 1
         assert req.prior_art_results[0].relevance_score == 0.85

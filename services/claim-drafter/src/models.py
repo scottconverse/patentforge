@@ -22,7 +22,7 @@ class PriorArtItem(BaseModel):
 class DraftSettings(BaseModel):
     """User settings forwarded from the backend."""
     api_key: str = ""  # Prefer ANTHROPIC_API_KEY env var; request body is fallback
-    default_model: str = "claude-sonnet-4-20250514"
+    default_model: str  # Required — no silent fallback to expensive model
     research_model: str = ""
     max_tokens: int = 16000
 
@@ -77,7 +77,7 @@ class GraphState(BaseModel):
     feasibility_stage_6: str = ""
     prior_art_context: str = ""
     api_key: str = ""
-    default_model: str = "claude-sonnet-4-20250514"
+    default_model: str = ""  # Set by run_claim_pipeline from request; empty = error
     research_model: str = ""
     max_tokens: int = 16000
 

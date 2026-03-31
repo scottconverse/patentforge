@@ -79,9 +79,14 @@ app.post('/analyze', requireInternalSecret, async (req, res) => {
     rawNarrative: inventionNarrative,
   };
 
-  // Apply defaults to settings
+  if (!settings.model) {
+    res.status(400).json({ error: 'settings.model is required. Configure a default model in Settings.' });
+    return;
+  }
+
+  // Apply defaults to settings — model is required, no silent fallback to expensive model
   const resolvedSettings: AnalysisSettings = {
-    model: settings.model || 'claude-opus-4-5',
+    model: settings.model,
     researchModel: settings.researchModel,
     maxTokens: settings.maxTokens || 32000,
     interStageDelaySeconds: settings.interStageDelaySeconds ?? 5,
