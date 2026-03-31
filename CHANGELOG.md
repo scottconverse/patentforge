@@ -5,6 +5,26 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-03-31
+
+### Added
+- **USPTO Open Data Portal integration** — replaces the shut-down PatentsView API with the new ODP API at data.uspto.gov for prior art search and patent detail enrichment
+- **USPTO API key in Settings** — optional BYOK field for the ODP API key; everything works without it (AI web search still handles prior art in Stage 2)
+- **ODP search client** — sequential queries with rate limit compliance (burst=1, 1.5s delays, 10s backoff on 429)
+- **ODP enrichment client** — fetches patent metadata (title, dates, inventors, assignees, CPC codes) by patent number
+- **86 automated tests** — 59 backend (Jest) + 27 frontend (Vitest), up from 62 in v0.3.0
+
+### Changed
+- Prior art panel error state now shows a helpful "add a USPTO API key" message instead of "PatentsView shut down" error
+- Patent detail drawer error state similarly updated with actionable guidance
+- Source label on prior art results shows "USPTO Open Data Portal" when ODP is the data source
+
+### Fixed
+- Missing Prisma migration for `exportPath` and `costCapUsd` columns (Settings 500 on fresh install)
+- Feasibility build script didn't copy `.md` prompt files to `dist/` (pipeline crash on fresh install)
+- Unhandled `AbortError` crashed feasibility service when client disconnected mid-pipeline
+- `@nestjs/testing` v11 conflicted with `@nestjs/common` v10 peer dependency
+
 ## [0.3.0] - 2026-03-31
 
 ### Added

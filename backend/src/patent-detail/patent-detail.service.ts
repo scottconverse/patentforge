@@ -1,12 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { fetchEnrichedPatent } from './patentsview-enrichment';
+import { fetchEnrichedPatentODP } from './odp-enrichment';
 
 const CACHE_TTL_DAYS = 30;
 
 @Injectable()
 export class PatentDetailService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   /**
    * Get enriched detail for a patent. Checks local cache first (30-day TTL),
@@ -22,11 +27,20 @@ export class PatentDetailService {
       return this.formatResponse(cached);
     }
 
-    // Fetch from PatentsView
-    const enriched = await fetchEnrichedPatent(patentNumber);
+    // Fetch from ODP (preferred) or PatentsView (legacy fallback)
+    const settings = await this.settingsService.getSettings();
+    let enriched;
+    if (settings.usptoApiKey) {
+      enriched = await fetchEnrichedPatentODP(patentNumber, settings.usptoApiKey);
+    } else {
+      enriched = await fetchEnrichedPatent(patentNumber);
+    }
     if (!enriched) {
       if (cached) return this.formatResponse(cached); // stale cache is better than nothing
-      throw new NotFoundException(`Patent ${patentNumber} not found in PatentsView`);
+      const msg = settings.usptoApiKey
+        ? `Patent ${patentNumber} not found in USPTO Open Data Portal`
+        : 'Patent detail requires a USPTO API key. Add one in Settings, or view this patent on Google Patents.';
+      throw new NotFoundException(msg);
     }
 
     // Upsert into cache

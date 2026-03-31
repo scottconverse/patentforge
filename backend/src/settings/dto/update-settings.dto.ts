@@ -36,4 +36,7 @@ export class UpdateSettingsDto {
   @Type(() => Number)
   costCapUsd?: number;
 
+  @IsOptional()
+  @IsString()
+  usptoApiKey?: string;
 }

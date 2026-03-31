@@ -39,6 +39,7 @@ export class FeasibilityController {
         run.id,
         body.narrative,
         settings.anthropicApiKey,
+        settings.usptoApiKey || undefined,
       );
     }
     return run;

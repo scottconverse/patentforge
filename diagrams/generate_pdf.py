@@ -1,5 +1,5 @@
 """
-PatentForge v0.3.0 — README-FULL.pdf Generator
+PatentForge v0.3.1 — README-FULL.pdf Generator
 Generates a professional PDF with architecture diagrams.
 """
 import os
@@ -14,7 +14,7 @@ class PatentForgePDF(FPDF):
         if self.page_no() > 1:
             self.set_font('Helvetica', 'I', 8)
             self.set_text_color(130, 130, 130)
-            self.cell(0, 8, 'PatentForge v0.3.0 - Patent Landscape Research Tool', align='L')
+            self.cell(0, 8, 'PatentForge v0.3.1 - Patent Landscape Research Tool', align='L')
             self.cell(0, 8, f'Page {self.page_no()}', align='R', new_x='LMARGIN', new_y='NEXT')
             self.line(10, 14, 200, 14)
             self.ln(4)
@@ -110,7 +110,7 @@ def generate():
     pdf.cell(0, 10, 'AI-Powered Patent Landscape Research Tool', align='C', new_x='LMARGIN', new_y='NEXT')
     pdf.ln(5)
     pdf.set_font('Helvetica', '', 11)
-    pdf.cell(0, 8, 'Version 0.3.0  |  March 2026', align='C', new_x='LMARGIN', new_y='NEXT')
+    pdf.cell(0, 8, 'Version 0.3.1  |  March 2026', align='C', new_x='LMARGIN', new_y='NEXT')
     pdf.cell(0, 8, 'Scott Converse', align='C', new_x='LMARGIN', new_y='NEXT')
     pdf.ln(15)
     pdf.set_font('Helvetica', 'I', 9)
@@ -190,7 +190,7 @@ def generate():
         'deployable and communicates via HTTP requests and Server-Sent Events (SSE) for real-time '
         'streaming. SQLite is used for local development; PostgreSQL for Docker deployment.'
     )
-    pdf.add_diagram('architecture.png', 'Figure 1: PatentForge System Architecture (v0.3.0)')
+    pdf.add_diagram('architecture.png', 'Figure 1: PatentForge System Architecture (v0.3.1)')
 
     pdf.section_title('Service Descriptions')
     pdf.bold_bullet('React Frontend (port 8080)', ' - Invention intake form, real-time streaming output with stage progress indicators, report viewer with export buttons. Built with React 18, TypeScript, Vite, and Tailwind CSS.')

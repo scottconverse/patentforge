@@ -25,6 +25,7 @@ export class SettingsService {
     if (dto.interStageDelaySeconds !== undefined) data.interStageDelaySeconds = dto.interStageDelaySeconds;
     if (dto.exportPath !== undefined) data.exportPath = dto.exportPath;
     if (dto.costCapUsd !== undefined) data.costCapUsd = dto.costCapUsd;
+    if (dto.usptoApiKey !== undefined) data.usptoApiKey = dto.usptoApiKey;
 
     return this.prisma.appSettings.upsert({
       where: { id: SINGLETON_ID },

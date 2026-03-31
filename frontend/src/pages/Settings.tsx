@@ -23,12 +23,14 @@ export default function Settings() {
     interStageDelaySeconds: 2,
     exportPath: '',
     costCapUsd: 5.00,
+    usptoApiKey: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showUsptoKey, setShowUsptoKey] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -109,6 +111,33 @@ export default function Settings() {
             </div>
             <p className="text-xs text-gray-500 mt-1">
               You are connecting to your own Anthropic API account. AI processing is performed by Anthropic's servers under their <a href="https://www.anthropic.com/policies/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">terms of service</a>. Review their data privacy policies before submitting invention details.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              USPTO Open Data Portal Key
+            </label>
+            <div className="flex gap-2">
+              <input
+                type={showUsptoKey ? 'text' : 'password'}
+                value={settings.usptoApiKey || ''}
+                onChange={e => update('usptoApiKey', e.target.value)}
+                placeholder="Optional — 30-character key"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowUsptoKey(v => !v)}
+                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
+              >
+                {showUsptoKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Optional. Adds structured patent search results with assignees, CPC codes, and filing dates. Free at{' '}
+              <a href="https://data.uspto.gov/myodp" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">data.uspto.gov</a>{' '}
+              (requires ID.me verification). Everything works without this key.
             </p>
           </div>
 

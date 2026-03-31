@@ -88,16 +88,16 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
 
   if (search.status === 'ERROR') {
     return (
-      <div className="p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm space-y-2">
-        <p className="font-semibold">Prior art search unavailable</p>
+      <div className="p-4 bg-amber-900/30 border border-amber-800 rounded-lg text-amber-300 text-sm space-y-2">
+        <p className="font-semibold">Structured prior art search unavailable</p>
         <p>
-          The USPTO PatentsView API has been shut down as part of the migration to the{' '}
-          <a href="https://data.uspto.gov/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-            USPTO Open Data Portal
-          </a>.
-          Prior art search will be restored in a future update when ODP integration is complete.
+          Add a{' '}
+          <a href="/settings" className="text-blue-400 hover:underline">
+            USPTO Open Data Portal API key
+          </a>{' '}
+          in Settings to enable structured patent search results with assignees, CPC codes, and filing dates.
         </p>
-        <p className="text-gray-400">The feasibility analysis still ran using AI web search for prior art research (Stage 2).</p>
+        <p className="text-gray-400">The feasibility analysis still uses AI web search for prior art research (Stage 2).</p>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
             {search.results.length} patent{search.results.length !== 1 ? 's' : ''} found
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Source: USPTO PatentsView ·{' '}
+            Source: {search.results[0]?.source === 'USPTO ODP' ? 'USPTO Open Data Portal' : 'USPTO PatentsView'} ·{' '}
             {search.completedAt ? new Date(search.completedAt).toLocaleString() : ''}
           </p>
         </div>

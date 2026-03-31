@@ -64,6 +64,7 @@ export interface AppSettings {
   interStageDelaySeconds: number;
   exportPath: string;
   costCapUsd: number;
+  usptoApiKey: string;
 }
 
 export interface FeasibilityRunSummary {

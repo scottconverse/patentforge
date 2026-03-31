@@ -1,5 +1,5 @@
 """
-PatentForge v0.3.0 — Architecture Diagram Generator
+PatentForge v0.3.1 — Architecture Diagram Generator
 Generates 5 PNG diagrams reflecting the current system state.
 """
 import matplotlib
@@ -61,7 +61,7 @@ def gen_architecture():
     ax.axis('off')
 
     # Title
-    ax.text(0.5, 0.95, 'PatentForge — System Architecture (v0.3.0)',
+    ax.text(0.5, 0.95, 'PatentForge — System Architecture (v0.3.1)',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     # Frontend
@@ -248,7 +248,7 @@ def gen_database_schema():
     ax.set_xlim(0, 1.2); ax.set_ylim(0, 1)
     ax.axis('off')
 
-    ax.text(0.6, 0.96, 'PatentForge — Database Schema (v0.3.0)',
+    ax.text(0.6, 0.96, 'PatentForge — Database Schema (v0.3.1)',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     def entity_box(x, y, w, h, name, fields, color=ACCENT):
@@ -381,7 +381,7 @@ def gen_docker_topology():
     arrow(ax, 0.5, 0.62, 0.75, 0.3, PURPLE, style='->', lw=1)
 
     # Note
-    ax.text(0.05, 0.12, 'v0.3.0: frontend + backend + feasibility + postgres',
+    ax.text(0.05, 0.12, 'v0.3.1: frontend + backend + feasibility + postgres',
             color=MUTED, fontsize=8, fontstyle='italic')
 
     fig.savefig(os.path.join(OUTPUT_DIR, 'docker-topology.png'), dpi=200, bbox_inches='tight',
@@ -391,7 +391,7 @@ def gen_docker_topology():
 
 
 if __name__ == '__main__':
-    print('Generating PatentForge v0.3.0 diagrams...')
+    print('Generating PatentForge v0.3.1 diagrams...')
     gen_architecture()
     gen_data_flow()
     gen_user_journey()

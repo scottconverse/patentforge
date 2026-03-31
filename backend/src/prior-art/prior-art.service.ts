@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PriorArtSseService } from './prior-art-sse.service';
 import { searchPatentsViewMulti, PatentsViewPatent } from './patentsview-client';
+import { searchODPMulti } from './odp-client';
 
 @Injectable()
 export class PriorArtService {
@@ -36,13 +37,13 @@ export class PriorArtService {
   }
 
   /** Called from the feasibility controller when a run starts. Non-blocking — starts background work. */
-  startSearch(projectId: string, feasibilityRunId: string, narrative: string, apiKey: string): void {
-    this.runSearch(projectId, feasibilityRunId, narrative, apiKey).catch(err =>
+  startSearch(projectId: string, feasibilityRunId: string, narrative: string, apiKey: string, usptoApiKey?: string): void {
+    this.runSearch(projectId, feasibilityRunId, narrative, apiKey, usptoApiKey).catch(err =>
       console.error(`[PriorArt] search failed for project ${projectId}:`, err),
     );
   }
 
-  private async runSearch(projectId: string, feasibilityRunId: string, narrative: string, apiKey: string): Promise<void> {
+  private async runSearch(projectId: string, feasibilityRunId: string, narrative: string, apiKey: string, usptoApiKey?: string): Promise<void> {
     // Determine version
     const last = await this.prisma.priorArtSearch.findFirst({ where: { projectId }, orderBy: { version: 'desc' } });
     const version = (last?.version ?? 0) + 1;
@@ -70,9 +71,16 @@ export class PriorArtService {
 
       this.sse.emit(projectId, { type: 'prior_art_queries', queries });
 
-      // Step 2: Query PatentsView for each query
+      // Step 2: Query patent database — prefer ODP if key is available, fall back to PatentsView
       const allTerms = queries.flatMap(q => q.toLowerCase().split(/\s+/));
-      const rawResults = await searchPatentsViewMulti(queries);
+      let rawResults: PatentsViewPatent[];
+      let source = 'PatentsView';
+      if (usptoApiKey) {
+        rawResults = await searchODPMulti(queries, usptoApiKey);
+        source = 'USPTO ODP';
+      } else {
+        rawResults = await searchPatentsViewMulti(queries);
+      }
 
       // Emit progress (one event per query equivalent)
       this.sse.emit(projectId, { type: 'prior_art_progress', queryIndex: 0, query: queries[0] ?? '', resultCount: rawResults.length });
@@ -99,7 +107,7 @@ export class PriorArtService {
             abstract,
             relevanceScore: score,
             snippet,
-            source: 'PatentsView',
+            source,
           },
         });
       }

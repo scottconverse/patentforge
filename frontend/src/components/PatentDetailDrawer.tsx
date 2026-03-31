@@ -84,10 +84,12 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
           {loading && <LoadingSkeleton />}
 
           {error && (
-            <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm space-y-2">
+            <div className="p-3 bg-amber-900/30 border border-amber-800 rounded-lg text-amber-300 text-sm space-y-2">
               <p className="font-semibold">Patent detail unavailable</p>
               <p>
-                The USPTO PatentsView API has been shut down. Enriched patent data (claims, assignees, CPC codes) is temporarily unavailable.
+                {error.includes('USPTO API key')
+                  ? 'Add a USPTO Open Data Portal API key in Settings to view enriched patent details.'
+                  : 'Could not retrieve patent details from the USPTO Open Data Portal.'}
               </p>
               <p>
                 <a

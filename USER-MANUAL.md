@@ -169,7 +169,7 @@ The prior art results are also provided as context to Stage 2, so the AI conside
 
 **Note:** This is a keyword-based search of U.S. patents. It is not exhaustive. A patent attorney will typically conduct a more thorough professional search using specialized databases.
 
-**Temporary note (v0.3.0):** The USPTO PatentsView API was shut down on March 20, 2026 as part of the migration to the USPTO Open Data Portal. Prior art search via PatentsView is temporarily unavailable. The AI analysis pipeline still works — Stage 2 uses Anthropic's web search tool for prior art research. Full integration with the new USPTO Open Data Portal is planned for a future update.
+**Note (v0.3.1):** Structured prior art search now uses the USPTO Open Data Portal (ODP). To enable it, add your ODP API key in Settings. The key is optional — without it, the AI analysis still uses web search for prior art research in Stage 2. To get an ODP API key (free), register at [data.uspto.gov](https://data.uspto.gov/myodp). This requires a USPTO.gov account with ID.me identity verification.
 
 ### Clicking a Prior Art Result
 

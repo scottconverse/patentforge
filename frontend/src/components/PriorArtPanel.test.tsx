@@ -95,23 +95,23 @@ describe('PriorArtPanel', () => {
     expect(screen.getByText(/Searching USPTO patent database/)).toBeInTheDocument();
   });
 
-  it('shows error state with PatentsView shutdown message', () => {
+  it('shows error state with ODP key prompt', () => {
     const search = makeSearch({ status: 'ERROR', results: [] });
     render(
       <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
     );
-    expect(screen.getByText('Prior art search unavailable')).toBeInTheDocument();
-    expect(screen.getByText(/PatentsView API has been shut down/)).toBeInTheDocument();
-    expect(screen.getByText(/feasibility analysis still ran/)).toBeInTheDocument();
+    expect(screen.getByText('Structured prior art search unavailable')).toBeInTheDocument();
+    expect(screen.getByText(/USPTO Open Data Portal API key/)).toBeInTheDocument();
+    expect(screen.getByText(/feasibility analysis still uses AI web search/)).toBeInTheDocument();
   });
 
-  it('shows error state with link to USPTO ODP', () => {
+  it('shows error state with link to Settings', () => {
     const search = makeSearch({ status: 'ERROR', results: [] });
     render(
       <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
     );
-    const odpLink = screen.getByText(/USPTO Open Data Portal/);
-    expect(odpLink.closest('a')).toHaveAttribute('href', 'https://data.uspto.gov/');
+    const settingsLink = screen.getByText(/USPTO Open Data Portal API key/);
+    expect(settingsLink.closest('a')).toHaveAttribute('href', '/settings');
   });
 
   it('renders completed search with results', () => {

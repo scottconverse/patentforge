@@ -194,4 +194,5 @@ model AppSettings {
   interStageDelaySeconds Int    @default(5)
   exportPath             String @default("")
   costCapUsd             Float  @default(5.00)
+  usptoApiKey            String @default("")
 }

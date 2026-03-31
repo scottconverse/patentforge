@@ -76,9 +76,9 @@ describe('PatentDetailDrawer', () => {
     expect(screen.getByText('Learning methods')).toBeInTheDocument();
   });
 
-  it('shows error state when fetch fails', async () => {
+  it('shows error state when fetch fails with key message', async () => {
     (api.patents.getDetail as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('PatentsView API shutdown')
+      new Error('API error 404: Patent detail requires a USPTO API key')
     );
 
     render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
@@ -87,7 +87,21 @@ describe('PatentDetailDrawer', () => {
       expect(screen.getByText('Patent detail unavailable')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/PatentsView API has been shut down/)).toBeInTheDocument();
+    expect(screen.getByText(/USPTO Open Data Portal API key/)).toBeInTheDocument();
+  });
+
+  it('shows generic error when fetch fails without key message', async () => {
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('API error 500: Internal server error')
+    );
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Patent detail unavailable')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Could not retrieve patent details/)).toBeInTheDocument();
   });
 
   it('shows Google Patents link in header', async () => {
