@@ -169,6 +169,22 @@ model ProsecutionEvent {
   createdAt   DateTime @default(now())
 }
 
+model PatentDetail {
+  id                 String   @id @default(uuid())
+  patentNumber       String   @unique
+  title              String?
+  abstract           String?
+  filingDate         String?
+  grantDate          String?
+  assignee           String?  // JSON array of assignee names
+  inventors          String?  // JSON array of inventor names
+  cpcClassifications String?  // JSON array of CPC codes
+  claimsText         String?  // full concatenated claims text
+  claimCount         Int?
+  patentType         String?
+  fetchedAt          DateTime @default(now())
+}
+
 model AppSettings {
   id                     String @id @default("singleton")
   anthropicApiKey        String @default("")

@@ -1,4 +1,4 @@
-import { PriorArtSearch } from './types';
+import { PriorArtSearch, PatentDetail } from './types';
 
 const BASE = '/api';
 
@@ -51,6 +51,14 @@ export const api = {
     runs: (projectId: string) => req<any[]>('GET', `/projects/${projectId}/feasibility/runs`),
     getVersion: (projectId: string, version: number) =>
       req<any>('GET', `/projects/${projectId}/feasibility/${version}`),
+    rerunFromStage: (projectId: string, fromStage: number) =>
+      req<any>('POST', `/projects/${projectId}/feasibility/rerun`, { fromStage }),
+  },
+  patents: {
+    getDetail: (patentNumber: string) =>
+      req<PatentDetail>('GET', `/patents/${patentNumber}`),
+    getClaims: (patentNumber: string) =>
+      req<{ claimsText: string | null; claimCount: number | null }>('GET', `/patents/${patentNumber}/claims`),
   },
   settings: {
     get: () => req<any>('GET', '/settings'),

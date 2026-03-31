@@ -9,6 +9,7 @@ import StreamingOutput from '../components/StreamingOutput';
 import Toast from '../components/Toast';
 import CostConfirmModal from '../components/CostConfirmModal';
 import PriorArtPanel from '../components/PriorArtPanel';
+import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import { formatCost } from '../utils/format';
 
 // ----- Narrative builder -----
@@ -168,6 +169,9 @@ export default function ProjectDetail() {
 
   // Prior art
   const [priorArtSearch, setPriorArtSearch] = useState<PriorArtSearch | null>(null);
+
+  // Patent detail drawer
+  const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
 
   // ----- Load project -----
   const loadProject = useCallback(async () => {
@@ -776,9 +780,31 @@ export default function ProjectDetail() {
               <StageProgress
                 stages={displayStages}
                 activeStage={activeStageNum}
+                pipelineIdle={viewMode !== 'running'}
                 onStageClick={(stage) => {
                   setSelectedStage(stage);
                   setViewMode('stage-output');
+                }}
+                onRerunFromStage={async (fromStage) => {
+                  if (!id || !project?.invention) return;
+                  try {
+                    // Create a new versioned run with stages 1..fromStage-1 copied
+                    const newRun = await api.feasibility.rerunFromStage(id, fromStage);
+                    runIdRef.current = newRun.id;
+                    const copiedOutputs: Record<number, string> = {};
+                    for (const s of newRun.stages) {
+                      if (s.status === 'COMPLETE' && s.outputText) {
+                        copiedOutputs[s.stageNumber] = s.outputText;
+                      }
+                    }
+                    // Set copied stages into the UI immediately
+                    setStages(newRun.stages);
+                    // Delegate to existing pipeline runner
+                    const appSettings = await api.settings.get();
+                    await proceedWithRun(appSettings, project.invention!, fromStage, copiedOutputs);
+                  } catch (err: any) {
+                    setToast({ message: 'Re-run failed', detail: err.message, type: 'error' });
+                  }
                 }}
               />
               {totalRunCost > 0 && (
@@ -1137,6 +1163,7 @@ export default function ProjectDetail() {
                 projectId={id!}
                 search={priorArtSearch}
                 onUpdate={setPriorArtSearch}
+                onPatentClick={(pn) => setDrawerPatent(pn)}
               />
             </div>
           )}
@@ -1219,6 +1246,12 @@ export default function ProjectDetail() {
           onCancel={() => setCostModal(null)}
         />
       )}
+
+      {/* Patent Detail Drawer */}
+      <PatentDetailDrawer
+        patentNumber={drawerPatent}
+        onClose={() => setDrawerPatent(null)}
+      />
     </div>
   );
 }

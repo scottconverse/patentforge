@@ -5,6 +5,7 @@ interface PriorArtPanelProps {
   projectId: string;
   search: PriorArtSearch | null;
   onUpdate: (search: PriorArtSearch) => void;
+  onPatentClick?: (patentNumber: string) => void;
 }
 
 function RelevanceBar({ score }: { score: number }) {
@@ -20,7 +21,7 @@ function RelevanceBar({ score }: { score: number }) {
   );
 }
 
-export default function PriorArtPanel({ projectId, search, onUpdate }: PriorArtPanelProps) {
+export default function PriorArtPanel({ projectId, search, onUpdate, onPatentClick }: PriorArtPanelProps) {
   const esRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -106,7 +107,15 @@ export default function PriorArtPanel({ projectId, search, onUpdate }: PriorArtP
             {search.completedAt ? new Date(search.completedAt).toLocaleString() : ''}
           </p>
         </div>
-        <span className="text-xs px-2 py-0.5 bg-green-900 text-green-300 rounded-full">Complete</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.open(`/api/projects/${projectId}/prior-art/export/csv`, '_blank')}
+            className="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
+          >
+            Export CSV
+          </button>
+          <span className="text-xs px-2 py-0.5 bg-green-900 text-green-300 rounded-full">Complete</span>
+        </div>
       </div>
 
       {/* Queries used */}
@@ -126,16 +135,15 @@ export default function PriorArtPanel({ projectId, search, onUpdate }: PriorArtP
       ) : (
         <div className="space-y-3">
           {search.results.map(result => (
-            <div key={result.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+            <div
+              key={result.id}
+              onClick={() => onPatentClick?.(result.patentNumber)}
+              className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 cursor-pointer hover:border-blue-700 hover:bg-blue-950/20 transition-colors"
+            >
               <div className="flex items-start justify-between gap-2">
-                <a
-                  href={`https://patents.google.com/patent/${result.patentNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline font-mono"
-                >
+                <span className="text-sm font-semibold text-blue-400 font-mono">
                   {result.patentNumber}
-                </a>
+                </span>
                 <RelevanceBar score={result.relevanceScore} />
               </div>
               <p className="text-sm text-gray-200 leading-snug">{result.title}</p>
@@ -144,6 +152,7 @@ export default function PriorArtPanel({ projectId, search, onUpdate }: PriorArtP
                   {result.snippet || result.abstract?.slice(0, 200)}
                 </p>
               )}
+              <p className="text-xs text-blue-600">Click for details</p>
             </div>
           ))}
         </div>

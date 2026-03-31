@@ -140,6 +140,77 @@ export class FeasibilityService {
     return run;
   }
 
+  /**
+   * Create a new FeasibilityRun that copies completed stages from the prior run
+   * up to fromStage-1, and sets stages fromStage..6 to PENDING for re-execution.
+   */
+  async rerunFromStage(projectId: string, fromStage: number) {
+    if (fromStage < 1 || fromStage > 6) {
+      throw new Error('fromStage must be between 1 and 6');
+    }
+
+    // Find the latest run
+    const latestRun = await this.prisma.feasibilityRun.findFirst({
+      where: { projectId },
+      orderBy: { version: 'desc' },
+      include: { stages: { orderBy: { stageNumber: 'asc' } } },
+    });
+
+    if (!latestRun) {
+      throw new NotFoundException('No prior run found to re-run from');
+    }
+
+    // Validate that stages before fromStage are complete
+    for (let i = 1; i < fromStage; i++) {
+      const stage = latestRun.stages.find(s => s.stageNumber === i);
+      if (!stage || stage.status !== 'COMPLETE' || !stage.outputText) {
+        throw new Error(`Stage ${i} must be complete before re-running from Stage ${fromStage}`);
+      }
+    }
+
+    const version = latestRun.version + 1;
+
+    // Build stage create data — copy completed, set pending for the rest
+    const stageData = STAGE_NAMES.map((stageName, index) => {
+      const stageNum = index + 1;
+      if (stageNum < fromStage) {
+        // Copy from prior run
+        const priorStage = latestRun.stages.find(s => s.stageNumber === stageNum)!;
+        return {
+          stageNumber: stageNum,
+          stageName,
+          status: 'COMPLETE' as const,
+          outputText: priorStage.outputText,
+          model: priorStage.model,
+          webSearchUsed: priorStage.webSearchUsed,
+          startedAt: priorStage.startedAt,
+          completedAt: priorStage.completedAt,
+          inputTokens: priorStage.inputTokens,
+          outputTokens: priorStage.outputTokens,
+          estimatedCostUsd: priorStage.estimatedCostUsd,
+        };
+      }
+      return {
+        stageNumber: stageNum,
+        stageName,
+        status: 'PENDING' as const,
+      };
+    });
+
+    const run = await this.prisma.feasibilityRun.create({
+      data: {
+        projectId,
+        version,
+        status: 'RUNNING',
+        startedAt: new Date(),
+        stages: { create: stageData },
+      },
+      include: { stages: { orderBy: { stageNumber: 'asc' } } },
+    });
+
+    return run;
+  }
+
   async getLatest(projectId: string) {
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) {

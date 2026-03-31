@@ -124,7 +124,8 @@ All settings are configurable via the Settings page in the UI:
 
 - [x] **v0.1** — 6-stage AI analysis pipeline with streaming
 - [x] **v0.2** — Prior art search, cost tracking, Word export, resume from interruption
-- [ ] **v0.3** — USPTO data integration, stage versioning
+- [x] **v0.3** — USPTO patent detail enrichment, individual stage re-run, CSV export
+- [ ] **v0.3.1** — Prosecution timeline, Office Action viewing
 - [ ] **v0.4** — AI-assisted claim drafting
 - [ ] **v0.5** — Compliance review tooling
 - [ ] **v0.6** — Full application document assembly

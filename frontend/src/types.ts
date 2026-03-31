@@ -98,3 +98,17 @@ export interface PriorArtResult {
   snippet: string | null;
   source: string;
 }
+
+export interface PatentDetail {
+  patentNumber: string;
+  title: string | null;
+  abstract: string | null;
+  filingDate: string | null;
+  grantDate: string | null;
+  assignee: string[];
+  inventors: string[];
+  cpcClassifications: { code: string; title: string }[];
+  claimsText: string | null;
+  claimCount: number | null;
+  patentType: string | null;
+}

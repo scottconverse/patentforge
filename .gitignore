@@ -46,3 +46,8 @@ reference/
 
 # Large binary docs (PDF version is generated and committed instead)
 PatentForge-Architecture.docx
+
+# Working docs (not shipped)
+ARCHITECTURE_ANALYSIS.md
+DISCUSSIONS-SEED.md
+IMPLEMENTATION-UPL-REVISIONS.md

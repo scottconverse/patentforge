@@ -5,6 +5,8 @@ interface StageProgressProps {
   stages: FeasibilityStage[];
   activeStage?: number;
   onStageClick?: (stage: FeasibilityStage) => void;
+  onRerunFromStage?: (stageNumber: number) => void;
+  pipelineIdle?: boolean; // true when no pipeline is currently running
 }
 
 function StatusIcon({ status }: { status: RunStatus }) {
@@ -43,7 +45,7 @@ function StatusIcon({ status }: { status: RunStatus }) {
 }
 
 
-export default function StageProgress({ stages, activeStage, onStageClick }: StageProgressProps) {
+export default function StageProgress({ stages, activeStage, onStageClick, onRerunFromStage, pipelineIdle }: StageProgressProps) {
   if (!stages || stages.length === 0) {
     return (
       <div className="text-gray-500 text-sm italic">No stages yet.</div>
@@ -85,9 +87,20 @@ export default function StageProgress({ stages, activeStage, onStageClick }: Sta
               {duration && (
                 <span className="text-xs text-gray-500 font-mono">{duration}</span>
               )}
-              {isClickable && (
-                <span className="text-xs text-blue-600">view</span>
-              )}
+              <div className="flex items-center gap-1.5">
+                {isClickable && (
+                  <span className="text-xs text-blue-600">view</span>
+                )}
+                {stage.status === 'COMPLETE' && pipelineIdle && onRerunFromStage && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRerunFromStage(stage.stageNumber); }}
+                    className="text-xs text-amber-600 hover:text-amber-400 transition-colors"
+                    title={`Re-run from Stage ${stage.stageNumber}`}
+                  >
+                    re-run
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         );

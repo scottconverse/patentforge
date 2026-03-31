@@ -5,6 +5,20 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-31
+
+### Added
+- **USPTO patent detail enrichment** — click any prior art result to see a slide-out drawer with full patent data: filing date, grant date, assignee(s), inventor(s), CPC classifications, patent type, abstract, and full claims text
+- **PatentDetail cache** — enriched patent data is cached locally for 30 days (granted patents don't change), reducing API calls on repeat views
+- **Individual stage re-run** — re-run any completed stage and its downstream dependents without restarting the entire pipeline; creates a new versioned run preserving full audit trail
+- **Prior art CSV export** — download prior art search results as a spreadsheet with enriched data (dates, assignees, CPC codes) when available
+- **Patent detail API** — new `GET /api/patents/:patentNumber` and `GET /api/patents/:patentNumber/claims` endpoints with automatic PatentsView enrichment
+
+### Changed
+- Prior art result cards are now clickable (open patent detail drawer)
+- Stage progress sidebar shows "re-run" button on completed stages when pipeline is idle
+- Prior art panel header includes "Export CSV" button when search is complete
+
 ## [0.2.2] - 2026-03-30
 
 ### Changed

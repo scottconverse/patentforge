@@ -88,6 +88,15 @@ export class FeasibilityController {
     return this.feasibilityService.patchStage(projectId, stageNumber, dto);
   }
 
+  @Post('rerun')
+  @HttpCode(HttpStatus.CREATED)
+  async rerunFromStage(
+    @Param('id') projectId: string,
+    @Body() body: { fromStage: number },
+  ) {
+    return this.feasibilityService.rerunFromStage(projectId, body.fromStage);
+  }
+
   @Post('cancel')
   @HttpCode(HttpStatus.OK)
   cancelRun(@Param('id') projectId: string) {
