@@ -201,4 +201,5 @@ model AppSettings {
   exportPath             String @default("")
   costCapUsd             Float  @default(5.00)
   usptoApiKey            String @default("")
+  encryptionSalt         String @default("")
 }

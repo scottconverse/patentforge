@@ -14,9 +14,6 @@ backend/prisma/dev.db-journal
 *.db
 *.db-journal
 
-# Encryption salt (generated per-installation, never committed)
-.encryption-salt
-
 # Environment & secrets
 .env
 .env.local
