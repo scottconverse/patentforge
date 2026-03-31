@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PatentForge — AI Patent Research &amp; Preparation Tool</title>
+  <title>PatentForge — AI Patent Landscape Research Tool</title>
   <meta name="description" content="Open-source, self-hosted AI patent landscape research tool. Explore your invention's patent landscape, discover prior art, and prepare for your patent attorney consultation.">
   <style>
     :root {
@@ -111,12 +111,31 @@
     }
     .architecture h2 { text-align: center; font-size: 1.8rem; margin-bottom: 1rem; }
     .architecture .desc { text-align: center; color: var(--text-muted); max-width: 700px; margin: 0 auto 2rem; }
-    .arch-diagram {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 0.75rem; padding: 2rem; max-width: 700px; margin: 0 auto;
-      font-family: 'Courier New', monospace; font-size: 0.8rem; line-height: 1.5;
-      white-space: pre; overflow-x: auto; color: var(--text-muted);
+    .arch-svg-wrap {
+      max-width: 900px; margin: 0 auto 2.5rem; overflow-x: auto;
     }
+    .arch-details {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem; max-width: 900px; margin: 0 auto 2rem;
+    }
+    .arch-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 0.75rem; padding: 1.25rem;
+    }
+    .arch-card h4 { font-size: 1rem; margin-bottom: 0.4rem; }
+    .arch-card .port { font-size: 0.8rem; color: var(--accent); font-weight: 600; margin-bottom: 0.5rem; }
+    .arch-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.4rem; }
+    .arch-card .tech { font-size: 0.78rem; color: var(--text-muted); opacity: 0.7; }
+    .arch-ext {
+      display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+      max-width: 900px; margin: 0 auto;
+    }
+    .arch-ext-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 0.5rem; padding: 0.75rem 1.25rem; text-align: center; min-width: 180px;
+    }
+    .arch-ext-item h5 { font-size: 0.85rem; margin-bottom: 0.2rem; }
+    .arch-ext-item p { font-size: 0.78rem; color: var(--text-muted); }
 
     .disclaimer {
       max-width: 700px; margin: 0 auto; padding: 2rem;
@@ -229,7 +248,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       </div>
       <div class="stage">
         <div class="stage-num">3</div>
-        <h4>Patentability Review</h4>
+        <h4>Patentability Assessment</h4>
       </div>
       <div class="stage">
         <div class="stage-num">4</div>
@@ -237,7 +256,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       </div>
       <div class="stage">
         <div class="stage-num">5</div>
-        <h4>Strategy Notes</h4>
+        <h4>IP Landscape Assessment</h4>
       </div>
       <div class="stage">
         <div class="stage-num">6</div>
@@ -262,16 +281,133 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section class="architecture">
     <h2>Architecture</h2>
-    <p class="desc">Three-service federated architecture. Each service is independently deployable. SQLite for development, PostgreSQL for Docker deployment.</p>
-    <div class="arch-diagram">
-&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
-&#9474;  React Frontend &#9474;────&gt;&#9474;  NestJS Backend  &#9474;────&gt;&#9474;  Feasibility    &#9474;
-&#9474;  Vite + Tailwind&#9474;     &#9474;  Prisma ORM      &#9474;     &#9474;  Service        &#9474;
-&#9474;  port 8080      &#9474;&lt;────&#9474;  port 3000       &#9474;&lt;────&#9474;  port 3001      &#9474;
-&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; SSE &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496; SSE &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
-                                                        &#9474;
-                                                        &#9660;
-                                                 Anthropic Claude API</div>
+    <p class="desc">Three-service federated architecture. Each service is independently deployable. Real-time SSE streaming from LLM to browser. SQLite for development, PostgreSQL for Docker.</p>
+
+    <!-- Inline SVG architecture diagram -->
+    <div class="arch-svg-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" style="width:100%;height:auto;">
+        <defs>
+          <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#94a3b8"/></marker>
+          <marker id="ah-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3b82f6"/></marker>
+          <marker id="ah-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#22c55e"/></marker>
+        </defs>
+        <!-- Background -->
+        <rect width="880" height="420" rx="12" fill="#1e293b"/>
+        <!-- Frontend box -->
+        <rect x="40" y="40" width="220" height="90" rx="8" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+        <text x="150" y="68" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700" font-family="system-ui,sans-serif">React Frontend</text>
+        <text x="150" y="88" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui,sans-serif">TypeScript + Vite + Tailwind CSS</text>
+        <text x="150" y="118" text-anchor="middle" fill="#3b82f6" font-size="11" font-weight="600" font-family="monospace">localhost:8080</text>
+        <!-- Backend box -->
+        <rect x="330" y="40" width="220" height="90" rx="8" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+        <text x="440" y="68" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700" font-family="system-ui,sans-serif">NestJS Backend</text>
+        <text x="440" y="88" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui,sans-serif">Prisma ORM + REST API</text>
+        <text x="440" y="118" text-anchor="middle" fill="#3b82f6" font-size="11" font-weight="600" font-family="monospace">localhost:3000</text>
+        <!-- Feasibility box -->
+        <rect x="620" y="40" width="220" height="90" rx="8" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
+        <text x="730" y="68" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700" font-family="system-ui,sans-serif">Feasibility Service</text>
+        <text x="730" y="88" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="system-ui,sans-serif">Express + 6 Prompt Templates</text>
+        <text x="730" y="118" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="600" font-family="monospace">localhost:3001</text>
+        <!-- Arrows: Frontend ↔ Backend -->
+        <line x1="260" y1="72" x2="328" y2="72" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="294" y="65" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">HTTP</text>
+        <line x1="328" y1="100" x2="260" y2="100" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ah-blue)"/>
+        <text x="294" y="115" text-anchor="middle" fill="#3b82f6" font-size="9" font-family="system-ui,sans-serif">SSE stream</text>
+        <!-- Arrows: Backend ↔ Feasibility -->
+        <line x1="550" y1="72" x2="618" y2="72" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="584" y="65" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">HTTP</text>
+        <line x1="618" y1="100" x2="550" y2="100" stroke="#22c55e" stroke-width="1.5" marker-end="url(#ah-green)"/>
+        <text x="584" y="115" text-anchor="middle" fill="#22c55e" font-size="9" font-family="system-ui,sans-serif">SSE stream</text>
+        <!-- Database -->
+        <ellipse cx="440" cy="200" rx="70" ry="20" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5"/>
+        <rect x="370" y="200" width="140" height="30" fill="#0f172a"/>
+        <line x1="370" y1="200" x2="370" y2="230" stroke="#f59e0b" stroke-width="1.5"/>
+        <line x1="510" y1="200" x2="510" y2="230" stroke="#f59e0b" stroke-width="1.5"/>
+        <ellipse cx="440" cy="230" rx="70" ry="20" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="440" y="220" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="600" font-family="system-ui,sans-serif">SQLite / PostgreSQL</text>
+        <!-- Arrow: Backend → Database -->
+        <line x1="440" y1="130" x2="440" y2="178" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="462" y="158" fill="#f59e0b" font-size="9" font-family="system-ui,sans-serif">Prisma</text>
+        <!-- External APIs box area -->
+        <rect x="560" y="180" width="300" height="130" rx="8" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="6,3"/>
+        <text x="710" y="198" text-anchor="middle" fill="#64748b" font-size="10" font-family="system-ui,sans-serif">EXTERNAL SERVICES</text>
+        <!-- Anthropic Claude API -->
+        <rect x="590" y="210" width="120" height="45" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="650" y="230" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600" font-family="system-ui,sans-serif">Anthropic</text>
+        <text x="650" y="246" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="system-ui,sans-serif">Claude API</text>
+        <!-- PatentsView API -->
+        <rect x="730" y="210" width="120" height="45" rx="6" fill="#0f172a" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="790" y="230" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600" font-family="system-ui,sans-serif">PatentsView</text>
+        <text x="790" y="246" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="system-ui,sans-serif">USPTO API</text>
+        <!-- Arrow: Feasibility → Anthropic -->
+        <line x1="730" y1="130" x2="660" y2="208" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="680" y="168" fill="#a78bfa" font-size="9" font-family="system-ui,sans-serif">SSE</text>
+        <!-- Arrow: Backend → PatentsView -->
+        <line x1="520" y1="130" x2="755" y2="208" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+        <text x="620" y="175" fill="#a78bfa" font-size="9" font-family="system-ui,sans-serif">REST</text>
+        <!-- Data flow summary -->
+        <rect x="40" y="290" width="800" height="110" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+        <text x="440" y="316" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700" font-family="system-ui,sans-serif">Data Flow: Invention → Research Report</text>
+        <!-- Flow steps -->
+        <rect x="60" y="332" width="110" height="50" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+        <text x="115" y="353" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600" font-family="system-ui,sans-serif">Inventor</text>
+        <text x="115" y="368" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">11-field form</text>
+        <line x1="170" y1="357" x2="198" y2="357" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+        <rect x="200" y="332" width="110" height="50" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+        <text x="255" y="353" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600" font-family="system-ui,sans-serif">Backend</text>
+        <text x="255" y="368" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">orchestrates</text>
+        <line x1="310" y1="357" x2="338" y2="357" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+        <rect x="340" y="332" width="130" height="50" rx="6" fill="#1e293b" stroke="#22c55e" stroke-width="1"/>
+        <text x="405" y="353" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600" font-family="system-ui,sans-serif">6-Stage Pipeline</text>
+        <text x="405" y="368" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">Claude AI + web search</text>
+        <line x1="470" y1="357" x2="498" y2="357" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+        <rect x="500" y="332" width="110" height="50" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+        <text x="555" y="353" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600" font-family="system-ui,sans-serif">Structured</text>
+        <text x="555" y="368" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">Report</text>
+        <line x1="610" y1="357" x2="638" y2="357" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+        <rect x="640" y="332" width="180" height="50" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-width="1"/>
+        <text x="730" y="348" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600" font-family="system-ui,sans-serif">Export &amp; Attorney</text>
+        <text x="730" y="363" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">HTML / Word / Markdown</text>
+        <text x="730" y="376" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">→ take to your attorney</text>
+      </svg>
+    </div>
+
+    <!-- Service details -->
+    <div class="arch-details">
+      <div class="arch-card">
+        <h4>React Frontend</h4>
+        <div class="port">:8080</div>
+        <p>Invention intake form, real-time streaming output, stage progress indicators, report viewer with export buttons.</p>
+        <div class="tech">React 18 &bull; TypeScript &bull; Vite &bull; Tailwind CSS</div>
+      </div>
+      <div class="arch-card">
+        <h4>NestJS Backend</h4>
+        <div class="port">:3000</div>
+        <p>Project CRUD, settings management, feasibility run tracking, SSE event forwarding, prior art search via PatentsView API, Word export generation.</p>
+        <div class="tech">NestJS &bull; Prisma ORM &bull; SQLite (dev) / PostgreSQL (Docker)</div>
+      </div>
+      <div class="arch-card">
+        <h4>Feasibility Service</h4>
+        <div class="port">:3001</div>
+        <p>6-stage sequential AI analysis pipeline. Each stage uses a markdown prompt template with the Anthropic Claude API. Streams tokens in real time via SSE.</p>
+        <div class="tech">Express &bull; Anthropic SSE &bull; 6 prompt templates (CC BY-SA 4.0)</div>
+      </div>
+    </div>
+
+    <div class="arch-ext">
+      <div class="arch-ext-item">
+        <h5>Anthropic Claude API</h5>
+        <p>LLM processing + web search</p>
+      </div>
+      <div class="arch-ext-item">
+        <h5>PatentsView API</h5>
+        <p>USPTO patent database search</p>
+      </div>
+      <div class="arch-ext-item">
+        <h5>LiteLLM Pricing</h5>
+        <p>Dynamic model cost estimation</p>
+      </div>
+    </div>
   </section>
 
   <section class="links">
