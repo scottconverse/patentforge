@@ -369,10 +369,14 @@ export default function ProjectDetail() {
     setViewMode('running');
 
     try {
+      if (!appSettings.defaultModel) {
+        throw new Error('No AI model configured. Go to Settings and select a default model before running analysis.');
+      }
+
       // Map AppSettings → AnalysisSettings (feasibility service field names)
       // API key is NOT sent from the frontend — the backend injects it server-side
       const settings = {
-        model: appSettings.defaultModel || 'claude-haiku-4-5-20251001',
+        model: appSettings.defaultModel,
         researchModel: appSettings.researchModel || undefined,
         maxTokens: appSettings.maxTokens || 32000,
         interStageDelaySeconds: appSettings.interStageDelaySeconds ?? 5,

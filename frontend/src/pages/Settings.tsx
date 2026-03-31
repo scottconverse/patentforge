@@ -3,6 +3,7 @@ import { api } from '../api';
 import { AppSettings } from '../types';
 
 const MODELS = [
+  { value: '', label: '— Select a model —' },
   { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
   { value: 'claude-opus-4-20250514', label: 'Claude Opus 4' },
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
@@ -17,7 +18,7 @@ const RESEARCH_MODELS = [
 export default function Settings() {
   const [settings, setSettings] = useState<Partial<AppSettings>>({
     anthropicApiKey: '',
-    defaultModel: 'claude-haiku-4-5-20251001',
+    defaultModel: '',
     researchModel: '',
     maxTokens: 16000,
     interStageDelaySeconds: 2,
