@@ -140,6 +140,10 @@ All settings are configurable via the Settings page in the UI:
 
 For network deployments, set the `PATENTFORGE_TOKEN` environment variable to require Bearer token auth on all API requests. When not set, auth is disabled (single-user local mode).
 
+### Internal Service Security
+
+The feasibility service (port 3001) and claim-drafter service (port 3002) are internal-only — the frontend communicates through the NestJS backend, which proxies SSE streams. Set `INTERNAL_SERVICE_SECRET` to require a shared secret header on all internal service calls. In Docker, this is configured automatically. In local dev, it's optional.
+
 ## Roadmap
 
 - [x] **v0.1** — 6-stage AI analysis pipeline with streaming

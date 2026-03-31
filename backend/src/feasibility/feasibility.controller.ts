@@ -11,9 +11,12 @@ import {
   Res,
   BadRequestException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { FeasibilityService } from './feasibility.service';
 import { SettingsService } from '../settings/settings.service';
+
+const FEASIBILITY_URL = process.env.FEASIBILITY_URL || 'http://localhost:3001';
+const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
 import { PriorArtService } from '../prior-art/prior-art.service';
 import { PatchStageDto } from './dto/patch-stage.dto';
 import { PatchRunDto } from './dto/patch-run.dto';
@@ -116,6 +119,60 @@ export class FeasibilityController {
     }
 
     return { ...result, costCapExceeded, cumulativeCost, costCapUsd };
+  }
+
+  /**
+   * SSE proxy — forwards the analysis request to the feasibility service
+   * and streams the response back to the browser. This keeps the feasibility
+   * service internal (not directly reachable from the browser).
+   */
+  @Post('stream')
+  async streamAnalysis(
+    @Param('id') projectId: string,
+    @Body() body: any,
+    @Res() res: Response,
+  ) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (INTERNAL_SECRET) {
+      headers['X-Internal-Secret'] = INTERNAL_SECRET;
+    }
+
+    try {
+      const upstream = await fetch(`${FEASIBILITY_URL}/analyze`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      if (!upstream.ok) {
+        const text = await upstream.text();
+        res.status(upstream.status).json({ error: text });
+        return;
+      }
+
+      // Set SSE headers and pipe the upstream response body through
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+
+      const reader = (upstream.body as any).getReader();
+      const decoder = new TextDecoder();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(decoder.decode(value, { stream: true }));
+        }
+      } catch {
+        // Client disconnected or upstream closed
+      } finally {
+        res.end();
+      }
+    } catch (err: any) {
+      res.status(502).json({ error: `Feasibility service unavailable: ${err.message}` });
+    }
   }
 
   @Post('rerun')

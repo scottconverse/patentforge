@@ -9,16 +9,33 @@ Endpoints:
 from __future__ import annotations
 import json
 import hashlib
+import os
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from sse_starlette.sse import EventSourceResponse
 
 from .models import ClaimDraftRequest, ClaimDraftResult
 from .graph import run_claim_pipeline
 
 app = FastAPI(title="PatentForge Claim Drafter", version="0.4.0")
+
+# Internal service auth — only the NestJS backend should call this service.
+# Set INTERNAL_SERVICE_SECRET env var to enable. When not set, auth is disabled (dev mode).
+INTERNAL_SECRET = os.environ.get("INTERNAL_SERVICE_SECRET", "")
+
+api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
+
+
+async def verify_internal_secret(key: str | None = Depends(api_key_header)):
+    """Reject requests without valid internal secret (when secret is configured)."""
+    if not INTERNAL_SECRET:
+        return  # Auth disabled in dev mode
+    if key != INTERNAL_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid or missing internal service secret")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,7 +70,7 @@ async def health():
 
 # ── Claim drafting endpoint ──────────────────────────────────────────────────
 
-@app.post("/draft")
+@app.post("/draft", dependencies=[Depends(verify_internal_secret)])
 async def draft_claims(request: ClaimDraftRequest):
     """
     Run the claim drafting pipeline. Returns SSE stream with progress events.
@@ -109,7 +126,7 @@ async def draft_claims(request: ClaimDraftRequest):
 
 # ── Synchronous draft endpoint (for simpler integration) ─────────────────────
 
-@app.post("/draft/sync", response_model=ClaimDraftResult)
+@app.post("/draft/sync", response_model=ClaimDraftResult, dependencies=[Depends(verify_internal_secret)])
 async def draft_claims_sync(request: ClaimDraftRequest):
     """
     Run the claim drafting pipeline synchronously. Returns the complete result.
@@ -139,4 +156,7 @@ async def draft_claims_sync(request: ClaimDraftRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=3002)
+    # Bind to localhost only in local mode. Docker overrides via Dockerfile CMD.
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "3002"))
+    uvicorn.run(app, host=host, port=port)

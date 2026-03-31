@@ -44,26 +44,28 @@ services:
     environment:
       DATABASE_URL: postgresql://patentforge:patentforge@postgres:5432/patentforge
       FEASIBILITY_URL: http://feasibility:3001
+      CLAIM_DRAFTER_URL: http://claim-drafter:3002
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
       NODE_ENV: production
     restart: unless-stopped
 
   feasibility:
     build: ./services/feasibility
-    ports:
-      - "3001:3001"
+    # No external port — only reachable by backend within the Docker network
     environment:
       PORT: 3001
       NODE_ENV: production
-      # Pass host ANTHROPIC_API_KEY into container if set (optional — can also be set via Settings UI)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
   claim-drafter:
     build: ./services/claim-drafter
-    ports:
-      - "3002:3002"
+    # No external port — only reachable by backend within the Docker network
     environment:
       PORT: 3002
+      HOST: "0.0.0.0"
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
     restart: unless-stopped
 
   frontend:

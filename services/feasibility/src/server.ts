@@ -11,13 +11,27 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// ── Health check ──────────────────────────────────────────────────────────────
+// Internal service auth — set INTERNAL_SERVICE_SECRET to require it.
+// When not set, auth is disabled (dev mode / backward compatible).
+const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
+
+function requireInternalSecret(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!INTERNAL_SECRET) return next(); // Auth disabled
+  const provided = req.headers['x-internal-secret'];
+  if (provided !== INTERNAL_SECRET) {
+    res.status(403).json({ error: 'Invalid or missing internal service secret' });
+    return;
+  }
+  next();
+}
+
+// ── Health check (no auth — used for Docker health checks) ───────────────────
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'patentforge-feasibility', promptHashes: getPromptHashes() });
 });
 
-// ── Main analysis endpoint — SSE stream ───────────────────────────────────────
-app.post('/analyze', async (req, res) => {
+// ── Main analysis endpoint — SSE stream (requires internal auth) ─────────────
+app.post('/analyze', requireInternalSecret, async (req, res) => {
   const { inventionNarrative, settings, priorArtContext, startFromStage, previousOutputs } = req.body as {
     inventionNarrative: string;
     settings: AnalysisSettings;

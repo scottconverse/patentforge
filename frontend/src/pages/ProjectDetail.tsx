@@ -441,7 +441,8 @@ export default function ProjectDetail() {
       const abortController = new AbortController();
       abortRef.current = abortController;
 
-      const response = await fetch('http://localhost:3001/analyze', {
+      // SSE stream proxied through the backend — feasibility service is internal-only
+      const response = await fetch(`/api/projects/${id}/feasibility/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

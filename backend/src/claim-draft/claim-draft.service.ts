@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 
 const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:3002';
+const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
 
 @Injectable()
 export class ClaimDraftService {
@@ -146,9 +147,14 @@ export class ClaimDraftService {
    * Call the Python claim-drafter service and save results.
    */
   private async callClaimDrafter(draftId: string, requestBody: any) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (INTERNAL_SECRET) {
+      headers['X-Internal-Secret'] = INTERNAL_SECRET;
+    }
+
     const res = await fetch(`${CLAIM_DRAFTER_URL}/draft/sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(300_000), // 5-minute timeout
     });

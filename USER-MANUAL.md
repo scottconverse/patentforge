@@ -295,9 +295,10 @@ Try refreshing the page (F5 or Ctrl+R). If a pipeline was running when the page 
 
 ### I can't connect to http://localhost:8080
 
-Make sure all three services are running:
+Make sure all four services are running:
 - Backend on port 3000
 - Feasibility service on port 3001
+- Claim drafter on port 3002
 - Frontend on port 8080
 
 If you used `PatentForge.bat`, check that the terminal windows are open and not showing errors.
