@@ -60,6 +60,14 @@ export const api = {
     getClaims: (patentNumber: string) =>
       req<{ claimsText: string | null; claimCount: number | null }>('GET', `/patents/${patentNumber}/claims`),
   },
+  claimDraft: {
+    start: (projectId: string) => req<any>('POST', `/projects/${projectId}/claims/draft`),
+    getLatest: (projectId: string) => req<any>('GET', `/projects/${projectId}/claims`),
+    getVersion: (projectId: string, version: number) =>
+      req<any>('GET', `/projects/${projectId}/claims/${version}`),
+    updateClaim: (projectId: string, claimId: string, text: string) =>
+      req<any>('PUT', `/projects/${projectId}/claims/edit/${claimId}`, { text }),
+  },
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),

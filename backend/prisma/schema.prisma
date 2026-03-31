@@ -96,15 +96,18 @@ model PriorArtResult {
 }
 
 model ClaimDraft {
-  id          String   @id @default(uuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  version     Int
-  status      String   @default("PENDING")
-  startedAt   DateTime?
-  completedAt DateTime?
-  claims      Claim[]
-  specLanguage String?
+  id               String   @id @default(uuid())
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version          Int
+  status           String   @default("PENDING")
+  startedAt        DateTime?
+  completedAt      DateTime?
+  claims           Claim[]
+  specLanguage     String?
+  plannerStrategy  String?
+  examinerFeedback String?
+  revisionNotes    String?
 }
 
 model Claim {
@@ -113,8 +116,11 @@ model Claim {
   draft             ClaimDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
   claimNumber       Int
   claimType         String
+  scopeLevel        String?
+  statutoryType     String?
   parentClaimNumber Int?
   text              String
+  examinerNotes     String     @default("")
 }
 
 model ComplianceCheck {

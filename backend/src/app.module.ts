@@ -5,8 +5,9 @@ import { FeasibilityModule } from './feasibility/feasibility.module';
 import { SettingsModule } from './settings/settings.module';
 import { PriorArtModule } from './prior-art/prior-art.module';
 import { PatentDetailModule } from './patent-detail/patent-detail.module';
+import { ClaimDraftModule } from './claim-draft/claim-draft.module';
 
 @Module({
-  imports: [PrismaModule, ProjectsModule, FeasibilityModule, SettingsModule, PriorArtModule, PatentDetailModule],
+  imports: [PrismaModule, ProjectsModule, FeasibilityModule, SettingsModule, PriorArtModule, PatentDetailModule, ClaimDraftModule],
 })
 export class AppModule {}
