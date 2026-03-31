@@ -9,11 +9,18 @@ import * as os from 'os';
 import { marked } from 'marked';
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, LevelFormat, AlignmentType } from 'docx';
 
-function resolveExportDir(customExportPath?: string): string {
-  if (customExportPath && customExportPath.trim()) {
-    return customExportPath.trim();
-  }
+export function resolveExportDir(customExportPath?: string): string {
   const home = os.homedir();
+
+  if (customExportPath && customExportPath.trim()) {
+    const resolved = path.resolve(customExportPath.trim());
+    // Prevent path traversal — export must be within user's home directory
+    if (!resolved.startsWith(home + path.sep) && resolved !== home) {
+      throw new Error(`Export path must be within your home directory (${home}). Got: ${resolved}`);
+    }
+    return resolved;
+  }
+
   const oneDriveDesktop = path.join(home, 'OneDrive', 'Desktop');
   const regularDesktop = path.join(home, 'Desktop');
   return fs.existsSync(oneDriveDesktop) ? oneDriveDesktop : regularDesktop;
