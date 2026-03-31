@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API key encryption at rest** — Anthropic and USPTO API keys are now encrypted with AES-256-GCM using a machine-derived key (hostname + platform + username) before storage in SQLite. Plaintext keys never hit disk. Backward-compatible with existing unencrypted values.
 - **GitHub Actions CI** — automated test pipeline runs backend (Jest) and frontend (Vitest) tests plus a full build check on every push and PR to master
 - **Optional Bearer token auth** — set `PATENTFORGE_TOKEN` environment variable to require `Authorization: Bearer <token>` on all API requests. Disabled by default for backward compatibility with single-user deployments.
-- **187 automated tests** — 135 backend (Jest, incl. 18 doc/version audit) + 31 frontend (Vitest) + 21 E2E (Playwright)
+- **191 automated tests** — 139 backend (Jest, incl. 22 doc/version audit) + 31 frontend (Vitest) + 21 E2E (Playwright)
 
 ### Security
 - API keys encrypted at rest with AES-256-GCM (machine-derived key)

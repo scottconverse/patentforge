@@ -111,4 +111,24 @@ describe('Documentation Currency', () => {
   it('.github/workflows/ci.yml exists', () => {
     expect(fileExists('.github/workflows/ci.yml')).toBe(true);
   });
+
+  it('docs/index.html contains current version number', () => {
+    const html = readFile('docs/index.html');
+    expect(html).toContain(`v${CURRENT_VERSION}`);
+  });
+
+  it('docs/index.html mentions API key encryption', () => {
+    const html = readFile('docs/index.html');
+    expect(html).toContain('encrypt');
+  });
+
+  it('docs/index.html mentions claims', () => {
+    const html = readFile('docs/index.html');
+    expect(html.toLowerCase()).toContain('claims');
+  });
+
+  it('DISCUSSIONS-SEED.md references current version', () => {
+    const seed = readFile('DISCUSSIONS-SEED.md');
+    expect(seed).toContain(`v${CURRENT_VERSION}`);
+  });
 });

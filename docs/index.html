@@ -213,24 +213,32 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <p>6-stage AI pipeline restates your invention in patent terminology, searches for related art, identifies potential issues, and organizes findings into a structured report.</p>
       </div>
       <div class="feature-card">
-        <h3>Prior Art Discovery</h3>
-        <p>Automated patent search via USPTO Open Data Portal with improved relevance scoring. Lazy-load actual patent claims text on demand. Results feed directly into the analysis.</p>
+        <h3>Prior Art &amp; Claims Discovery</h3>
+        <p>Automated patent search via USPTO Open Data Portal with stop-word filtering and title-weighted scoring. Lazy-load actual patent claims text from the USPTO Documents API on demand.</p>
       </div>
       <div class="feature-card">
         <h3>Real-Time Streaming</h3>
-        <p>Watch the AI write its findings in real time. Stage progress indicators show exactly where you are in the pipeline.</p>
+        <p>Watch the AI write its findings in real time. Stage progress indicators show exactly where you are in the pipeline. Re-run individual stages without restarting.</p>
       </div>
       <div class="feature-card">
         <h3>Cost Transparency</h3>
-        <p>See the estimated API cost before you run. Dynamic pricing from LiteLLM. Per-stage token tracking after completion.</p>
+        <p>Pre-run cost estimate with configurable cost cap. Per-stage token tracking after completion. Choose cheaper models for research stages.</p>
       </div>
       <div class="feature-card">
-        <h3>Self-Hosted &amp; Private</h3>
-        <p>Runs entirely on your machine. Invention data stays local except for the Anthropic API call. Critical for pre-filing confidentiality.</p>
+        <h3>Self-Hosted &amp; Secure</h3>
+        <p>Runs on your machine. API keys encrypted at rest (AES-256-GCM). Optional Bearer token auth for network deployments. Invention data stays local.</p>
       </div>
       <div class="feature-card">
         <h3>Attorney-Ready Exports</h3>
-        <p>Download findings as styled HTML, Word (.docx), or Markdown. Bring structured research to your first attorney meeting instead of loose notes.</p>
+        <p>Download findings as styled HTML, Word (.docx with full formatting), or Markdown. CSV export for prior art results. Bring structured research to your first attorney meeting.</p>
+      </div>
+      <div class="feature-card">
+        <h3>187 Automated Tests</h3>
+        <p>Jest backend tests, Vitest component tests, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Prompt Integrity</h3>
+        <p>SHA-256 hashes of all AI prompt files verified at startup. Drift detection warns if prompts are modified. Prompts licensed CC BY-SA 4.0 so disclaimers survive forks.</p>
       </div>
     </div>
   </section>
@@ -276,6 +284,23 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       <strong>Legal guardrails built in:</strong> first-run clickwrap agreement, API key usage disclosure,
       embedded disclaimers on every stage output, and persistent disclaimer watermarks on every
       generated report. See <a href="https://github.com/scottconverse/patentforge/blob/master/LEGAL_NOTICE.md">LEGAL_NOTICE.md</a> for full details.
+    </div>
+  </section>
+
+  <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.3.4</h3>
+      <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
+        <li>Patent claims lazy-loading from USPTO Documents API (v0.3.2)</li>
+        <li>Playwright E2E browser tests with screenshots and console checks (v0.3.3)</li>
+        <li>DOCX export: italic, inline code, numbered lists, nested bullets (v0.3.3)</li>
+        <li>API key encryption at rest with AES-256-GCM (v0.3.4)</li>
+        <li>Prior art scoring: stop-word filtering, title weighting (v0.3.4)</li>
+        <li>GitHub Actions CI pipeline (v0.3.4)</li>
+        <li>Optional Bearer token authentication for network deployments (v0.3.4)</li>
+        <li>187 automated tests across 3 layers</li>
+      </ul>
+      <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
   </section>
 
