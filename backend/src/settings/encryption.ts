@@ -11,13 +11,49 @@
 
 import * as crypto from 'crypto';
 import * as os from 'os';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
-const SALT = 'patentforge-key-v1'; // Fixed salt — key derivation is deterministic per machine
 
-/** Derive a 256-bit encryption key from machine-specific values. */
+/**
+ * Get or generate a random salt for key derivation.
+ * Stored in a file alongside the database (prisma/prisma/.encryption-salt).
+ * Generated once on first run — unique per installation.
+ */
+function getOrCreateSalt(): string {
+  const saltDir = path.resolve(__dirname, '..', '..', 'prisma', 'prisma');
+  const saltFile = path.join(saltDir, '.encryption-salt');
+
+  try {
+    if (fs.existsSync(saltFile)) {
+      return fs.readFileSync(saltFile, 'utf-8').trim();
+    }
+  } catch {
+    // File doesn't exist or unreadable — generate new salt
+  }
+
+  const salt = crypto.randomBytes(32).toString('hex');
+  try {
+    if (!fs.existsSync(saltDir)) {
+      fs.mkdirSync(saltDir, { recursive: true });
+    }
+    fs.writeFileSync(saltFile, salt, 'utf-8');
+  } catch {
+    // Can't write salt file — fall back to deterministic salt
+    // This happens in Docker or read-only filesystems
+    console.warn('[Encryption] Could not write salt file — using deterministic salt');
+    return `patentforge-${os.hostname()}-${os.platform()}`;
+  }
+
+  return salt;
+}
+
+const SALT = getOrCreateSalt();
+
+/** Derive a 256-bit encryption key from machine-specific values + random salt. */
 function deriveKey(): Buffer {
   const material = `${os.hostname()}:${os.platform()}:${os.userInfo().username}:${SALT}`;
   return crypto.pbkdf2Sync(material, SALT, 100_000, 32, 'sha256');
