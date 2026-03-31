@@ -95,6 +95,9 @@ async def draft_claims(request: ClaimDraftRequest):
             part += f"\nClaims:\n{pa.claims_text[:2000]}"
         prior_art_parts.append(part)
     prior_art_context = "\n\n".join(prior_art_parts) if prior_art_parts else "(No prior art results available)"
+    # Cap total context size to prevent oversized prompts
+    if len(prior_art_context) > 50_000:
+        prior_art_context = prior_art_context[:50_000] + "\n\n(truncated — prior art context exceeds 50K characters)"
 
     async def event_stream():
         steps_seen = []
@@ -150,6 +153,9 @@ async def draft_claims_sync(request: ClaimDraftRequest):
             part += f"\nClaims:\n{pa.claims_text[:2000]}"
         prior_art_parts.append(part)
     prior_art_context = "\n\n".join(prior_art_parts) if prior_art_parts else "(No prior art results available)"
+    # Cap total context size to prevent oversized prompts
+    if len(prior_art_context) > 50_000:
+        prior_art_context = prior_art_context[:50_000] + "\n\n(truncated — prior art context exceeds 50K characters)"
 
     return await run_claim_pipeline(
         invention_narrative=request.invention_narrative,

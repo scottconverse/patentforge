@@ -29,10 +29,10 @@ class DraftSettings(BaseModel):
 
 class ClaimDraftRequest(BaseModel):
     """Input to the claim drafting pipeline."""
-    invention_narrative: str
-    feasibility_stage_5: str = ""
-    feasibility_stage_6: str = ""
-    prior_art_results: list[PriorArtItem] = Field(default_factory=list)
+    invention_narrative: str = Field(max_length=100_000)
+    feasibility_stage_5: str = Field(default="", max_length=200_000)
+    feasibility_stage_6: str = Field(default="", max_length=200_000)
+    prior_art_results: list[PriorArtItem] = Field(default_factory=list, max_length=20)
     settings: DraftSettings
 
 

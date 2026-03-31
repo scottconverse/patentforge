@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Per-installation encryption salt** (#11) — PBKDF2 salt stored in the `AppSettings.encryptionSalt` database column (generated on first run), replacing the hardcoded constant. Salt travels with the database on backup/restore.
 - **No silent model defaults** (#12) — removed inconsistent model fallbacks across three services. Feasibility service returns 400 if model is missing. Prisma default is empty string. Frontend requires explicit model selection before running analysis.
 - **LangGraph dict/Pydantic crash** — `run_claim_pipeline` now handles dict state from LangGraph's `astream` correctly, fixing a crash on every real pipeline call.
+- **Claim-drafter added to CI** (#13) — pytest job runs on every push/PR; build job verifies pip install.
+- **Playwright E2E added to CI** (#14) — browser tests run against the full stack on every push/PR, with artifact upload on failure.
+- **DTO validation for startRun and rerunFromStage** (#15) — `StartRunDto` caps narrative at 50K chars, `RerunFromStageDto` validates stage number 1-6.
+- **Prior art context size limits** (#16) — `ClaimDraftRequest` caps `prior_art_results` at 20 items, all text fields have `max_length` constraints, built context string capped at 50K chars.
 
 ### Security
 - All claim drafting prompts licensed CC BY-SA 4.0 (disclaimers survive forks)
