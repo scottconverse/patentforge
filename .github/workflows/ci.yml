@@ -83,3 +83,42 @@ jobs:
 
       - name: Install claim-drafter dependencies (verify pip install works)
         run: cd services/claim-drafter && pip install .
+
+  e2e-tests:
+    name: Browser E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install all Node dependencies
+        run: |
+          cd backend && npm ci && cd ..
+          cd services/feasibility && npm ci && cd ../..
+          cd frontend && npm ci
+
+      - name: Set up database
+        run: |
+          echo 'DATABASE_URL="file:./prisma/dev.db"' > backend/.env
+          cd backend && npx prisma migrate deploy && npx prisma generate
+
+      - name: Build services
+        run: |
+          cd backend && npm run build
+          cd ../services/feasibility && npm run build
+
+      - name: Install Playwright Chromium
+        run: cd frontend && npx playwright install chromium --with-deps
+
+      - name: Run Playwright E2E tests
+        run: cd frontend && npx playwright test --reporter=list
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: frontend/e2e-results/
