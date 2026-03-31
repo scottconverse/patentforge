@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { fetchEnrichedPatent } from './patentsview-enrichment';
 import { fetchEnrichedPatentODP } from './odp-enrichment';
+import { fetchClaimsFromODP } from './odp-claims';
 
 const CACHE_TTL_DAYS = 30;
 
@@ -70,6 +71,8 @@ export class PatentDetailService {
 
   /**
    * Get just the claims text for a patent (lazy-loaded by frontend).
+   * Tries cache first, then fetches from ODP Documents API if a
+   * USPTO API key is configured. Without a key, returns null claims.
    */
   async getClaims(patentNumber: string) {
     // Try cache first
@@ -82,9 +85,25 @@ export class PatentDetailService {
       return { claimsText: cached.claimsText, claimCount: cached.claimCount };
     }
 
-    // Fetch if not cached
-    const detail = await this.getDetail(patentNumber);
-    return { claimsText: detail.claimsText, claimCount: detail.claimCount };
+    // Fetch from ODP Documents API if key is available
+    const settings = await this.settingsService.getSettings();
+    if (settings.usptoApiKey) {
+      const result = await fetchClaimsFromODP(patentNumber, settings.usptoApiKey);
+      if (result) {
+        // Cache the claims for future requests
+        await this.prisma.patentDetail.updateMany({
+          where: { patentNumber },
+          data: {
+            claimsText: result.claimsText,
+            claimCount: result.claimCount,
+          },
+        });
+        return { claimsText: result.claimsText, claimCount: result.claimCount };
+      }
+    }
+
+    // No key or fetch failed — return null claims
+    return { claimsText: null, claimCount: null };
   }
 
   /**

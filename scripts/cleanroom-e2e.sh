@@ -55,10 +55,11 @@ trap cleanup EXIT
 # ============================================================================
 log "=== Phase 1: Nuke database and fresh install ==="
 
-# Remove SQLite DB
-if [ -f "$BACKEND/prisma/dev.db" ]; then
-  rm -f "$BACKEND/prisma/dev.db"
-  rm -f "$BACKEND/prisma/dev.db-journal"
+# Remove SQLite DB (Prisma resolves file:./prisma/dev.db relative to schema dir → prisma/prisma/dev.db)
+DB_PATH="$BACKEND/prisma/prisma/dev.db"
+if [ -f "$DB_PATH" ]; then
+  rm -f "$DB_PATH"
+  rm -f "${DB_PATH}-journal"
   pass "Deleted existing dev.db"
 else
   pass "No existing dev.db (clean state)"
@@ -87,7 +88,7 @@ npx prisma generate 2>&1 | tail -1
 pass "Prisma generate"
 
 # Verify DB was created
-if [ -f "$BACKEND/prisma/dev.db" ]; then
+if [ -f "$BACKEND/prisma/prisma/dev.db" ]; then
   pass "dev.db created by migration"
 else
   fail "dev.db NOT created after migration"
@@ -137,7 +138,8 @@ echo "$JEST_OUTPUT"
 
 if [ $JEST_EXIT -eq 0 ]; then
   # Extract test count from Jest output
-  TEST_COUNT=$(echo "$JEST_OUTPUT" | grep -oP 'Tests:\s+\K\d+ passed' | head -1 || echo "unknown")
+  TEST_COUNT=$(echo "$JEST_OUTPUT" | sed -n 's/.*Tests:\s*\([0-9]* passed\).*/\1/p' | head -1)
+  TEST_COUNT=${TEST_COUNT:-unknown}
   pass "Backend tests: $TEST_COUNT"
 else
   fail "Backend tests FAILED (exit code $JEST_EXIT)"
@@ -220,7 +222,7 @@ fi
 PROJECT_JSON=$(curl -s -X POST http://localhost:3000/projects \
   -H "Content-Type: application/json" \
   -d '{"title":"E2E Test Project"}')
-PROJECT_ID=$(echo "$PROJECT_JSON" | grep -oP '"id"\s*:\s*"\K[^"]+' | head -1)
+PROJECT_ID=$(echo "$PROJECT_JSON" | sed -n 's/.*"id"\s*:\s*"\([^"]*\)".*/\1/p' | head -1)
 
 if [ -n "$PROJECT_ID" ]; then
   pass "POST /projects → created (id=$PROJECT_ID)"

@@ -12,6 +12,11 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showClaims, setShowClaims] = useState(false);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const [claimsError, setClaimsError] = useState<string | null>(null);
+  const [lazyClaimsText, setLazyClaimsText] = useState<string | null>(null);
+  const [lazyClaimCount, setLazyClaimCount] = useState<number | null>(null);
+  const claimsFetchedRef = useRef(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,6 +29,11 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
     setLoading(true);
     setError(null);
     setShowClaims(false);
+    setClaimsLoading(false);
+    setClaimsError(null);
+    setLazyClaimsText(null);
+    setLazyClaimCount(null);
+    claimsFetchedRef.current = false;
     api.patents.getDetail(patentNumber)
       .then(d => { setDetail(d); setLoading(false); })
       .catch(err => { setError(err.message); setLoading(false); });
@@ -180,22 +190,60 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                 </div>
               )}
 
-              {/* Claims (collapsible) */}
+              {/* Claims (collapsible, lazy-loaded from ODP Documents API) */}
               <div>
                 <button
-                  onClick={() => setShowClaims(!showClaims)}
+                  onClick={() => {
+                    const willShow = !showClaims;
+                    setShowClaims(willShow);
+                    // Lazy-fetch claims when expanding if not already loaded
+                    if (willShow && !detail.claimsText && !lazyClaimsText && !claimsFetchedRef.current) {
+                      claimsFetchedRef.current = true;
+                      setClaimsLoading(true);
+                      setClaimsError(null);
+                      api.patents.getClaims(patentNumber!)
+                        .then(res => {
+                          setLazyClaimsText(res.claimsText);
+                          setLazyClaimCount(res.claimCount);
+                          setClaimsLoading(false);
+                        })
+                        .catch(err => {
+                          setClaimsError(err.message);
+                          setClaimsLoading(false);
+                        });
+                    }
+                  }}
                   className="flex items-center gap-2 text-sm font-semibold text-gray-200 hover:text-blue-300 transition-colors"
                 >
                   <span className={`transform transition-transform ${showClaims ? 'rotate-90' : ''}`}>&#9654;</span>
-                  Claims {detail.claimCount != null && `(${detail.claimCount})`}
+                  Claims {(detail.claimCount ?? lazyClaimCount) != null && `(${detail.claimCount ?? lazyClaimCount})`}
                 </button>
                 {showClaims && (
                   <div className="mt-2 pl-4 border-l-2 border-gray-700">
-                    {detail.claimsText ? (
+                    {claimsLoading && (
+                      <div className="flex items-center gap-2 py-2">
+                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-gray-400">Loading claims from USPTO...</span>
+                      </div>
+                    )}
+                    {claimsError && (
+                      <p className="text-xs text-amber-400">
+                        Could not load claims.{' '}
+                        <a
+                          href={`https://patents.google.com/patent/${patentNumber}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          View on Google Patents
+                        </a>
+                      </p>
+                    )}
+                    {(detail.claimsText || lazyClaimsText) ? (
                       <pre className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap font-sans">
-                        {detail.claimsText}
+                        {detail.claimsText || lazyClaimsText}
                       </pre>
-                    ) : (
+                    ) : (!claimsLoading && !claimsError) ? (
                       <p className="text-xs text-gray-500 italic">
                         Claims text not available.{' '}
                         <a
@@ -207,7 +255,7 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                           View on Google Patents
                         </a>
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>

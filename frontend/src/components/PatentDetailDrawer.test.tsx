@@ -162,9 +162,15 @@ describe('PatentDetailDrawer', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('handles patent with no claims text gracefully', async () => {
+  it('lazy-loads claims from API when detail has no claimsText', async () => {
     const noClaimsDetail = { ...mockDetail, claimsText: null, claimCount: null };
     (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(noClaimsDetail);
+
+    // getClaims returns successfully after delay
+    (api.patents.getClaims as ReturnType<typeof vi.fn>).mockResolvedValue({
+      claimsText: '1. A lazy-loaded claim.',
+      claimCount: 1,
+    });
 
     render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
 
@@ -172,11 +178,107 @@ describe('PatentDetailDrawer', () => {
       expect(screen.getByText(/Claims/)).toBeInTheDocument();
     });
 
-    // Expand claims
+    // Expand claims — should trigger lazy fetch
     fireEvent.click(screen.getByText(/Claims/));
 
-    expect(screen.getByText(/Claims text not available/)).toBeInTheDocument();
+    // Should show loading spinner
+    expect(screen.getByText(/Loading claims from USPTO/)).toBeInTheDocument();
+
+    // Wait for claims to load
+    await waitFor(() => {
+      expect(screen.getByText('1. A lazy-loaded claim.')).toBeInTheDocument();
+    });
+
+    // getClaims should have been called
+    expect(api.patents.getClaims).toHaveBeenCalledWith('US10234567B2');
+  });
+
+  it('shows fallback link when lazy-load returns null claims', async () => {
+    const noClaimsDetail = { ...mockDetail, claimsText: null, claimCount: null };
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(noClaimsDetail);
+
+    (api.patents.getClaims as ReturnType<typeof vi.fn>).mockResolvedValue({
+      claimsText: null,
+      claimCount: null,
+    });
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Claims/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/Claims/));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Claims text not available/)).toBeInTheDocument();
+    });
     expect(screen.getByText(/View on Google Patents/)).toBeInTheDocument();
+  });
+
+  it('shows error state when lazy-load fails', async () => {
+    const noClaimsDetail = { ...mockDetail, claimsText: null, claimCount: null };
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(noClaimsDetail);
+
+    (api.patents.getClaims as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('API error 500: Internal error'),
+    );
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Claims/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/Claims/));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Could not load claims/)).toBeInTheDocument();
+    });
+  });
+
+  it('does not re-fetch claims when collapsing and re-expanding', async () => {
+    const noClaimsDetail = { ...mockDetail, claimsText: null, claimCount: null };
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(noClaimsDetail);
+
+    (api.patents.getClaims as ReturnType<typeof vi.fn>).mockResolvedValue({
+      claimsText: '1. Claim text.',
+      claimCount: 1,
+    });
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Claims/)).toBeInTheDocument();
+    });
+
+    // Expand → fetch
+    fireEvent.click(screen.getByText(/Claims/));
+    await waitFor(() => {
+      expect(screen.getByText('1. Claim text.')).toBeInTheDocument();
+    });
+
+    // Collapse
+    fireEvent.click(screen.getByText(/Claims/));
+
+    // Re-expand — should NOT re-fetch
+    fireEvent.click(screen.getByText(/Claims/));
+    expect(api.patents.getClaims).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips lazy-load when detail already has claimsText', async () => {
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(mockDetail);
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Claims/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/Claims/));
+
+    expect(screen.getByText('1. A method comprising: step a; step b.')).toBeInTheDocument();
+    expect(api.patents.getClaims).not.toHaveBeenCalled();
   });
 
   it('shows CPC overflow indicator when more than 8 classifications', async () => {

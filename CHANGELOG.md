@@ -5,6 +5,19 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-03-31
+
+### Added
+- **Lazy-load patent claims from USPTO** — when you expand the Claims section in the Patent Detail drawer and have a USPTO API key configured, PatentForge now fetches the actual patent claims text from the ODP Documents API
+- **ODP Documents API client** — fetches the file wrapper documents list, finds the most recent CLM (Claims) XML document, downloads and extracts the tar archive, and parses ST96 XML to extract active (non-canceled) claims
+- **Claims loading spinner** — shows a spinner with "Loading claims from USPTO..." while fetching, gracefully falls back to "View on Google Patents" link on error or when no key is configured
+- **Claims caching** — once fetched, claims are cached locally and reused on subsequent views without additional API calls
+- **110 automated tests** — 79 backend (Jest) + 31 frontend (Vitest), up from 86 in v0.3.1
+
+### Changed
+- Claims section in Patent Detail drawer is now lazy-loaded on-demand rather than fetched with initial patent detail (reduces API calls — user's key, user's quota)
+- `getClaims` API endpoint now fetches from ODP Documents API when cached claims are unavailable and a USPTO key is configured
+
 ## [0.3.1] - 2026-03-31
 
 ### Added

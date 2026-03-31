@@ -180,7 +180,7 @@ When prior art results are available, click any patent card to open a **detail d
 - **Assignee(s)** — who owns the patent
 - **Inventor(s)**
 - **CPC classifications** — the patent categories assigned by the patent office
-- **Full claims text** — expandable section showing all patent claims
+- **Full claims text** — expandable section showing all patent claims. If you have a USPTO API key configured in Settings, clicking the Claims section will fetch the actual patent claims text from the USPTO. A loading spinner appears while the claims are being retrieved. Once loaded, claims are cached locally so they appear instantly on subsequent views. Without a USPTO key, a "View on Google Patents" link is shown instead.
 
 If the patent data service is unavailable, the drawer will show a message with a link to view the patent directly on Google Patents.
 
