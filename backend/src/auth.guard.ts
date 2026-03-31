@@ -10,6 +10,7 @@
 
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -20,6 +21,16 @@ export class AuthGuard implements CanActivate {
     if (this.token) {
       console.log('[Auth] Token-based authentication enabled (PATENTFORGE_TOKEN is set)');
     }
+  }
+
+  /**
+   * Constant-time string comparison to prevent timing attacks on token auth.
+   */
+  private timingSafeEqual(a: string, b: string): boolean {
+    const bufA = Buffer.from(a, 'utf-8');
+    const bufB = Buffer.from(b, 'utf-8');
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -34,7 +45,7 @@ export class AuthGuard implements CanActivate {
     }
 
     const [scheme, value] = authHeader.split(' ');
-    if (scheme !== 'Bearer' || value !== this.token) {
+    if (scheme !== 'Bearer' || !this.timingSafeEqual(value ?? '', this.token)) {
       throw new UnauthorizedException('Invalid authentication token.');
     }
 
