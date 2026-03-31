@@ -12,6 +12,7 @@ from pathlib import Path
 import anthropic
 
 from ..models import GraphState
+from ..cost import estimate_cost
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -65,6 +66,11 @@ Based on the above, produce a claim strategy."""
             messages=[{"role": "user", "content": user_message}],
         )
         strategy = response.content[0].text
+        input_tokens = response.usage.input_tokens
+        output_tokens = response.usage.output_tokens
+        state.total_input_tokens += input_tokens
+        state.total_output_tokens += output_tokens
+        state.total_estimated_cost_usd += estimate_cost(model, input_tokens, output_tokens)
     except Exception as e:
         state.error = f"Planner failed: {e}"
         return state

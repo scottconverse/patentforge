@@ -101,6 +101,9 @@ async def run_claim_pipeline(
                     error_message=state.error,
                     planner_strategy=state.planner_strategy,
                     examiner_feedback=state.examiner_feedback,
+                    total_input_tokens=state.total_input_tokens,
+                    total_output_tokens=state.total_output_tokens,
+                    total_estimated_cost_usd=state.total_estimated_cost_usd,
                 )
 
     return ClaimDraftResult(
@@ -110,5 +113,8 @@ async def run_claim_pipeline(
         planner_strategy=state.planner_strategy,
         examiner_feedback=state.examiner_feedback,
         revision_notes=state.revision_notes,
+        total_input_tokens=state.total_input_tokens,
+        total_output_tokens=state.total_output_tokens,
+        total_estimated_cost_usd=state.total_estimated_cost_usd,
         status="COMPLETE",
     )

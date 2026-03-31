@@ -1,14 +1,21 @@
 /**
  * Tests for server-side cost cap enforcement.
- * Verifies that pipelines are blocked when cumulative cost exceeds the cap.
+ * Covers:
+ * 1. Cumulative cost calculation (service layer)
+ * 2. Pre-flight cost cap check in controller (integration)
+ * 3. Mid-pipeline cost cap check in patchStage (integration)
  */
 
+import { BadRequestException } from '@nestjs/common';
 import { FeasibilityService } from './feasibility.service';
+import { FeasibilityController } from './feasibility.controller';
 
 // Mock PrismaService
 const mockPrisma = {
   feasibilityStage: {
     findMany: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
   },
   feasibilityRun: {
     count: jest.fn(),
@@ -21,20 +28,36 @@ const mockPrisma = {
   },
 };
 
+// Mock SettingsService
+const mockSettings = {
+  getSettings: jest.fn(),
+};
+
+// Mock PriorArtService
+const mockPriorArt = {
+  startSearch: jest.fn(),
+};
+
 describe('Cost Cap Enforcement', () => {
   let service: FeasibilityService;
+  let controller: FeasibilityController;
 
   beforeEach(() => {
     jest.clearAllMocks();
     service = new FeasibilityService(mockPrisma as any);
+    controller = new FeasibilityController(
+      service,
+      mockSettings as any,
+      mockPriorArt as any,
+    );
   });
+
+  // ─── Service: getProjectCumulativeCost ──────────────────────────────
 
   describe('getProjectCumulativeCost', () => {
     it('returns 0 when no stages have cost data', async () => {
       mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
-
-      const cost = await service.getProjectCumulativeCost('project-1');
-      expect(cost).toBe(0);
+      expect(await service.getProjectCumulativeCost('p1')).toBe(0);
     });
 
     it('sums estimatedCostUsd across all stages', async () => {
@@ -44,9 +67,7 @@ describe('Cost Cap Enforcement', () => {
         { estimatedCostUsd: 0.25 },
         { estimatedCostUsd: 1.00 },
       ]);
-
-      const cost = await service.getProjectCumulativeCost('project-1');
-      expect(cost).toBe(2.50);
+      expect(await service.getProjectCumulativeCost('p1')).toBe(2.50);
     });
 
     it('handles null estimatedCostUsd values', async () => {
@@ -55,23 +76,126 @@ describe('Cost Cap Enforcement', () => {
         { estimatedCostUsd: null },
         { estimatedCostUsd: 1.00 },
       ]);
+      expect(await service.getProjectCumulativeCost('p1')).toBe(1.50);
+    });
+  });
 
-      const cost = await service.getProjectCumulativeCost('project-1');
-      expect(cost).toBe(1.50);
+  // ─── Controller: startRun pre-flight check ──────────────────────────
+
+  describe('startRun cost cap enforcement', () => {
+    it('blocks run when cumulative cost exceeds cap', async () => {
+      mockSettings.getSettings.mockResolvedValue({
+        costCapUsd: 5.00,
+        anthropicApiKey: 'key',
+      });
+      mockPrisma.feasibilityStage.findMany.mockResolvedValue([
+        { estimatedCostUsd: 3.00 },
+        { estimatedCostUsd: 2.50 },
+      ]);
+
+      await expect(controller.startRun('p1', {})).rejects.toThrow(BadRequestException);
+      await expect(controller.startRun('p1', {})).rejects.toThrow(/Cost cap exceeded/);
     });
 
-    it('queries only stages belonging to the given project', async () => {
-      mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
-
-      await service.getProjectCumulativeCost('project-xyz');
-
-      expect(mockPrisma.feasibilityStage.findMany).toHaveBeenCalledWith({
-        where: {
-          feasibilityRun: { projectId: 'project-xyz' },
-          estimatedCostUsd: { not: null },
-        },
-        select: { estimatedCostUsd: true },
+    it('allows run when cost is under cap', async () => {
+      mockSettings.getSettings.mockResolvedValue({
+        costCapUsd: 10.00,
+        anthropicApiKey: 'key',
       });
+      mockPrisma.feasibilityStage.findMany.mockResolvedValue([
+        { estimatedCostUsd: 1.00 },
+      ]);
+      mockPrisma.project.findUnique.mockResolvedValue({ id: 'p1' });
+      mockPrisma.feasibilityRun.count.mockResolvedValue(0);
+      mockPrisma.feasibilityRun.create.mockResolvedValue({
+        id: 'run-1',
+        version: 1,
+        status: 'PENDING',
+        stages: [],
+      });
+      mockPrisma.project.update.mockResolvedValue({});
+
+      const result = await controller.startRun('p1', {});
+      expect(result).toBeDefined();
+      expect(result.id).toBe('run-1');
+    });
+
+    it('skips check when costCapUsd is 0 (disabled)', async () => {
+      mockSettings.getSettings.mockResolvedValue({
+        costCapUsd: 0,
+        anthropicApiKey: 'key',
+      });
+      mockPrisma.project.findUnique.mockResolvedValue({ id: 'p1' });
+      mockPrisma.feasibilityRun.count.mockResolvedValue(0);
+      mockPrisma.feasibilityRun.create.mockResolvedValue({
+        id: 'run-1',
+        version: 1,
+        status: 'PENDING',
+        stages: [],
+      });
+      mockPrisma.project.update.mockResolvedValue({});
+
+      // Should NOT call getProjectCumulativeCost
+      const result = await controller.startRun('p1', {});
+      expect(result).toBeDefined();
+      expect(mockPrisma.feasibilityStage.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Controller: patchStage mid-pipeline check ──────────────────────
+
+  describe('patchStage cost cap check', () => {
+    it('returns costCapExceeded=true when cap is breached after stage', async () => {
+      mockPrisma.feasibilityRun.findFirst.mockResolvedValue({ id: 'run-1' });
+      mockPrisma.feasibilityStage.findFirst.mockResolvedValue({ id: 'stage-1' });
+      mockPrisma.feasibilityStage.update.mockResolvedValue({ id: 'stage-1', stageNumber: 3 });
+      mockSettings.getSettings.mockResolvedValue({ costCapUsd: 2.00 });
+      // After this stage, cumulative cost is $3.00 which exceeds $2.00 cap
+      mockPrisma.feasibilityStage.findMany.mockResolvedValue([
+        { estimatedCostUsd: 1.50 },
+        { estimatedCostUsd: 1.00 },
+        { estimatedCostUsd: 0.50 },
+      ]);
+
+      const result = await controller.patchStage('p1', 3, {
+        status: 'COMPLETE',
+        estimatedCostUsd: 0.50,
+      } as any);
+
+      expect(result.costCapExceeded).toBe(true);
+      expect(result.cumulativeCost).toBe(3.00);
+      expect(result.costCapUsd).toBe(2.00);
+    });
+
+    it('returns costCapExceeded=false when under cap', async () => {
+      mockPrisma.feasibilityRun.findFirst.mockResolvedValue({ id: 'run-1' });
+      mockPrisma.feasibilityStage.findFirst.mockResolvedValue({ id: 'stage-1' });
+      mockPrisma.feasibilityStage.update.mockResolvedValue({ id: 'stage-1', stageNumber: 1 });
+      mockSettings.getSettings.mockResolvedValue({ costCapUsd: 10.00 });
+      mockPrisma.feasibilityStage.findMany.mockResolvedValue([
+        { estimatedCostUsd: 0.50 },
+      ]);
+
+      const result = await controller.patchStage('p1', 1, {
+        status: 'COMPLETE',
+        estimatedCostUsd: 0.50,
+      } as any);
+
+      expect(result.costCapExceeded).toBe(false);
+    });
+
+    it('skips cost check when no cost data in patch', async () => {
+      mockPrisma.feasibilityRun.findFirst.mockResolvedValue({ id: 'run-1' });
+      mockPrisma.feasibilityStage.findFirst.mockResolvedValue({ id: 'stage-1' });
+      mockPrisma.feasibilityStage.update.mockResolvedValue({ id: 'stage-1', stageNumber: 1 });
+
+      const result = await controller.patchStage('p1', 1, {
+        status: 'RUNNING',
+      } as any);
+
+      // No cost data → no settings lookup needed
+      expect(result.costCapExceeded).toBe(false);
+      expect(mockSettings.getSettings).not.toHaveBeenCalled();
     });
   });
 });

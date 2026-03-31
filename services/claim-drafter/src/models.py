@@ -57,6 +57,9 @@ class ClaimDraftResult(BaseModel):
     planner_strategy: str = ""
     examiner_feedback: str = ""
     revision_notes: str = ""
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_estimated_cost_usd: float = 0.0
     status: Literal["COMPLETE", "ERROR"] = "COMPLETE"
     error_message: str | None = None
 
@@ -95,6 +98,11 @@ class GraphState(BaseModel):
     # Final parsed output
     claims: list[Claim] = Field(default_factory=list)
     specification_language: str = ""
+
+    # Cost tracking (accumulated across all agent calls)
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_estimated_cost_usd: float = 0.0
 
     # Pipeline control
     step: str = "init"

@@ -11,6 +11,7 @@ from pathlib import Path
 import anthropic
 
 from ..models import GraphState
+from ..cost import estimate_cost
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -78,6 +79,11 @@ Draft the claims following the planner's strategy. Maximum 20 total claims."""
             messages=[{"role": "user", "content": user_message}],
         )
         claims_text = response.content[0].text
+        input_tokens = response.usage.input_tokens
+        output_tokens = response.usage.output_tokens
+        state.total_input_tokens += input_tokens
+        state.total_output_tokens += output_tokens
+        state.total_estimated_cost_usd += estimate_cost(state.default_model, input_tokens, output_tokens)
     except Exception as e:
         state.error = f"Writer failed: {e}"
         return state

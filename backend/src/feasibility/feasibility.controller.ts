@@ -94,12 +94,28 @@ export class FeasibilityController {
   }
 
   @Patch('stages/:stageNumber')
-  patchStage(
+  async patchStage(
     @Param('id') projectId: string,
     @Param('stageNumber', ParseIntPipe) stageNumber: number,
     @Body() dto: PatchStageDto,
   ) {
-    return this.feasibilityService.patchStage(projectId, stageNumber, dto);
+    const result = await this.feasibilityService.patchStage(projectId, stageNumber, dto);
+
+    // After writing cost data, check if cumulative cost exceeds cap
+    // Return a flag so the frontend can abort the pipeline
+    let costCapExceeded = false;
+    let cumulativeCost = 0;
+    let costCapUsd = 0;
+    if (dto.estimatedCostUsd !== undefined && dto.estimatedCostUsd > 0) {
+      const settings = await this.settingsService.getSettings();
+      costCapUsd = settings.costCapUsd;
+      if (costCapUsd > 0) {
+        cumulativeCost = await this.feasibilityService.getProjectCumulativeCost(projectId);
+        costCapExceeded = cumulativeCost >= costCapUsd;
+      }
+    }
+
+    return { ...result, costCapExceeded, cumulativeCost, costCapUsd };
   }
 
   @Post('rerun')

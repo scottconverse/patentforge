@@ -557,9 +557,9 @@ export default function ProjectDetail() {
               });
               setIsStreamComplete(true);
 
-              // Patch the stage in the backend
+              // Patch the stage in the backend and check cost cap
               try {
-                await api.feasibility.patchStage(id, currentStageNum, {
+                const patchResult = await api.feasibility.patchStage(id, currentStageNum, {
                   status: 'COMPLETE',
                   outputText,
                   ...(currentStageStart ? { startedAt: currentStageStart } : {}),
@@ -570,6 +570,14 @@ export default function ProjectDetail() {
                   outputTokens,
                   estimatedCostUsd,
                 });
+
+                // If cost cap exceeded, cancel the pipeline
+                if (patchResult?.costCapExceeded) {
+                  console.warn(`[CostCap] Cumulative cost $${patchResult.cumulativeCost.toFixed(2)} exceeds cap $${patchResult.costCapUsd.toFixed(2)}. Cancelling pipeline.`);
+                  try { await api.feasibility.cancel(id); } catch {}
+                  setError(`Cost cap reached ($${patchResult.cumulativeCost.toFixed(2)} of $${patchResult.costCapUsd.toFixed(2)}). Pipeline stopped. Increase the cap in Settings to continue.`);
+                  setViewMode('overview');
+                }
               } catch {
                 // non-fatal
               }
