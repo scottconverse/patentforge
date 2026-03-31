@@ -103,6 +103,12 @@ app.post('/analyze', async (req, res) => {
   }
 });
 
+// Prevent unhandled AbortError from crashing the process when clients disconnect
+process.on('unhandledRejection', (reason: any) => {
+  if (reason?.name === 'AbortError') return; // expected when client disconnects
+  console.error('[Feasibility] Unhandled rejection:', reason);
+});
+
 // ── Start server ──────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT || '3001', 10);
 app.listen(PORT, () => {

@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/prompts/*.md dist/prompts/",
     "start": "node dist/server.js",
     "start:dev": "ts-node src/server.ts"
   },
