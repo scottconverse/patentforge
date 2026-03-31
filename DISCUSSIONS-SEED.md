@@ -152,6 +152,44 @@ Looking forward to hearing from you!
 
 *Post each of these as a new Announcements discussion when the version ships.*
 
+### Title: v0.1.0 — Initial Release
+
+**Body:**
+
+PatentForge v0.1.0 is the first public release. A complete 6-stage AI patent research pipeline with real-time streaming, invention intake form, HTML export, web search for prior art, rate limit handling, settings management, and Docker Compose deployment. Three-service architecture: NestJS backend, Express feasibility service, and React frontend.
+
+### Title: v0.2.0 — Prior Art Search, Cost Tracking, Word Export
+
+**Body:**
+
+Big update. PatentsView API integration for automated prior art search with Haiku-powered query extraction and relevance scoring. LiteLLM dynamic pricing with cost confirmation before every run. Resume from interrupted stages. DOCX table rendering and Word download. SSE keepalive heartbeat prevents idle drops. Token streaming throttle prevents browser freeze.
+
+### Title: v0.2.1 — Legal Guardrails
+
+**Body:**
+
+Added first-run disclaimer modal (unskippable clickwrap agreement), API key entry disclaimer on Settings page, and persistent export watermarks on all generated reports (HTML, Word, on-screen).
+
+### Title: v0.2.2 — UPL Risk Mitigation
+
+**Body:**
+
+Comprehensive prompt language overhaul. AI now identifies as "patent landscape research assistant" instead of role-playing as an attorney. Assessment labels softened from "FILE NOW" to "INDICATORS FAVOR FILING". Stage disclaimers embedded in every output. Added LEGAL_NOTICE.md and dual licensing (MIT code, CC BY-SA 4.0 prompts so disclaimers survive forks).
+
+### Title: v0.3.0 — USPTO Patent Detail, Stage Re-run, CSV Export
+
+**Body:**
+
+Click any prior art result to see a slide-out drawer with full patent data: dates, assignees, inventors, CPC classifications, abstract, and claims. Individual stage re-run without restarting the full pipeline. CSV export for prior art results. All enriched data cached locally for 30 days.
+
+Note: PatentsView API was shut down during this release. Prior art search temporarily unavailable — AI web search in Stage 2 still works. Full ODP integration in v0.3.1.
+
+### Title: v0.3.1 — USPTO Open Data Portal Integration
+
+**Body:**
+
+Replaces the shut-down PatentsView API with the new USPTO Open Data Portal. Prior art search and patent detail enrichment are back, now using the ODP API at data.uspto.gov. Add your free ODP API key in Settings to enable structured patent search. Without a key, AI web search in Stage 2 still handles prior art research. 86 automated tests.
+
 ### Title: v0.3.2 — Patent Claims Viewer
 
 **Body:**

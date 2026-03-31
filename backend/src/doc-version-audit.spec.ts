@@ -131,4 +131,35 @@ describe('Documentation Currency', () => {
     const seed = readFile('DISCUSSIONS-SEED.md');
     expect(seed).toContain(`v${CURRENT_VERSION}`);
   });
+
+  it('DISCUSSIONS-SEED.md has an announcement post for every CHANGELOG version', () => {
+    const changelog = readFile('CHANGELOG.md');
+    const seed = readFile('DISCUSSIONS-SEED.md');
+
+    // Extract all version numbers from CHANGELOG headers: ## [0.3.4] - 2026-03-31
+    const versionRegex = /^## \[(\d+\.\d+\.\d+)\]/gm;
+    const versions: string[] = [];
+    let match;
+    while ((match = versionRegex.exec(changelog)) !== null) {
+      versions.push(match[1]);
+    }
+
+    expect(versions.length).toBeGreaterThan(0);
+
+    // Every version that has a CHANGELOG entry must have a matching
+    // announcement title or section in DISCUSSIONS-SEED.md
+    const missing: string[] = [];
+    for (const ver of versions) {
+      if (!seed.includes(`v${ver}`)) {
+        missing.push(ver);
+      }
+    }
+
+    if (missing.length > 0) {
+      fail(
+        `DISCUSSIONS-SEED.md is missing announcement posts for: ${missing.map(v => `v${v}`).join(', ')}. ` +
+        `Every CHANGELOG version needs a corresponding discussion announcement.`,
+      );
+    }
+  });
 });
