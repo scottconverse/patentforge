@@ -6,34 +6,29 @@ Mocks Anthropic SDK to verify state transitions and revision flag detection.
 from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 
-from src.agents.examiner import run_examiner
+from src.agents.examiner import run_examiner, _parse_revision_verdict
 from src.models import GraphState
 
 
 MOCK_FEEDBACK_NO_REVISION = """# Examination Report
 
 ## Claim 1 Analysis
-Claim 1 is adequate for research purposes. Minor §112 concern with "actionable guidance" term.
+Claim 1 is adequate for research purposes.
 
 ## Overall Assessment
-Quality: ADEQUATE
-Top 3 issues: §101 risk on Claim 1, §103 combination risk, vague spec support.
-
-REVISION_NEEDED: NO"""
+```json
+{"revision_needed": false, "quality": "ADEQUATE"}
+```"""
 
 MOCK_FEEDBACK_WITH_REVISION = """# Examination Report
 
 ## Claim 1 Analysis
-CRITICAL: Claim 1 is anticipated by US10845342. Must add ML prediction limitation.
-
-## Claim 8 Analysis
-Claim 8 lacks antecedent basis for "the neural network model" — not introduced in preamble.
+CRITICAL: Claim 1 is anticipated by US10845342.
 
 ## Overall Assessment
-Quality: NEEDS WORK
-Top 3 issues: anticipation by prior art, missing antecedent basis, §101 risk.
-
-REVISION_NEEDED: YES"""
+```json
+{"revision_needed": true, "quality": "NEEDS WORK"}
+```"""
 
 
 def _make_mock_response(text: str):
@@ -154,3 +149,35 @@ class TestExaminerAgent:
 
             call_kwargs = mock_client.messages.create.call_args.kwargs
             assert call_kwargs["model"] == "claude-opus-4-20250514"
+
+
+class TestParseRevisionVerdict:
+    """Tests for the JSON verdict parser."""
+
+    def test_parses_json_block_revision_true(self):
+        feedback = '# Review\n```json\n{"revision_needed": true, "quality": "NEEDS WORK"}\n```'
+        assert _parse_revision_verdict(feedback) is True
+
+    def test_parses_json_block_revision_false(self):
+        feedback = '# Review\n```json\n{"revision_needed": false, "quality": "ADEQUATE"}\n```'
+        assert _parse_revision_verdict(feedback) is False
+
+    def test_parses_raw_json_without_code_block(self):
+        feedback = '# Review\n{"revision_needed": true, "quality": "NEEDS WORK"}'
+        assert _parse_revision_verdict(feedback) is True
+
+    def test_falls_back_to_sentinel_pattern(self):
+        feedback = "# Review\n\nREVISION_NEEDED: YES"
+        assert _parse_revision_verdict(feedback) is True
+
+    def test_defaults_to_false_on_no_verdict(self):
+        feedback = "# Review\nThe claims look fine but I have no structured verdict."
+        assert _parse_revision_verdict(feedback) is False
+
+    def test_defaults_to_false_on_malformed_json(self):
+        feedback = '# Review\n```json\n{broken json\n```'
+        assert _parse_revision_verdict(feedback) is False
+
+    def test_handles_json_with_extra_whitespace(self):
+        feedback = '```json\n  { "revision_needed" :  true ,  "quality" : "NEEDS WORK" }  \n```'
+        assert _parse_revision_verdict(feedback) is True

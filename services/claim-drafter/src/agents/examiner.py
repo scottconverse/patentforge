@@ -11,6 +11,8 @@ from pathlib import Path
 
 import anthropic
 
+import json as json_module
+
 from ..models import GraphState
 from ..cost import estimate_cost
 
@@ -27,6 +29,36 @@ def _load_prompt() -> str:
     if prompt_path.exists():
         return common + prompt_path.read_text(encoding="utf-8")
     return common + "You are a critical patent examiner. Review claims for weaknesses."
+
+
+import re
+
+
+def _parse_revision_verdict(feedback: str) -> bool:
+    """
+    Parse the examiner's structured JSON verdict to determine if revision is needed.
+    Falls back to False if JSON parsing fails — better to finalize than loop.
+    """
+    # Look for a JSON block: ```json\n{...}\n``` or raw {..."revision_needed":...}
+    json_block_match = re.search(r'```json\s*\n?\s*(\{[^}]+\})\s*\n?\s*```', feedback)
+    if json_block_match:
+        try:
+            verdict = json_module.loads(json_block_match.group(1))
+            return bool(verdict.get("revision_needed", False))
+        except (json_module.JSONDecodeError, AttributeError):
+            pass
+
+    # Fallback: look for raw JSON object with revision_needed
+    raw_json_match = re.search(r'\{\s*"revision_needed"\s*:\s*(true|false)', feedback, re.IGNORECASE)
+    if raw_json_match:
+        return raw_json_match.group(1).lower() == "true"
+
+    # Last resort fallback: old sentinel pattern (backward compatible)
+    if "REVISION_NEEDED: YES" in feedback.upper():
+        return True
+
+    # Default: don't revise (better to finalize than risk infinite loop)
+    return False
 
 
 async def run_examiner(state: GraphState) -> GraphState:
@@ -60,7 +92,15 @@ Review these claims critically. For each claim:
 2. Suggest specific improvements
 3. Flag any claims that need revision
 
-At the end, state clearly: REVISION_NEEDED: YES or REVISION_NEEDED: NO"""
+At the very end of your review, output a JSON verdict block on its own line:
+```json
+{{"revision_needed": true, "quality": "NEEDS WORK"}}
+```
+or
+```json
+{{"revision_needed": false, "quality": "ADEQUATE"}}
+```
+Quality must be one of: STRONG, ADEQUATE, NEEDS WORK."""
 
     client = anthropic.AsyncAnthropic(api_key=state.api_key)
 
@@ -82,6 +122,8 @@ At the end, state clearly: REVISION_NEEDED: YES or REVISION_NEEDED: NO"""
         return state
 
     state.examiner_feedback = feedback
-    state.needs_revision = "REVISION_NEEDED: YES" in feedback.upper()
+
+    # Parse structured JSON verdict from the examiner's output
+    state.needs_revision = _parse_revision_verdict(feedback)
     state.step = "examine_complete"
     return state
