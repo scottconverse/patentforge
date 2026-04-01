@@ -220,6 +220,20 @@ This release is all about quality and reliability — no new features, just maki
 
 The biggest feature since launch. PatentForge can now generate patent claim drafts using a 3-agent AI pipeline (Planner, Writer, Examiner) built with Python + LangGraph. Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks, collapsible strategy and examiner feedback. 3 independent claims (broad/medium/narrow) plus dependents, capped at 20 total. 40 Python tests.
 
+### Title: v0.4.0 Hardening — 20-Issue Security and Reliability Audit
+
+**Body:**
+
+Following an independent technical review, we resolved all 20 identified issues:
+
+**Security:** Server-side cost cap enforcement (pre-flight + mid-pipeline), internal service authentication via shared secret, API key removed from browser request bodies, path traversal prevention on export, HTML injection fix in report titles, timing-safe token comparison, per-installation encryption salt stored in database.
+
+**Reliability:** Concurrent claim draft guard, stuck RUNNING draft cleanup on startup, structured JSON examiner verdict (replaces fragile string matching), per-agent 120s timeout, typed request bodies, input validation DTOs on all endpoints, prior art context size limits.
+
+**CI/Testing:** Claim-drafter pytest added to CI and cleanroom script, Playwright E2E browser tests added to CI, 303 total tests across 4 layers.
+
+**Correctness:** ODP scoring bias correction for title-only results, no silent model defaults (user must choose), inconsistent fallbacks removed.
+
 ### Title: v0.3.4 — Scoring, Encryption, CI, Auth
 
 **Body:**

@@ -194,6 +194,26 @@ describe('Architecture Documentation', () => {
     expect(html).toContain('8080');
   });
 
+  it('docs/index.html describes four-service architecture', () => {
+    const html = readFile('docs/index.html').toLowerCase();
+    expect(html).toContain('four-service');
+  });
+
+  it('docs/index.html mentions security hardening', () => {
+    const html = readFile('docs/index.html').toLowerCase();
+    expect(html).toContain('hardened');
+  });
+
+  it('USER-MANUAL.md has troubleshooting for cost cap', () => {
+    const manual = readFile('USER-MANUAL.md').toLowerCase();
+    expect(manual).toContain('cost cap exceeded');
+  });
+
+  it('USER-MANUAL.md has troubleshooting for model not configured', () => {
+    const manual = readFile('USER-MANUAL.md').toLowerCase();
+    expect(manual).toContain('no ai model configured');
+  });
+
   it('docker-compose.yml includes all services', () => {
     const compose = readFile('docker-compose.yml');
     expect(compose).toContain('backend');

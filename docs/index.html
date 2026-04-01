@@ -293,11 +293,12 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
         <li><strong>NEW:</strong> AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
         <li><strong>NEW:</strong> Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks</li>
+        <li><strong>HARDENED:</strong> 20-issue security and reliability audit — server-side cost cap enforcement, internal service authentication, API key removed from browser, path traversal prevention, HTML injection fix, timing-safe auth, per-installation encryption salt</li>
         <li>Patent claims lazy-loading from USPTO Documents API</li>
-        <li>API key encryption at rest with AES-256-GCM</li>
-        <li>Prior art scoring: stop-word filtering, title weighting</li>
-        <li>GitHub Actions CI + Playwright E2E with screenshots and responsive testing</li>
-        <li>Optional Bearer token authentication for network deployments</li>
+        <li>API key encryption at rest with per-installation random salt</li>
+        <li>Prior art scoring with ODP bias correction for title-only results</li>
+        <li>GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>Optional Bearer token auth + internal service shared secret</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
@@ -305,7 +306,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section class="architecture">
     <h2>Architecture</h2>
-    <p class="desc">Three-service federated architecture. Each service is independently deployable. Real-time SSE streaming from LLM to browser. SQLite for development, PostgreSQL for Docker.</p>
+    <p class="desc">Four-service federated architecture. Each service is independently deployable. Internal services authenticated via shared secret. SSE streaming proxied through the backend. SQLite for development, PostgreSQL for Docker.</p>
 
     <!-- Inline SVG architecture diagram -->
     <div class="arch-svg-wrap">

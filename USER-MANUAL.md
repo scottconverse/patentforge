@@ -293,6 +293,27 @@ This means you've sent too many requests to the Anthropic API in a short time. P
 
 Try refreshing the page (F5 or Ctrl+R). If a pipeline was running when the page loaded, PatentForge detects the stale state and shows you the partial results with a Resume option.
 
+### "Cost cap exceeded"
+
+Your cumulative API spending for this project has reached your cost cap. PatentForge tracks cost across all completed stages and blocks new runs when the total exceeds the cap you set in Settings. If a stage pushes the cost over the cap mid-pipeline, the pipeline is cancelled automatically.
+
+To continue:
+1. Go to **Settings**
+2. Increase the **Cost Cap (USD)** to a higher value, or set it to **0** to disable the cap entirely
+3. Return to your project and start the run again
+
+### "No AI model configured"
+
+You need to select a model in Settings before running analysis or generating claims. PatentForge does not pick a default model for you — you choose which AI model to use based on your quality and cost preferences.
+
+### "A claim draft is already running"
+
+Only one claim draft can run at a time per project. Wait for the current draft to complete, or refresh the page — if a previous draft was interrupted by a crash, PatentForge automatically cleans it up on restart.
+
+### "Export path must be within your home directory"
+
+For security, the export folder must be inside your home directory. Paths like `/etc` or `C:\Windows` are rejected. Use a subfolder of your Desktop, Documents, or home directory.
+
 ### I can't connect to http://localhost:8080
 
 Make sure all four services are running:
