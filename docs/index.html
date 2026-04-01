@@ -273,6 +273,28 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
     </div>
   </section>
 
+  <section class="pipeline">
+    <h2>AI Claim Drafting Pipeline</h2>
+    <p style="text-align: center; color: var(--text-muted); max-width: 700px; margin: 0 auto 2rem; font-size: 0.95rem;">After the research pipeline completes, generate patent claim drafts using a 3-agent AI pipeline. Each agent specializes in one phase of claim development.</p>
+    <div class="pipeline-stages" style="max-width: 700px;">
+      <div class="stage" style="border-color: var(--green);">
+        <div class="stage-num" style="background: var(--green);">P</div>
+        <h4>Planner</h4>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Analyzes prior art &amp; feasibility to create a claim strategy</p>
+      </div>
+      <div class="stage" style="border-color: var(--green);">
+        <div class="stage-num" style="background: var(--green);">W</div>
+        <h4>Writer</h4>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Drafts 3 independent claims + dependents, capped at 20 total</p>
+      </div>
+      <div class="stage" style="border-color: var(--green);">
+        <div class="stage-num" style="background: var(--green);">E</div>
+        <h4>Examiner</h4>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Reviews claims for &sect;101/102/103/112 issues, requests revisions</p>
+      </div>
+    </div>
+  </section>
+
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 4rem;">
     <div class="disclaimer">
       <strong>PatentForge is a research tool, not a legal service.</strong> The author of this tool is not a lawyer.

@@ -88,6 +88,7 @@ describe('Required Repo Files', () => {
   const requiredFiles = [
     'LICENSE',
     'README.md',
+    'README-FULL.pdf',
     'CHANGELOG.md',
     'CONTRIBUTING.md',
     '.gitignore',
