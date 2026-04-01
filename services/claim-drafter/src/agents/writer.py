@@ -77,6 +77,7 @@ Draft the claims following the planner's strategy. Maximum 20 total claims."""
             max_tokens=state.max_tokens,
             system=prompt,
             messages=[{"role": "user", "content": user_message}],
+            timeout=120.0,
         )
         claims_text = response.content[0].text
         input_tokens = response.usage.input_tokens

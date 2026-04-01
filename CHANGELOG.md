@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Playwright E2E added to CI** (#14) — browser tests run against the full stack on every push/PR, with artifact upload on failure.
 - **DTO validation for startRun and rerunFromStage** (#15) — `StartRunDto` caps narrative at 50K chars, `RerunFromStageDto` validates stage number 1-6.
 - **Prior art context size limits** (#16) — `ClaimDraftRequest` caps `prior_art_results` at 20 items, all text fields have `max_length` constraints, built context string capped at 50K chars.
+- **Per-agent timeout in claim-drafter** (#17) — each agent's `messages.create` call has `timeout=120.0` seconds, preventing a single slow Anthropic response from blocking the pipeline indefinitely.
+- **Typed request body for callClaimDrafter** (#18) — `requestBody: any` replaced with `ClaimDraftRequestBody` interface that mirrors the Python `ClaimDraftRequest` Pydantic model. Field name mismatches are now caught at compile time.
+- **Internal service ports not exposed in Docker** (#19) — confirmed fixed in #2. Only backend (3000) and frontend (8080) are reachable from the host.
+- **ODP scoring bias correction** (#20) — prior art results without abstracts (common with ODP) now receive a 1.5x title-score multiplier to compensate for the missing abstract dimension. Prevents systematic underscoring of ODP results vs PatentsView results.
 
 ### Security
 - All claim drafting prompts licensed CC BY-SA 4.0 (disclaimers survive forks)

@@ -248,14 +248,23 @@ export function scoreRelevance(patent: PatentsViewPatent, queryTerms: string[]):
 
   // Score each term with title weighting and frequency
   let totalScore = 0;
+  const hasAbstract = abstract.length > 0;
   for (const term of unique) {
     const titleHit = title.includes(term) ? 1 : 0;
     const abstractHit = abstract.includes(term) ? 1 : 0;
     // Title match = 2 points, abstract match = 1 point (max 3 per term)
     totalScore += titleHit * 2 + abstractHit;
   }
+
   // Normalize: max possible = 3 * unique.length
-  const termScore = totalScore / (unique.length * 3);
+  let termScore = totalScore / (unique.length * 3);
+
+  // Bias correction: ODP results have null abstracts, so they can only match on title.
+  // Without correction, ODP results are systematically underscored vs results with abstracts.
+  // Apply 1.5x multiplier for title-only scoring to compensate for the missing dimension.
+  if (!hasAbstract && termScore > 0) {
+    termScore = Math.min(1.0, termScore * 1.5);
+  }
 
   // Recency boost: newer patents get up to 15% bonus
   const year = parseInt(patent.patent_date?.slice(0, 4) ?? '2000', 10);

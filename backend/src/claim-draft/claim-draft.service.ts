@@ -5,6 +5,29 @@ import { SettingsService } from '../settings/settings.service';
 const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:3002';
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
 
+/**
+ * Request body sent to the Python claim-drafter service.
+ * Must match the ClaimDraftRequest Pydantic model in services/claim-drafter/src/models.py.
+ */
+interface ClaimDraftRequestBody {
+  invention_narrative: string;
+  feasibility_stage_5: string;
+  feasibility_stage_6: string;
+  prior_art_results: Array<{
+    patent_number: string;
+    title: string;
+    abstract: string | null;
+    relevance_score: number;
+    claims_text: string | null;
+  }>;
+  settings: {
+    api_key: string;
+    default_model: string;
+    research_model: string;
+    max_tokens: number;
+  };
+}
+
 @Injectable()
 export class ClaimDraftService implements OnModuleInit {
   constructor(
@@ -168,7 +191,7 @@ export class ClaimDraftService implements OnModuleInit {
   /**
    * Call the Python claim-drafter service and save results.
    */
-  private async callClaimDrafter(draftId: string, requestBody: any) {
+  private async callClaimDrafter(draftId: string, requestBody: ClaimDraftRequestBody) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (INTERNAL_SECRET) {
       headers['X-Internal-Secret'] = INTERNAL_SECRET;

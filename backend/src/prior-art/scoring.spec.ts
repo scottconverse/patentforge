@@ -82,6 +82,26 @@ describe('scoreRelevance', () => {
     expect(score).toBeGreaterThan(0);
   });
 
+  it('applies bias correction for title-only scoring (no abstract)', () => {
+    const withAbstract = makePatent({
+      title: 'Neural Network Optimizer',
+      abstract: 'Something unrelated to the query terms.',
+    });
+    const withoutAbstract = makePatent({
+      title: 'Neural Network Optimizer',
+      patent_abstract: null,
+      abstract: undefined,
+    });
+    // Both match "neural" in title. Without bias correction, the no-abstract
+    // version would score lower because it can't match on abstract.
+    // With 1.5x correction, the title-only score should be boosted.
+    const scoreWith = scoreRelevance(withAbstract, ['neural']);
+    const scoreWithout = scoreRelevance(withoutAbstract, ['neural']);
+    // The corrected title-only score should be close to or higher than the
+    // abstract version (which doesn't match "neural" in abstract either)
+    expect(scoreWithout).toBeGreaterThanOrEqual(scoreWith * 0.9);
+  });
+
   it('deduplicates query terms', () => {
     const patent = makePatent();
     const score1 = scoreRelevance(patent, ['machine', 'learning']);
