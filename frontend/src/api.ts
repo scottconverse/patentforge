@@ -77,6 +77,16 @@ export const api = {
       req<any>('GET', `/projects/${projectId}/claims/${version}`),
     updateClaim: (projectId: string, claimId: string, text: string) =>
       req<any>('PUT', `/projects/${projectId}/claims/edit/${claimId}`, { text }),
+    regenerateClaim: (projectId: string, claimNumber: number) =>
+      req<any>('POST', `/projects/${projectId}/claims/${claimNumber}/regenerate`),
+  },
+  compliance: {
+    startCheck: (projectId: string, draftVersion?: number) =>
+      req<any>('POST', `/projects/${projectId}/compliance/check`, draftVersion ? { draftVersion } : {}),
+    getLatest: (projectId: string) =>
+      req<any>('GET', `/projects/${projectId}/compliance`),
+    getVersion: (projectId: string, version: number) =>
+      req<any>('GET', `/projects/${projectId}/compliance/${version}`),
   },
   settings: {
     get: () => req<any>('GET', '/settings'),
