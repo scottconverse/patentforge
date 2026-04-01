@@ -40,6 +40,22 @@ export class ProjectsService {
           include: {
             stages: {
               orderBy: { stageNumber: 'asc' },
+              select: {
+                id: true,
+                feasibilityRunId: true,
+                stageNumber: true,
+                stageName: true,
+                status: true,
+                model: true,
+                webSearchUsed: true,
+                startedAt: true,
+                completedAt: true,
+                errorMessage: true,
+                inputTokens: true,
+                outputTokens: true,
+                estimatedCostUsd: true,
+                // Exclude outputText — loaded separately via /feasibility endpoint
+              },
             },
           },
         },
@@ -48,6 +64,13 @@ export class ProjectsService {
 
     if (!project) {
       throw new NotFoundException(`Project ${id} not found`);
+    }
+
+    // Strip finalReport from the project response — loaded separately via /feasibility
+    if (project.feasibility?.length) {
+      (project.feasibility as any[]).forEach(run => {
+        (run as any).finalReport = run.finalReport ? true : null;
+      });
     }
 
     return project;
