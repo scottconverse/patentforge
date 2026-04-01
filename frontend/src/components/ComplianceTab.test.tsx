@@ -35,6 +35,35 @@ describe('ComplianceTab', () => {
     });
   });
 
+  it('shows spinner when running is true and check is null', async () => {
+    const { api } = await import('../api');
+    // Initial load returns NONE → check stays null
+    (api.compliance.getLatest as any).mockResolvedValue({ status: 'NONE', results: [] });
+    (api.compliance.startCheck as any).mockResolvedValue({});
+    render(<ComplianceTab projectId="test-123" hasClaims={true} />);
+    // Wait for initial load — should show run button
+    await waitFor(() => {
+      expect(screen.getByText('Run Compliance Check')).toBeTruthy();
+    });
+    // Click run → opens UPL modal
+    fireEvent.click(screen.getByText('Run Compliance Check'));
+    await waitFor(() => {
+      expect(screen.getByText(/This is a research tool, not a legal service/i)).toBeTruthy();
+    });
+    // Check acknowledgment checkbox
+    const checkbox = screen.getByRole('checkbox');
+    fireEvent.click(checkbox);
+    // Click modal's run button — sets running=true, check is still null
+    const modalRunBtn = screen.getAllByText('Run Compliance Check').find(
+      btn => btn.closest('.fixed') !== null
+    )!;
+    fireEvent.click(modalRunBtn);
+    // Spinner should appear (running=true, check=null)
+    await waitFor(() => {
+      expect(screen.getByText(/Running compliance checks/i)).toBeTruthy();
+    });
+  });
+
   it('shows spinner when check is running', async () => {
     const { api } = await import('../api');
     (api.compliance.getLatest as any).mockResolvedValue({ status: 'RUNNING', results: [] });

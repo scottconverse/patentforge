@@ -156,6 +156,54 @@ describe('ClaimsTab', () => {
     });
   });
 
+  it('shows spinner when generating is true and draft is null', async () => {
+    const { api } = await import('../api');
+    // Initial load returns NONE → draft stays null
+    (api.claimDraft.getLatest as any).mockResolvedValue({ status: 'NONE', claims: [] });
+    (api.claimDraft.start as any).mockResolvedValue({});
+    render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    // Wait for initial load to finish — should show generate button
+    await waitFor(() => {
+      expect(screen.getByText('Generate Draft Claims')).toBeTruthy();
+    });
+    // Click generate → opens UPL modal
+    fireEvent.click(screen.getByText('Generate Draft Claims'));
+    await waitFor(() => {
+      expect(screen.getByText(/This is a research tool, not a legal service/i)).toBeTruthy();
+    });
+    // Check the acknowledgment checkbox
+    const checkbox = screen.getByRole('checkbox');
+    fireEvent.click(checkbox);
+    // Click the modal's generate button — sets generating=true, draft is still null
+    const modalGenerateBtn = screen.getAllByText('Generate Draft Claims').find(
+      btn => btn.closest('.fixed') !== null
+    )!;
+    fireEvent.click(modalGenerateBtn);
+    // Spinner should appear (generating=true, draft=null)
+    await waitFor(() => {
+      expect(screen.getByText('Generating claim drafts...')).toBeTruthy();
+    });
+  });
+
+  it('shows spinner when draft status is RUNNING', async () => {
+    const { api } = await import('../api');
+    // API returns status RUNNING — loadDraft sets draft to the response AND sets generating=true
+    (api.claimDraft.getLatest as any).mockResolvedValue({
+      id: 'draft-running',
+      version: 1,
+      status: 'RUNNING',
+      claims: [],
+      specLanguage: null,
+      plannerStrategy: null,
+      examinerFeedback: null,
+      revisionNotes: null,
+    });
+    render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => {
+      expect(screen.getByText('Generating claim drafts...')).toBeTruthy();
+    });
+  });
+
   it('renders no-feasibility state correctly', async () => {
     const { api } = await import('../api');
     (api.claimDraft.getLatest as any).mockResolvedValue({ status: 'NONE' });

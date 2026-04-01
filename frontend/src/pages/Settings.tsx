@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { AppSettings } from '../types';
 
@@ -85,12 +86,22 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <Link to="/" className="hover:text-gray-300 transition-colors">Projects</Link>
+        <span>/</span>
+        <span className="text-gray-300">Settings</span>
+      </div>
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-100">Settings</h1>
         <p className="text-gray-400 text-sm mt-1">Configure API keys and analysis defaults</p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form onSubmit={handleSave} autoComplete="off" className="space-y-6">
+        {/* Hidden dummy input to prevent Chrome autofill */}
+        <input type="text" name="prevent-autofill" style={{display:'none'}} autoComplete="username" />
+
         {/* API Keys */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">API Keys</h2>
@@ -105,6 +116,7 @@ export default function Settings() {
                 value={settings.anthropicApiKey || ''}
                 onChange={e => update('anthropicApiKey', e.target.value)}
                 placeholder="sk-ant-..."
+                autoComplete="new-password"
                 className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
               />
               <button
@@ -130,6 +142,7 @@ export default function Settings() {
                 value={settings.usptoApiKey || ''}
                 onChange={e => update('usptoApiKey', e.target.value)}
                 placeholder="Optional — 30-character key"
+                autoComplete="new-password"
                 className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
               />
               <button

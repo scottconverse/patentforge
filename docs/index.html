@@ -222,7 +222,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       </div>
       <div class="feature-card">
         <h3>Cost Transparency</h3>
-        <p>Pre-run cost estimate with configurable cost cap. Per-stage token tracking after completion. Choose cheaper models for research stages.</p>
+        <p>Pre-run cost estimate based on historical run data (within 25% of actual). Configurable cost cap with per-stage token tracking. ODP API usage tracking with weekly summary in Settings.</p>
       </div>
       <div class="feature-card">
         <h3>Self-Hosted &amp; Secure</h3>
@@ -230,15 +230,15 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       </div>
       <div class="feature-card">
         <h3>Attorney-Ready Exports</h3>
-        <p>Download findings as styled HTML, Word (.docx with full formatting), or Markdown. CSV export for prior art results. Bring structured research to your first attorney meeting.</p>
+        <p>Download findings as styled HTML, Word (.docx with full formatting), or Markdown. Word export for claims and compliance results. CSV export for prior art. Bring structured research to your first attorney meeting.</p>
       </div>
       <div class="feature-card">
         <h3>Compliance Checking</h3>
         <p>Four automated checks validate claim drafts against 35 USC 112(a) written description, 112(b) definiteness, MPEP 608 formalities, and 101 eligibility. Traffic-light PASS/FAIL/WARN results with MPEP citations and fix suggestions.</p>
       </div>
       <div class="feature-card">
-        <h3>187 Automated Tests</h3>
-        <p>Jest backend tests, Vitest component tests, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
+        <h3>391 Automated Tests</h3>
+        <p>Jest backend tests, Vitest component tests, pytest for claim-drafter and compliance-checker, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
       </div>
       <div class="feature-card">
         <h3>Prompt Integrity</h3>
@@ -318,12 +318,13 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
       <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.5.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
         <li><strong>NEW:</strong> Compliance checking — four automated checks (112a, 112b, MPEP 608, 101) with traffic-light PASS/FAIL/WARN results, MPEP citations, and fix suggestions</li>
-        <li><strong>NEW:</strong> Individual claim regeneration — rewrite a single claim without re-running the entire drafter</li>
-        <li><strong>NEW:</strong> Prior art overlap warnings — amber icons on claims with potential prior art overlap</li>
-        <li><strong>NEW:</strong> Re-check after edits — run compliance again after editing claims to verify fixes</li>
+        <li><strong>NEW:</strong> Claims and compliance Word export — download formatted .docx files for attorney review</li>
+        <li><strong>NEW:</strong> Accurate cost estimates — modal uses historical run data (within 25% of actual cost)</li>
+        <li><strong>NEW:</strong> ODP API usage tracking — queries, results, and rate limits tracked per search with weekly summary in Settings</li>
+        <li><strong>NEW:</strong> Individual claim regeneration, prior art overlap warnings, re-check after edits</li>
         <li>AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
         <li>Claim tree visualization, patent family tree lookup, 20-issue security audit</li>
-        <li>GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>391 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>

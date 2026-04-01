@@ -13,13 +13,14 @@ PatentForge is a self-hosted web application that helps inventors organize their
 - **Structured technical analysis** — 6-stage AI pipeline that restates your invention in patent terminology, searches for related prior art, identifies potential issues under patent law, and organizes findings into a readable report
 - **Prior art discovery** — automated patent search via USPTO Open Data Portal with improved relevance scoring (stop-word filtering, title weighting), plus AI-powered web search for related patents, papers, and products
 - **Patent claims viewer** — lazy-loads actual patent claims text from the USPTO Documents API when you click a prior art result (requires free ODP API key)
-- **Cost transparency** — pre-run cost estimate with per-stage token tracking so you know what the AI processing will cost before you start
+- **Cost transparency** — pre-run cost estimate based on historical run data (within 25% of actual), per-stage token tracking, and configurable cost cap
 - **Resume from interruption** — pick up where you left off if a run stops mid-pipeline
-- **Multiple export formats** — HTML, Word (.docx), and Markdown for sharing with your attorney or team
+- **Multiple export formats** — HTML, Word (.docx), and Markdown for reports; Word export for claims and compliance results; CSV for prior art
 - **AI-assisted claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates patent claim drafts informed by your feasibility analysis and prior art, with per-claim examiner review
 - **Claim tree visualization** — SVG-based hierarchical view of claim dependencies with list/tree toggle
 - **Patent family lookup** — continuity data (parents, children, continuations, divisionals) fetched from USPTO ODP and displayed in the patent detail drawer
 - **Compliance checking** — automated validation of claim drafts against 35 USC 112(a) written description, 35 USC 112(b) definiteness, MPEP 608 formalities, and 35 USC 101 eligibility (Alice/Mayo framework), with traffic-light PASS/FAIL/WARN results, MPEP citations, and actionable fix suggestions
+- **ODP API usage tracking** — queries, results, and rate limit events tracked per search with weekly summary in Settings
 - **Self-hosted** — runs on your machine; invention data stays local except for Anthropic API calls
 - **Configurable** — choose your model (Sonnet, Opus, Haiku), set max tokens, adjust inter-stage delays
 

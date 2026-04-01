@@ -565,9 +565,19 @@ ${bodyHtml}
       where: { projectId, status: 'COMPLETE' },
       orderBy: { version: 'desc' },
     });
-    if (!run?.finalReport) throw new NotFoundException('No completed report found');
+    if (!run) throw new NotFoundException('No completed report found');
 
-    const paragraphs = parseMarkdownToDocxParagraphs(run.finalReport);
+    // Use finalReport if available, otherwise fall back to stage 6 output
+    let reportText = run.finalReport;
+    if (!reportText) {
+      const stage6 = await this.prisma.feasibilityStage.findFirst({
+        where: { feasibilityRunId: run.id, stageNumber: 6, status: 'COMPLETE' },
+      });
+      reportText = stage6?.outputText ?? null;
+    }
+    if (!reportText) throw new NotFoundException('No completed report found');
+
+    const paragraphs = parseMarkdownToDocxParagraphs(reportText);
 
     // Append legal disclaimer watermark
     paragraphs.push(new Paragraph({ text: '' }));

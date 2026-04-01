@@ -15,6 +15,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Prior art overlap warnings** — amber warning icons on claims whose terms overlap with known prior art references
 - **Compliance checker service** — new Python + FastAPI + LangGraph service (port 3004) with four specialized checker agents, internal service authentication, and per-check cost tracking
 - **UPL compliance modal** — per-project acknowledgment required before running compliance checks, consistent with claim drafting guardrails
+- **Claims DOCX export** — "Export Word" button on Claims tab generates a Word document with formatted claims and UPL disclaimer
+- **Compliance DOCX export** — "Export Word" button on Compliance tab generates a Word document with results, MPEP citations, and suggestions
+- **ODP API usage tracking** — new OdpApiUsage table tracks queries, results, and rate limits per search; weekly summary displayed in Settings page
+- **Accurate cost estimates** — cost confirmation modal now shows estimates within 25% of actual cost based on historical run data, labeled "Based on N previous runs" or "Estimated (no run history)"
+- **Settings page breadcrumb** — "Projects / Settings" breadcrumb for back navigation
+- **391 automated tests** — 220 backend (Jest) + 62 frontend (Vitest) + 59 claim-drafter (pytest) + 50 compliance (pytest)
+
+### Changed
+- Settings API key fields no longer trigger Chrome's password save popup (autocomplete fix)
+- Settings "Output Folder" help text now accurately describes server vs browser download behavior
+
+### Fixed
+- Claim parser duplicate numbering — parent references now updated correctly when claims are renumbered
+- Feasibility report/export fallback — uses stage 6 output when finalReport is null
+- Cost confirmation modal was showing approximately 3x actual cost (was using maxTokens as output estimate instead of historical data)
 
 ### Security
 - Compliance checker service authenticated via `INTERNAL_SERVICE_SECRET` (same pattern as claim-drafter)

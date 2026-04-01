@@ -749,7 +749,11 @@ export default function ProjectDetail() {
   const totalRunCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
 
   // Report content to display (historical or latest)
-  const reportContent = historicalReport ?? latestRun?.finalReport ?? null;
+  // Fallback: if finalReport is missing but stage 6 has output, use that
+  const stage6Output = latestRun?.status === 'COMPLETE' && !latestRun?.finalReport
+    ? latestRun?.stages?.find((s: any) => s.stageNumber === 6)?.outputText ?? null
+    : null;
+  const reportContent = historicalReport ?? latestRun?.finalReport ?? stage6Output;
 
   return (
     <div className="max-w-7xl mx-auto">

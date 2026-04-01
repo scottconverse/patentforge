@@ -115,7 +115,7 @@ Click **Save Draft** to save your work without starting the analysis.
 
 1. Click **"Run Feasibility"** on the project detail page
 2. A **cost estimate** dialog will appear showing:
-   - **Token cost** — estimated cost for the AI processing
+   - **Token cost** — estimated cost for the AI processing, based on historical run data when available (within 25% of actual). The label shows "Based on N previous runs" if historical data exists, or "Estimated (no run history)" for your first run.
    - **Web search cost** — approximately $0.15 for real-time patent and product research
    - **Total estimated cost** — combined estimate
 3. Click **"Run Analysis"** to confirm and start
@@ -211,6 +211,10 @@ PatentForge generates three types of claims:
 - **Dependent claims** — narrower versions that add specific limitations to an independent claim
 - Total is capped at 20 claims (the USPTO fee boundary)
 
+### Exporting Claims as Word
+
+Click the **"Export Word"** button at the top of the Claims tab to download a .docx file containing all your claims, formatted with proper numbering and including the standard UPL disclaimer. You can share this file with your patent attorney.
+
 ### Editing Claims
 
 Click any claim text to edit it directly. Your changes are saved when you click the Save button.
@@ -297,6 +301,10 @@ Compliance checking is **automated research, not legal review**. The results are
 - Potentially incomplete — the checker may miss issues that a human examiner would catch
 - Not a guarantee of patentability — a PASS result means the AI didn't find an obvious problem, not that the claim will survive examination
 
+### Exporting Compliance Results as Word
+
+Click the **"Export Word"** button at the top of the Compliance tab to download a .docx file containing the full compliance results: per-claim status, MPEP citations, and suggested fixes. This is useful for sharing with your patent attorney alongside the claims export.
+
 All compliance results are marked "RESEARCH OUTPUT — NOT LEGAL ADVICE." **Always have a registered patent attorney review your claims before filing.**
 
 ---
@@ -318,7 +326,7 @@ Your previous analysis version is preserved — you can view it in the **History
 
 ## Settings
 
-Access settings via the gear icon in the navigation bar.
+Access settings via the gear icon in the navigation bar. A **"Projects / Settings"** breadcrumb at the top of the page lets you navigate back to the project list.
 
 | Setting | What It Does | Default |
 |---------|-------------|---------|
@@ -328,8 +336,10 @@ Access settings via the gear icon in the navigation bar.
 | **Research Model** | Optional separate model for the research stage | — |
 | **Max Tokens** | Maximum length of each stage's response | 32,000 |
 | **Inter-Stage Delay** | Seconds to wait between stages (prevents rate limiting) | 5 |
-| **Export Path** | Folder where reports are saved. Must be within your home directory. | Your Desktop |
+| **Export Path** | Folder where reports are saved on the server. When running locally, files download to your browser's Downloads folder. | — |
 | **Cost Cap (USD)** | Enforced server-side: blocks new analysis or claim drafting runs when cumulative project cost reaches this amount. Also checked mid-pipeline — if a stage pushes cost over the cap, the pipeline is cancelled. Set to 0 to disable. | $5.00 |
+
+Below the settings form, the **ODP API Usage** card shows a weekly summary of your USPTO Open Data Portal API activity: total queries, results returned, and any rate limit events. This helps you monitor your API usage if you have a free ODP key configured.
 
 **Model choices:**
 - **Sonnet** (recommended) — good balance of quality and cost
