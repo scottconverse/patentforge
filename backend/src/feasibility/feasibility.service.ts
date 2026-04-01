@@ -218,6 +218,28 @@ export class FeasibilityService {
     };
   }
 
+  /**
+   * Return just the report text — lightweight endpoint for the report view.
+   * Returns finalReport, or falls back to stage 6 output.
+   */
+  async getReportText(projectId: string) {
+    const run = await this.prisma.feasibilityRun.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      select: { id: true, finalReport: true },
+    });
+    if (!run) return { report: null };
+
+    if (run.finalReport) return { report: run.finalReport };
+
+    // Fallback to stage 6
+    const stage6 = await this.prisma.feasibilityStage.findFirst({
+      where: { feasibilityRunId: run.id, stageNumber: 6, status: 'COMPLETE' },
+      select: { outputText: true },
+    });
+    return { report: stage6?.outputText ?? null };
+  }
+
   async getProjectCumulativeCost(projectId: string): Promise<number> {
     const stages = await this.prisma.feasibilityStage.findMany({
       where: {

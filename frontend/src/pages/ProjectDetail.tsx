@@ -190,15 +190,12 @@ export default function ProjectDetail() {
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
 
-  // Report content — loaded lazily from /feasibility (project GET excludes heavy text fields)
+  // Report content — loaded lazily via dedicated lightweight endpoint
   const [fullReportContent, setFullReportContent] = useState<string | null>(null);
   useEffect(() => {
     if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
-      api.feasibility.get(id).then(run => {
-        const report = run.finalReport
-          || run.stages?.find((s: any) => s.stageNumber === 6)?.outputText
-          || null;
-        setFullReportContent(report);
+      api.feasibility.getReport(id).then(data => {
+        setFullReportContent(data.report || null);
       }).catch(() => {});
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
