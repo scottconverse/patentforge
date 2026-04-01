@@ -196,7 +196,9 @@ export default function ProjectDetail() {
     if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
       api.feasibility.getReport(id).then(data => {
         setFullReportContent(data.report || null);
-      }).catch(() => {});
+      }).catch(err => {
+        console.error('[Report] Failed to load report:', err);
+      });
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
 
@@ -220,7 +222,7 @@ export default function ProjectDetail() {
       if (latestRun) {
         if (latestRun.status === 'COMPLETE' || latestRun.status === 'ERROR') {
           setStages(latestRun.stages?.length ? latestRun.stages : makePlaceholderStages());
-          setViewMode('report');
+          setViewMode('overview');
         } else if (latestRun.status === 'RUNNING') {
           // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
           // No active abort controller means nothing is actually streaming. Mark it ERROR
@@ -1150,10 +1152,13 @@ export default function ProjectDetail() {
                 />
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
-                  <p className="text-gray-400">No report available yet.</p>
+                  <div className="inline-flex items-center gap-3 text-gray-400">
+                    <div className="w-5 h-5 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin" />
+                    Loading report...
+                  </div>
                   <button
                     onClick={() => setViewMode('overview')}
-                    className="mt-3 text-sm text-blue-400 hover:text-blue-300"
+                    className="mt-3 block mx-auto text-sm text-blue-400 hover:text-blue-300"
                   >
                     Back to overview
                   </button>
