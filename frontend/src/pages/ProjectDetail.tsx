@@ -190,6 +190,19 @@ export default function ProjectDetail() {
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
 
+  // Report content — loaded lazily from /feasibility (project GET excludes heavy text fields)
+  const [fullReportContent, setFullReportContent] = useState<string | null>(null);
+  useEffect(() => {
+    if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
+      api.feasibility.get(id).then(run => {
+        const report = run.finalReport
+          || run.stages?.find((s: any) => s.stageNumber === 6)?.outputText
+          || null;
+        setFullReportContent(report);
+      }).catch(() => {});
+    }
+  }, [viewMode, id, historicalReport, fullReportContent]);
+
   // ----- Load project -----
   const loadProject = useCallback(async () => {
     if (!id) return;
@@ -748,18 +761,6 @@ export default function ProjectDetail() {
 
   const totalRunCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
 
-  // Report content — loaded from /feasibility endpoint (not the project GET, which omits heavy fields)
-  const [fullReportContent, setFullReportContent] = useState<string | null>(null);
-  useEffect(() => {
-    if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
-      api.feasibility.get(id).then(run => {
-        const report = run.finalReport
-          || run.stages?.find((s: any) => s.stageNumber === 6)?.outputText
-          || null;
-        setFullReportContent(report);
-      }).catch(() => {});
-    }
-  }, [viewMode, id, historicalReport, fullReportContent]);
   const reportContent = historicalReport ?? fullReportContent;
 
   return (
