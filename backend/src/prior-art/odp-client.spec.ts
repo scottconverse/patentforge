@@ -84,7 +84,9 @@ describe('searchODPMulti', () => {
     expect(results[0].patent_type).toBe('Utility');
   });
 
-  it('deduplicates results across multiple queries', async () => {
+  it('deduplicates results across multiple queries with inter-query delay', async () => {
+    jest.useFakeTimers();
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
     mockFetch
       .mockResolvedValueOnce(makeODPResponse([
         makeODPPatent('10234567', 'Widget A'),
@@ -95,10 +97,18 @@ describe('searchODPMulti', () => {
         makeODPPatent('10234569', 'Widget C'),
       ]));
 
-    const results = await searchODPMulti(['query one', 'query two'], FAKE_API_KEY);
+    const resultPromise = searchODPMulti(['query one', 'query two'], FAKE_API_KEY);
+    // First query fires immediately; second waits 1.5s
+    await jest.advanceTimersByTimeAsync(2_000);
+    const results = await resultPromise;
 
     expect(results).toHaveLength(3);
     expect(results.map(r => r.patent_id)).toEqual(['US10234567', 'US10234568', 'US10234569']);
+    // Verify the inter-query delay was respected (setTimeout called with 1500ms)
+    const delayCalls = setTimeoutSpy.mock.calls.filter(c => c[1] === 1500);
+    expect(delayCalls.length).toBeGreaterThanOrEqual(1);
+    setTimeoutSpy.mockRestore();
+    jest.useRealTimers();
   });
 
   it('skips results without patent numbers (ungranted applications)', async () => {
@@ -120,19 +130,30 @@ describe('searchODPMulti', () => {
     expect(results[0].patent_id).toBe('US10234567');
   });
 
-  it('limits to 3 queries maximum', async () => {
+  it('limits to 3 queries maximum with delays between each', async () => {
+    jest.useFakeTimers();
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
     mockFetch
       .mockResolvedValueOnce(makeODPResponse([]))
       .mockResolvedValueOnce(makeODPResponse([]))
       .mockResolvedValueOnce(makeODPResponse([]));
 
-    await searchODPMulti(['q1', 'q2', 'q3', 'q4', 'q5'], FAKE_API_KEY);
+    const resultPromise = searchODPMulti(['q1', 'q2', 'q3', 'q4', 'q5'], FAKE_API_KEY);
+    // 3 queries with 1.5s gaps: need at least 3s for all to complete
+    await jest.advanceTimersByTimeAsync(5_000);
+    await resultPromise;
 
     expect(mockFetch).toHaveBeenCalledTimes(3);
+    // Verify two inter-query delays of 1500ms (queries 2 and 3 each wait)
+    const delayCalls = setTimeoutSpy.mock.calls.filter(c => c[1] === 1500);
+    expect(delayCalls).toHaveLength(2);
+    setTimeoutSpy.mockRestore();
+    jest.useRealTimers();
   });
 
   it('handles HTTP 429 with retry after delay', async () => {
     jest.useFakeTimers();
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
     mockFetch
       .mockResolvedValueOnce({ ok: false, status: 429 })
       .mockResolvedValueOnce(makeODPResponse([
@@ -147,6 +168,10 @@ describe('searchODPMulti', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(results).toHaveLength(1);
     expect(results[0].patent_title).toBe('After Retry');
+    // Verify the 429 retry used a 10-second delay
+    const retryCalls = setTimeoutSpy.mock.calls.filter(c => c[1] === 10_000);
+    expect(retryCalls.length).toBeGreaterThanOrEqual(1);
+    setTimeoutSpy.mockRestore();
     jest.useRealTimers();
   });
 
