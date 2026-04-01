@@ -45,6 +45,12 @@ export default defineConfig({
       reuseExistingServer: true,
     },
     {
+      command: 'cd ../services/compliance-checker && python -m uvicorn src.server:app --port 3004',
+      port: 3004,
+      timeout: 15_000,
+      reuseExistingServer: true,
+    },
+    {
       command: 'npx vite --port 8080 --strictPort',
       port: 8080,
       timeout: 15_000,
