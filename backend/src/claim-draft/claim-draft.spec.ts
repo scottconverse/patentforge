@@ -12,6 +12,7 @@ const mockPrisma = {
   },
   claimDraft: {
     findFirst: jest.fn(),
+    findUnique: jest.fn(),
     create: jest.fn(),
     update: jest.fn().mockResolvedValue({}),
   },
@@ -118,6 +119,9 @@ describe('ClaimDraftService', () => {
 
       const result = await service.startDraft('project-1');
       expect(result.id).toBe('new-draft');
+      // Let the fire-and-forget pipeline IIFE settle (multiple async hops:
+      // fetch attempt → catch → console.error → finally → findUnique)
+      for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r));
     });
   });
 });
