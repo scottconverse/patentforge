@@ -39,7 +39,7 @@ export default defineConfig({
       reuseExistingServer: true,
     },
     {
-      command: 'cd ../services/claim-drafter && uvicorn src.server:app --port 3002',
+      command: 'cd ../services/claim-drafter && python -m uvicorn src.server:app --port 3002',
       port: 3002,
       timeout: 15_000,
       reuseExistingServer: true,
