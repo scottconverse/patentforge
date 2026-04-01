@@ -161,5 +161,60 @@ describe('ClaimDraftService', () => {
       await expect(service.regenerateClaim('project-1', 99))
         .rejects.toThrow(/Claim 99 not found/);
     });
+
+    it('regenerates a claim and updates its text in the database', async () => {
+      // 1. Completed draft with claims
+      mockPrisma.claimDraft.findFirst.mockResolvedValue({
+        id: 'draft-1',
+        status: 'COMPLETE',
+        claims: [
+          { id: 'c1', claimNumber: 1, text: 'Original claim 1 text' },
+          { id: 'c2', claimNumber: 2, text: 'Original claim 2 text' },
+        ],
+      });
+
+      // 2. Settings with API key (already configured via mockSettings default)
+
+      // 3. Project with invention
+      mockPrisma.project.findUnique.mockResolvedValue({
+        id: 'project-1',
+        invention: { title: 'Widget', description: 'A novel widget' },
+      });
+
+      // 4. Successful fetch response with regenerated claim
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: 'COMPLETE',
+          claims: [
+            { claim_number: 1, text: 'Regenerated claim 1 text' },
+          ],
+        }),
+      });
+
+      // 5. claim.update returns updated record
+      mockPrisma.claim.update.mockResolvedValue({
+        id: 'c1',
+        claimNumber: 1,
+        text: 'Regenerated claim 1 text',
+      });
+
+      // 6. Call regenerateClaim
+      const result = await service.regenerateClaim('project-1', 1);
+
+      // 7. Verify fetch was called with the claim drafter URL
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/draft/sync'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+
+      // 8. Verify claim.update was called with the new text
+      expect(mockPrisma.claim.update).toHaveBeenCalledWith({
+        where: { id: 'c1' },
+        data: { text: 'Regenerated claim 1 text' },
+      });
+
+      expect(result.text).toBe('Regenerated claim 1 text');
+    });
   });
 });
