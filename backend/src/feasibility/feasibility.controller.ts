@@ -86,6 +86,23 @@ export class FeasibilityController {
     return this.feasibilityService.getReportText(projectId);
   }
 
+  @Get('report/html')
+  async getReportHtml(@Param('id') projectId: string, @Res() res: Response) {
+    const html = await this.feasibilityService.getReportHtmlPage(projectId);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  }
+
+  @Get('export/html')
+  async exportToHtml(@Param('id') projectId: string, @Res() res: Response) {
+    const html = await this.feasibilityService.getReportHtmlPage(projectId);
+    const project = await this.feasibilityService.getProjectTitle(projectId);
+    const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}-feasibility.html"`);
+    res.send(html);
+  }
+
   @Get('cost-estimate')
   getCostEstimate(@Param('id') projectId: string) {
     return this.feasibilityService.getCostEstimate(projectId);
