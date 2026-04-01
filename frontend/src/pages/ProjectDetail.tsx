@@ -192,10 +192,12 @@ export default function ProjectDetail() {
 
   // Report content — loaded lazily via dedicated lightweight endpoint
   const [fullReportContent, setFullReportContent] = useState<string | null>(null);
+  const [reportHtml, setReportHtml] = useState<string | null>(null);
   useEffect(() => {
     if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
       api.feasibility.getReport(id).then(data => {
         setFullReportContent(data.report || null);
+        setReportHtml(data.html || null);
       }).catch(err => {
         console.error('[Report] Failed to load report:', err);
       });
@@ -1147,6 +1149,7 @@ export default function ProjectDetail() {
               {reportContent ? (
                 <ReportViewer
                   report={reportContent}
+                  preRenderedHtml={reportHtml ?? undefined}
                   projectTitle={project.title}
                   projectId={project.id}
                 />

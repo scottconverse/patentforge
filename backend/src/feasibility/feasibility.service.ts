@@ -228,16 +228,21 @@ export class FeasibilityService {
       orderBy: { version: 'desc' },
       select: { id: true, finalReport: true },
     });
-    if (!run) return { report: null };
+    if (!run) return { report: null, html: null };
 
-    if (run.finalReport) return { report: run.finalReport };
+    let reportText = run.finalReport;
+    if (!reportText) {
+      const stage6 = await this.prisma.feasibilityStage.findFirst({
+        where: { feasibilityRunId: run.id, stageNumber: 6, status: 'COMPLETE' },
+        select: { outputText: true },
+      });
+      reportText = stage6?.outputText ?? null;
+    }
+    if (!reportText) return { report: null, html: null };
 
-    // Fallback to stage 6
-    const stage6 = await this.prisma.feasibilityStage.findFirst({
-      where: { feasibilityRunId: run.id, stageNumber: 6, status: 'COMPLETE' },
-      select: { outputText: true },
-    });
-    return { report: stage6?.outputText ?? null };
+    // Pre-render HTML server-side so the browser doesn't have to parse markdown
+    const html = marked(reportText);
+    return { report: reportText, html };
   }
 
   async getProjectCumulativeCost(projectId: string): Promise<number> {

@@ -62,7 +62,7 @@ export const api = {
       return res.blob();
     },
     getReport: (projectId: string) =>
-      req<{ report: string | null }>('GET', `/projects/${projectId}/feasibility/report`),
+      req<{ report: string | null; html: string | null }>('GET', `/projects/${projectId}/feasibility/report`),
     costEstimate: (projectId: string) =>
       req<{ hasHistory: boolean; runsUsed: number; stagesUsed: number; avgInputTokens: number; avgOutputTokens: number; avgCostPerStage: number }>(
         'GET', `/projects/${projectId}/feasibility/cost-estimate`),
