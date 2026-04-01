@@ -4,6 +4,7 @@ import { SettingsService } from '../settings/settings.service';
 import { fetchEnrichedPatent } from './patentsview-enrichment';
 import { fetchEnrichedPatentODP } from './odp-enrichment';
 import { fetchClaimsFromODP } from './odp-claims';
+import { fetchPatentFamilyODP, PatentFamilyMember } from './odp-continuity';
 
 const CACHE_TTL_DAYS = 30;
 
@@ -133,6 +134,43 @@ export class PatentDetailService {
     }
 
     return result;
+  }
+
+  /**
+   * Get patent family (continuity) data for a patent.
+   * Checks local cache first (30-day TTL), then fetches from ODP.
+   */
+  async getFamily(patentNumber: string): Promise<PatentFamilyMember[]> {
+    // Check cache
+    const cached = await this.prisma.patentFamily.findUnique({
+      where: { patentNumber },
+    });
+
+    if (cached && !this.isStale(cached.fetchedAt)) {
+      return this.parseJsonArray(cached.members);
+    }
+
+    // Fetch from ODP
+    const settings = await this.settingsService.getSettings();
+    if (!settings.usptoApiKey) {
+      return [];
+    }
+
+    const members = await fetchPatentFamilyODP(patentNumber, settings.usptoApiKey);
+    if (members === null) {
+      // Return stale cache if available
+      if (cached) return this.parseJsonArray(cached.members);
+      return [];
+    }
+
+    // Cache the result
+    await this.prisma.patentFamily.upsert({
+      where: { patentNumber },
+      create: { patentNumber, members: JSON.stringify(members), fetchedAt: new Date() },
+      update: { members: JSON.stringify(members), fetchedAt: new Date() },
+    });
+
+    return members;
   }
 
   private isStale(fetchedAt: Date): boolean {

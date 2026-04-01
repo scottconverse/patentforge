@@ -5,6 +5,15 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-04-01
+
+### Added
+- **Claim tree visualization** — SVG-based hierarchical view of patent claims showing independent/dependent relationships. Toggle between list and tree views in the Claims tab. Independent claims render as blue nodes, dependent claims as gray, with connector lines showing parent-child hierarchy.
+- **Patent family tree lookup** — new `GET /patents/:patentNumber/family` endpoint fetches continuity data (parent, child, continuation, divisional, CIP relationships) from the USPTO Open Data Portal. Results cached in a new `PatentFamily` Prisma model with 30-day TTL. The PatentDetailDrawer now has a collapsible "Patent Family" section that lazy-loads family members on expand, showing relationship type, status (granted/pending/abandoned), filing/grant dates, and links to Google Patents.
+
+### Fixed
+- **Flaky project-lifecycle E2E test** — the "navigate to project detail" test failed ~50% of the time with a 404 console error. Root cause: Vite proxy race condition where `afterEach` deleted the project via direct API call before the browser's proxied `loadProject()` fetch completed. Fixed by waiting for the project detail page to fully render before allowing teardown.
+
 ## [0.4.0] - 2026-03-31
 
 ### Fixed (CI & Testing)

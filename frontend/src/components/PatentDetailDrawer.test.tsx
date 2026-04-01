@@ -8,6 +8,7 @@ vi.mock('../api', () => ({
     patents: {
       getDetail: vi.fn(),
       getClaims: vi.fn(),
+      getFamily: vi.fn(),
     },
   },
 }));
@@ -294,5 +295,126 @@ describe('PatentDetailDrawer', () => {
     await waitFor(() => {
       expect(screen.getByText('+4 more')).toBeInTheDocument();
     });
+  });
+
+  it('lazy-loads patent family when section is expanded', async () => {
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(mockDetail);
+    (api.patents.getFamily as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        patentNumber: '11500000',
+        applicationNumber: '16123456',
+        relationship: 'continuation',
+        filingDate: '2020-03-15',
+        grantDate: '2022-01-10',
+        title: 'Parent Invention',
+        status: 'granted',
+      },
+      {
+        patentNumber: null,
+        applicationNumber: '18678901',
+        relationship: 'divisional',
+        filingDate: '2024-08-01',
+        grantDate: null,
+        title: 'Child Application',
+        status: 'pending',
+      },
+    ]);
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Patent Family')).toBeInTheDocument();
+    });
+
+    // Family not visible initially
+    expect(screen.queryByText('continuation')).not.toBeInTheDocument();
+
+    // Expand family section
+    fireEvent.click(screen.getByText('Patent Family'));
+
+    // Should show loading spinner
+    expect(screen.getByText(/Loading patent family/)).toBeInTheDocument();
+
+    // Wait for family data
+    await waitFor(() => {
+      expect(screen.getByText('continuation')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('divisional')).toBeInTheDocument();
+    expect(screen.getByText('granted')).toBeInTheDocument();
+    expect(screen.getByText('pending')).toBeInTheDocument();
+    expect(screen.getByText('Parent Invention')).toBeInTheDocument();
+    expect(screen.getByText('App. 18678901')).toBeInTheDocument();
+    expect(api.patents.getFamily).toHaveBeenCalledWith('US10234567B2');
+  });
+
+  it('shows empty state when no family members found', async () => {
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(mockDetail);
+    (api.patents.getFamily as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Patent Family')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Patent Family'));
+
+    await waitFor(() => {
+      expect(screen.getByText('No related patents found.')).toBeInTheDocument();
+    });
+  });
+
+  it('shows error when family fetch fails', async () => {
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(mockDetail);
+    (api.patents.getFamily as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('API error 500: Internal error'),
+    );
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Patent Family')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Patent Family'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Could not load patent family/)).toBeInTheDocument();
+    });
+  });
+
+  it('does not re-fetch family when collapsing and re-expanding', async () => {
+    (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(mockDetail);
+    (api.patents.getFamily as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        patentNumber: '11500000',
+        applicationNumber: '16123456',
+        relationship: 'continuation',
+        filingDate: '2020-03-15',
+        grantDate: '2022-01-10',
+        title: 'Parent Invention',
+        status: 'granted',
+      },
+    ]);
+
+    render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Patent Family')).toBeInTheDocument();
+    });
+
+    // Expand
+    fireEvent.click(screen.getByText('Patent Family'));
+    await waitFor(() => {
+      expect(screen.getByText('continuation')).toBeInTheDocument();
+    });
+
+    // Collapse
+    fireEvent.click(screen.getByText('Patent Family'));
+
+    // Re-expand — should NOT re-fetch
+    fireEvent.click(screen.getByText('Patent Family'));
+    expect(api.patents.getFamily).toHaveBeenCalledTimes(1);
   });
 });

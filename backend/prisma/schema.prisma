@@ -191,6 +191,13 @@ model PatentDetail {
   fetchedAt          DateTime @default(now())
 }
 
+model PatentFamily {
+  id           String   @id @default(uuid())
+  patentNumber String   @unique
+  members      String   // JSON array of family members
+  fetchedAt    DateTime @default(now())
+}
+
 model AppSettings {
   id                     String @id @default("singleton")
   anthropicApiKey        String @default("")

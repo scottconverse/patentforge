@@ -17,6 +17,8 @@ PatentForge is a self-hosted web application that helps inventors organize their
 - **Resume from interruption** — pick up where you left off if a run stops mid-pipeline
 - **Multiple export formats** — HTML, Word (.docx), and Markdown for sharing with your attorney or team
 - **AI-assisted claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates patent claim drafts informed by your feasibility analysis and prior art, with per-claim examiner review
+- **Claim tree visualization** — SVG-based hierarchical view of claim dependencies with list/tree toggle
+- **Patent family lookup** — continuity data (parents, children, continuations, divisionals) fetched from USPTO ODP and displayed in the patent detail drawer
 - **Self-hosted** — runs on your machine; invention data stays local except for Anthropic API calls
 - **Configurable** — choose your model (Sonnet, Opus, Haiku), set max tokens, adjust inter-stage delays
 
@@ -161,6 +163,7 @@ docker compose up --build
 - [x] **v0.3.3** — Playwright E2E tests, DOCX parser improvements, type safety, CORS hardening
 - [x] **v0.3.4** — Scoring improvements, API key encryption, prompt integrity, CI pipeline, auth skeleton
 - [x] **v0.4.0** — AI-assisted claim drafting (Python + LangGraph, 3-agent pipeline)
+- [x] **v0.4.1** — Claim tree visualization, patent family tree lookup
 - [ ] **v0.5** — Compliance review tooling
 - [ ] **v0.6** — Full application document assembly
 

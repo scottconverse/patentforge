@@ -59,6 +59,16 @@ export const api = {
       req<PatentDetail>('GET', `/patents/${patentNumber}`),
     getClaims: (patentNumber: string) =>
       req<{ claimsText: string | null; claimCount: number | null }>('GET', `/patents/${patentNumber}/claims`),
+    getFamily: (patentNumber: string) =>
+      req<Array<{
+        patentNumber: string | null;
+        applicationNumber: string | null;
+        relationship: string;
+        filingDate: string | null;
+        grantDate: string | null;
+        title: string | null;
+        status: string | null;
+      }>>('GET', `/patents/${patentNumber}/family`),
   },
   claimDraft: {
     start: (projectId: string) => req<any>('POST', `/projects/${projectId}/claims/draft`),

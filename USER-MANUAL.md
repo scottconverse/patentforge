@@ -181,6 +181,7 @@ When prior art results are available, click any patent card to open a **detail d
 - **Inventor(s)**
 - **CPC classifications** — the patent categories assigned by the patent office
 - **Full claims text** — expandable section showing all patent claims. If you have a USPTO API key configured in Settings, clicking the Claims section will fetch the actual patent claims text from the USPTO. A loading spinner appears while the claims are being retrieved. Once loaded, claims are cached locally so they appear instantly on subsequent views. Without a USPTO key, a "View on Google Patents" link is shown instead.
+- **Patent Family** — expandable section showing related patents in the same patent family. Click to load continuity data from the USPTO, which shows parent patents, child applications, continuations, divisionals, and continuations-in-part. Each family member shows its relationship type, status (granted, pending, or abandoned), filing/grant dates, and a link to Google Patents. This helps you understand the full patent landscape around a prior art result. Requires a USPTO API key.
 
 If the patent data service is unavailable, the drawer will show a message with a link to view the patent directly on Google Patents.
 
@@ -213,6 +214,15 @@ PatentForge generates three types of claims:
 ### Editing Claims
 
 Click any claim text to edit it directly. Your changes are saved when you click the Save button.
+
+### Claim Tree View
+
+Above the claims list, you'll see a **List / Tree** toggle. Click **Tree** to switch to a visual tree diagram that shows the hierarchy of your claims:
+- **Independent claims** appear as blue nodes at the top
+- **Dependent claims** appear as gray nodes below, connected by lines to their parent claim
+- Click any node to switch back to list view and jump to that claim for editing
+
+This view is useful for quickly understanding how your claims relate to each other and verifying the dependency structure.
 
 ### Viewing Strategy and Feedback
 
@@ -345,6 +355,9 @@ If you used `PatentForge.bat`, check that the terminal windows are open and not 
 | **Dependent claim** | A patent claim that refers to and narrows another claim (e.g., "The method of claim 1, wherein...") |
 | **Claim scope** | How broad or narrow a claim is — broader claims cover more but are easier to invalidate, narrower claims are more defensible |
 | **Statutory type** | The legal category of a claim — method (process), system (machine), apparatus (device), or computer-readable medium (software) |
+| **Patent family** | A group of related patents and applications that share a common origin — including parent patents, continuations, divisionals, and continuations-in-part |
+| **Continuation** | A patent application filed to pursue additional claims based on the same invention described in an earlier (parent) application |
+| **Divisional** | A patent application split off from a parent application when the patent office determines the parent covers more than one distinct invention |
 
 ---
 

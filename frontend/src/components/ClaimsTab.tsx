@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import ClaimTree from './ClaimTree';
 
 interface ClaimsTabProps {
   projectId: string;
@@ -38,6 +39,7 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
   const [editingClaim, setEditingClaim] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'tree'>('list');
 
   useEffect(() => {
     loadDraft();
@@ -181,7 +183,37 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
         </p>
       </div>
 
+      {/* View toggle */}
+      <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 w-fit">
+        <button
+          onClick={() => setViewMode('list')}
+          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
+        >
+          List
+        </button>
+        <button
+          onClick={() => setViewMode('tree')}
+          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'tree' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
+        >
+          Tree
+        </button>
+      </div>
+
+      {/* Tree view */}
+      {viewMode === 'tree' && (
+        <ClaimTree
+          claims={draft.claims}
+          onClaimClick={(claimId) => {
+            setViewMode('list');
+            setEditingClaim(claimId);
+            const claim = draft.claims.find(c => c.id === claimId);
+            if (claim) setEditText(claim.text);
+          }}
+        />
+      )}
+
       {/* Claims list */}
+      {viewMode === 'list' && (<>
       {independentClaims.map(indep => (
         <div key={indep.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
           {/* Independent claim header */}
@@ -258,6 +290,7 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
           ))}
         </div>
       ))}
+      </>)}
 
       {/* Collapsible sections: Strategy, Feedback, Specification */}
       {draft.plannerStrategy && (

@@ -311,16 +311,15 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.4.0</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.4.1</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>NEW:</strong> AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
-        <li><strong>NEW:</strong> Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks</li>
-        <li><strong>HARDENED:</strong> 20-issue security and reliability audit — server-side cost cap enforcement, internal service authentication, API key removed from browser, path traversal prevention, HTML injection fix, timing-safe auth, per-installation encryption salt</li>
+        <li><strong>NEW:</strong> Claim tree visualization — SVG-based hierarchical view of claim dependencies with list/tree toggle</li>
+        <li><strong>NEW:</strong> Patent family tree lookup — continuity data (parents, children, continuations, divisionals) fetched from USPTO ODP, lazy-loaded in patent detail drawer</li>
+        <li>AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
+        <li>Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks</li>
+        <li>20-issue security and reliability audit — server-side cost cap, internal service auth, timing-safe tokens</li>
         <li>Patent claims lazy-loading from USPTO Documents API</li>
-        <li>API key encryption at rest with per-installation random salt</li>
-        <li>Prior art scoring with ODP bias correction for title-only results</li>
         <li>GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
-        <li>Optional Bearer token auth + internal service shared secret</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>

@@ -17,6 +17,19 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
   const [lazyClaimsText, setLazyClaimsText] = useState<string | null>(null);
   const [lazyClaimCount, setLazyClaimCount] = useState<number | null>(null);
   const claimsFetchedRef = useRef(false);
+  const [showFamily, setShowFamily] = useState(false);
+  const [familyLoading, setFamilyLoading] = useState(false);
+  const [familyError, setFamilyError] = useState<string | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<Array<{
+    patentNumber: string | null;
+    applicationNumber: string | null;
+    relationship: string;
+    filingDate: string | null;
+    grantDate: string | null;
+    title: string | null;
+    status: string | null;
+  }> | null>(null);
+  const familyFetchedRef = useRef(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +47,11 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
     setLazyClaimsText(null);
     setLazyClaimCount(null);
     claimsFetchedRef.current = false;
+    setShowFamily(false);
+    setFamilyLoading(false);
+    setFamilyError(null);
+    setFamilyMembers(null);
+    familyFetchedRef.current = false;
     api.patents.getDetail(patentNumber)
       .then(d => { setDetail(d); setLoading(false); })
       .catch(err => { setError(err.message); setLoading(false); });
@@ -256,6 +274,103 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                         </a>
                       </p>
                     ) : null}
+                  </div>
+                )}
+              </div>
+
+              {/* Patent Family / Continuity (collapsible, lazy-loaded) */}
+              <div>
+                <button
+                  onClick={() => {
+                    const willShow = !showFamily;
+                    setShowFamily(willShow);
+                    if (willShow && !familyMembers && !familyFetchedRef.current) {
+                      familyFetchedRef.current = true;
+                      setFamilyLoading(true);
+                      setFamilyError(null);
+                      api.patents.getFamily(patentNumber!)
+                        .then(res => {
+                          setFamilyMembers(res);
+                          setFamilyLoading(false);
+                        })
+                        .catch(err => {
+                          setFamilyError(err.message);
+                          setFamilyLoading(false);
+                        });
+                    }
+                  }}
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-200 hover:text-blue-300 transition-colors"
+                >
+                  <span className={`transform transition-transform ${showFamily ? 'rotate-90' : ''}`}>&#9654;</span>
+                  Patent Family
+                </button>
+                {showFamily && (
+                  <div className="mt-2 pl-4 border-l-2 border-gray-700">
+                    {familyLoading && (
+                      <div className="flex items-center gap-2 py-2">
+                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-gray-400">Loading patent family from USPTO...</span>
+                      </div>
+                    )}
+                    {familyError && (
+                      <p className="text-xs text-amber-400">
+                        Could not load patent family data. Add a USPTO API key in Settings.
+                      </p>
+                    )}
+                    {familyMembers && familyMembers.length === 0 && !familyLoading && !familyError && (
+                      <p className="text-xs text-gray-500 italic">No related patents found.</p>
+                    )}
+                    {familyMembers && familyMembers.length > 0 && (
+                      <div className="space-y-2">
+                        {familyMembers.map((member, i) => (
+                          <div key={i} className="bg-gray-800/50 rounded p-2 space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 capitalize">
+                                {member.relationship}
+                              </span>
+                              {member.status && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                  member.status === 'granted'
+                                    ? 'bg-green-900/40 text-green-400'
+                                    : member.status === 'abandoned'
+                                      ? 'bg-red-900/40 text-red-400'
+                                      : 'bg-yellow-900/40 text-yellow-400'
+                                }`}>
+                                  {member.status}
+                                </span>
+                              )}
+                            </div>
+                            {member.patentNumber && (
+                              <a
+                                href={`https://patents.google.com/patent/US${member.patentNumber.replace(/^US/i, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-400 hover:text-blue-300 hover:underline font-mono"
+                              >
+                                US{member.patentNumber.replace(/^US/i, '')}
+                              </a>
+                            )}
+                            {!member.patentNumber && member.applicationNumber && (
+                              <span className="text-xs text-gray-400 font-mono">
+                                App. {member.applicationNumber}
+                              </span>
+                            )}
+                            {member.title && (
+                              <p className="text-xs text-gray-400 leading-snug truncate" title={member.title}>
+                                {member.title}
+                              </p>
+                            )}
+                            {(member.filingDate || member.grantDate) && (
+                              <p className="text-xs text-gray-500">
+                                {member.filingDate && `Filed: ${member.filingDate}`}
+                                {member.filingDate && member.grantDate && ' · '}
+                                {member.grantDate && `Granted: ${member.grantDate}`}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

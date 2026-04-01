@@ -16,4 +16,10 @@ export class PatentDetailController {
   async getClaims(@Param('patentNumber') patentNumber: string) {
     return this.service.getClaims(patentNumber);
   }
+
+  /** GET /api/patents/:patentNumber/family — patent family/continuity data (cached) */
+  @Get(':patentNumber/family')
+  async getFamily(@Param('patentNumber') patentNumber: string) {
+    return this.service.getFamily(patentNumber);
+  }
 }
