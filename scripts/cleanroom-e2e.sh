@@ -13,10 +13,11 @@
 #   5. Runs backend unit tests (Jest)
 #   5b. Runs claim-drafter unit tests (pytest)
 #   6. Runs frontend unit tests (Vitest)
-#   7. Starts backend + feasibility and waits for healthy endpoints
+#   7. Starts all services and waits for healthy endpoints
 #   8. Runs API smoke tests against live services
-#   9. Tears down services
-#  10. Reports pass/fail summary
+#   9. Runs Playwright E2E tests (browser-level integration tests)
+#  10. Tears down services
+#  11. Reports pass/fail summary
 # ============================================================================
 
 set -euo pipefail
@@ -207,6 +208,18 @@ node dist/server.js &
 PIDS+=($!)
 log "  Feasibility service starting (PID ${PIDS[-1]})..."
 
+# Start claim-drafter service
+cd "$CLAIM_DRAFTER"
+python3 -m uvicorn src.server:app --port 3002 &
+PIDS+=($!)
+log "  Claim-drafter starting (PID ${PIDS[-1]})..."
+
+# Start Vite dev server for Playwright
+cd "$FRONTEND"
+npx vite --port 8080 --strictPort &
+PIDS+=($!)
+log "  Frontend dev server starting (PID ${PIDS[-1]})..."
+
 # Wait for backend to be ready
 log "  Waiting for backend (port 3000)..."
 for i in $(seq 1 30); do
@@ -229,6 +242,19 @@ for i in $(seq 1 15); do
   fi
   if [ "$i" -eq 15 ]; then
     warn "Feasibility service not responding — some smoke tests may fail"
+  fi
+  sleep 1
+done
+
+# Wait for frontend dev server
+log "  Waiting for frontend (port 8080)..."
+for i in $(seq 1 15); do
+  if curl -s http://localhost:8080/ > /dev/null 2>&1; then
+    pass "Frontend dev server is up on port 8080"
+    break
+  fi
+  if [ "$i" -eq 15 ]; then
+    warn "Frontend dev server not responding — Playwright tests may fail"
   fi
   sleep 1
 done
@@ -311,7 +337,28 @@ if [ -n "$PROJECT_ID" ]; then
 fi
 
 # ============================================================================
-# Phase 7: Summary
+# Phase 7: Playwright E2E tests (browser-level integration tests)
+# ============================================================================
+log "=== Phase 7: Playwright E2E tests ==="
+
+cd "$FRONTEND"
+set +e
+PLAYWRIGHT_OUTPUT=$(npx playwright test 2>&1)
+PLAYWRIGHT_EXIT=$?
+set -e
+
+echo "$PLAYWRIGHT_OUTPUT"
+
+if [ $PLAYWRIGHT_EXIT -eq 0 ]; then
+  PW_COUNT=$(echo "$PLAYWRIGHT_OUTPUT" | sed -n 's/.*\([0-9]* passed\).*/\1/p' | tail -1)
+  PW_COUNT=${PW_COUNT:-unknown}
+  pass "Playwright E2E tests: $PW_COUNT"
+else
+  fail "Playwright E2E tests FAILED (exit code $PLAYWRIGHT_EXIT)"
+fi
+
+# ============================================================================
+# Phase 8: Summary
 # ============================================================================
 cleanup  # stop services before reporting
 
