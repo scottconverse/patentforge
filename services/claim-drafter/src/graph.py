@@ -5,7 +5,7 @@ Flow: plan → draft → examine → (revise if needed) → finalize
 """
 
 from __future__ import annotations
-from typing import Literal
+from typing import Literal, Callable
 
 from langgraph.graph import StateGraph, END
 
@@ -71,7 +71,7 @@ async def run_claim_pipeline(
     default_model: str = "claude-sonnet-4-20250514",
     research_model: str = "",
     max_tokens: int = 16000,
-    on_step: callable | None = None,
+    on_step: 'Callable[[str, str], None] | None' = None,  # (node_name, step_name) — no state dict exposed
 ) -> ClaimDraftResult:
     """
     Run the full claim drafting pipeline and return structured results.
@@ -99,7 +99,8 @@ async def run_claim_pipeline(
             else:
                 state_dict = node_state.model_dump() if hasattr(node_state, 'model_dump') else dict(node_state)
             if on_step:
-                on_step(node_name, state_dict)
+                # Pass only the node name and step, NOT the full state (contains api_key)
+                on_step(node_name, state_dict.get("step", ""))
             if state_dict.get("error"):
                 return ClaimDraftResult(
                     status="ERROR",

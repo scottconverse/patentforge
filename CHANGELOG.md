@@ -45,6 +45,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Typed request body for callClaimDrafter** (#18) — `requestBody: any` replaced with `ClaimDraftRequestBody` interface that mirrors the Python `ClaimDraftRequest` Pydantic model. Field name mismatches are now caught at compile time.
 - **Internal service ports not exposed in Docker** (#19) — confirmed fixed in #2. Only backend (3000) and frontend (8080) are reachable from the host.
 - **ODP scoring bias correction** (#20) — prior art results without abstracts (common with ODP) now receive a 1.5x title-score multiplier to compensate for the missing abstract dimension. Prevents systematic underscoring of ODP results vs PatentsView results.
+- **/draft/sync bypassed resolve_api_key()** (NEW-A) — the sync endpoint now correctly uses `resolve_api_key()` to prefer the env var. Docker Compose passes `ANTHROPIC_API_KEY` to the claim-drafter container.
+- **Postgres port removed from Docker Compose** (NEW-B) — `5432:5432` was published externally with hardcoded credentials. Removed.
+- **on_step callback no longer receives full state dict** (NEW-C) — passes only `(node_name, step)` strings, not the GraphState containing the API key.
+- **Pydantic v2 list validation** (NEW-D) — `max_length` on `Field()` for lists is silently ignored in Pydantic v2. Replaced with `@field_validator` that raises on >20 items.
+- **INTERNAL_SERVICE_SECRET default documented** (NEW-E) — README now warns that the Docker default is a known public value and provides an `openssl rand` command to generate a custom secret.
+- **callClaimDrafter finally block** (#8 residual) — draft status is now guaranteed to resolve via a `finally` block, even if the error handler's Prisma update itself fails.
 
 ### Security
 - All claim drafting prompts licensed CC BY-SA 4.0 (disclaimers survive forks)

@@ -142,7 +142,14 @@ For network deployments, set the `PATENTFORGE_TOKEN` environment variable to req
 
 ### Internal Service Security
 
-The feasibility service (port 3001) and claim-drafter service (port 3002) are internal-only — the frontend communicates through the NestJS backend, which proxies SSE streams. Set `INTERNAL_SERVICE_SECRET` to require a shared secret header on all internal service calls. In Docker, this is configured automatically. In local dev, it's optional.
+The feasibility service (port 3001) and claim-drafter service (port 3002) are internal-only — the frontend communicates through the NestJS backend, which proxies SSE streams. Set `INTERNAL_SERVICE_SECRET` to require a shared secret header on all internal service calls. In local dev, it's optional.
+
+**Docker deployments:** The default secret is `patentforge-internal` — a known public value. **Set a custom secret** before deploying:
+
+```bash
+export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+docker compose up --build
+```
 
 ## Roadmap
 

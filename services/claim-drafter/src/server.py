@@ -102,8 +102,8 @@ async def draft_claims(request: ClaimDraftRequest):
     async def event_stream():
         steps_seen = []
 
-        def on_step(step_name: str, state):
-            steps_seen.append(step_name)
+        def on_step(node_name: str, step: str):
+            steps_seen.append(node_name)
 
         try:
             result = await run_claim_pipeline(
@@ -162,7 +162,7 @@ async def draft_claims_sync(request: ClaimDraftRequest):
         feasibility_stage_5=request.feasibility_stage_5,
         feasibility_stage_6=request.feasibility_stage_6,
         prior_art_context=prior_art_context,
-        api_key=request.settings.api_key,
+        api_key=resolve_api_key(request.settings.api_key),
         default_model=request.settings.default_model,
         research_model=request.settings.research_model,
         max_tokens=request.settings.max_tokens,

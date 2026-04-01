@@ -5,7 +5,7 @@ Defines request/response schemas and the LangGraph state.
 
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ── Request models ────────────────────────────────────────────────────────────
@@ -32,8 +32,15 @@ class ClaimDraftRequest(BaseModel):
     invention_narrative: str = Field(max_length=100_000)
     feasibility_stage_5: str = Field(default="", max_length=200_000)
     feasibility_stage_6: str = Field(default="", max_length=200_000)
-    prior_art_results: list[PriorArtItem] = Field(default_factory=list, max_length=20)
+    prior_art_results: list[PriorArtItem] = Field(default_factory=list)
     settings: DraftSettings
+
+    @field_validator('prior_art_results')
+    @classmethod
+    def cap_prior_art_results(cls, v: list[PriorArtItem]) -> list[PriorArtItem]:
+        if len(v) > 20:
+            raise ValueError('Maximum 20 prior art results allowed')
+        return v
 
 
 # ── Output models ─────────────────────────────────────────────────────────────

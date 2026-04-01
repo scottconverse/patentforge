@@ -166,24 +166,34 @@ export class ClaimDraftService implements OnModuleInit {
     });
 
     // Call claim drafter service (fire and forget — frontend polls for status)
-    this.callClaimDrafter(draft.id, {
-      invention_narrative: narrative,
-      feasibility_stage_5: stage5,
-      feasibility_stage_6: stage6,
-      prior_art_results: priorArtResults,
-      settings: {
-        api_key: settings.anthropicApiKey,
-        default_model: settings.defaultModel,
-        research_model: settings.researchModel || '',
-        max_tokens: settings.maxTokens,
-      },
-    }).catch(err => {
-      console.error(`[ClaimDraft] Pipeline failed for draft ${draft.id}:`, err.message);
-      this.prisma.claimDraft.update({
-        where: { id: draft.id },
-        data: { status: 'ERROR', completedAt: new Date() },
-      }).catch(() => {});
-    });
+    // finally block guarantees draft status is resolved even if error handling itself fails
+    (async () => {
+      try {
+        await this.callClaimDrafter(draft.id, {
+          invention_narrative: narrative,
+          feasibility_stage_5: stage5,
+          feasibility_stage_6: stage6,
+          prior_art_results: priorArtResults,
+          settings: {
+            api_key: settings.anthropicApiKey,
+            default_model: settings.defaultModel,
+            research_model: settings.researchModel || '',
+            max_tokens: settings.maxTokens,
+          },
+        });
+      } catch (err: any) {
+        console.error(`[ClaimDraft] Pipeline failed for draft ${draft.id}:`, err.message);
+      } finally {
+        // Ensure draft is never left in RUNNING status
+        const current = await this.prisma.claimDraft.findUnique({ where: { id: draft.id } });
+        if (current && current.status === 'RUNNING') {
+          await this.prisma.claimDraft.update({
+            where: { id: draft.id },
+            data: { status: 'ERROR', completedAt: new Date() },
+          }).catch(e => console.error(`[ClaimDraft] Failed to update draft status: ${e.message}`));
+        }
+      }
+    })();
 
     return draft;
   }
