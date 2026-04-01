@@ -46,6 +46,10 @@ test.describe('Project Lifecycle', () => {
     await openBtn.first().click();
 
     await expect(page).toHaveURL(new RegExp(`/projects/${projectId}`), { timeout: 5_000 });
+    // Wait for the project detail page to finish loading (not just URL change).
+    // Without this, afterEach may delete the project while the browser's proxied
+    // GET /api/projects/:id is still in-flight, causing a 404 console error.
+    await expect(page.locator('text=E2E Navigate Test').first()).toBeVisible({ timeout: 5_000 });
     await screenshot(page, 'project-detail-page');
   });
 
