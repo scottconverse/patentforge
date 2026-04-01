@@ -11,6 +11,11 @@ export class SettingsController {
     return this.settingsService.getSettings();
   }
 
+  @Get('odp-usage')
+  getOdpUsage() {
+    return this.settingsService.getOdpUsageSummary();
+  }
+
   @Put()
   @HttpCode(HttpStatus.OK)
   updateSettings(@Body() dto: UpdateSettingsDto) {

@@ -42,6 +42,8 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const [editText, setEditText] = useState('');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'tree'>('list');
+  const [docxLoading, setDocxLoading] = useState(false);
+  const [docxError, setDocxError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDraft();
@@ -185,6 +187,26 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const independentClaims = draft.claims.filter(c => c.claimType === 'INDEPENDENT');
   const dependentClaims = draft.claims.filter(c => c.claimType === 'DEPENDENT');
 
+  async function handleDownloadDocx() {
+    setDocxLoading(true);
+    setDocxError(null);
+    try {
+      const blob = await api.claimDraft.exportToDocx(projectId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'claims.docx';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    } catch (e: any) {
+      setDocxError(e.message || 'Word export failed');
+    } finally {
+      setDocxLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* DRAFT watermark */}
@@ -197,7 +219,8 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         </p>
       </div>
 
-      {/* View toggle */}
+      {/* View toggle + export */}
+      <div className="flex items-center justify-between">
       <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 w-fit">
         <button
           onClick={() => setViewMode('list')}
@@ -212,6 +235,20 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
           Tree
         </button>
       </div>
+        <button
+          onClick={handleDownloadDocx}
+          disabled={docxLoading}
+          className="px-3 py-1.5 text-sm bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white rounded transition-colors"
+        >
+          {docxLoading ? 'Preparing...' : 'Export Word'}
+        </button>
+      </div>
+
+      {docxError && (
+        <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
+          Word export failed: {docxError}
+        </div>
+      )}
 
       {/* Tree view */}
       {viewMode === 'tree' && (

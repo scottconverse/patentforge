@@ -3,13 +3,14 @@ interface CostConfirmModalProps {
   webSearchCost: number;
   cap: number;
   model: string;
-  maxTokens: number;
+  source: 'history' | 'static';
+  runsUsed: number;
   stageCount?: number;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function CostConfirmModal({ tokenCost, webSearchCost, cap, model, maxTokens, stageCount = 6, onConfirm, onCancel }: CostConfirmModalProps) {
+export default function CostConfirmModal({ tokenCost, webSearchCost, cap, model, source, runsUsed, stageCount = 6, onConfirm, onCancel }: CostConfirmModalProps) {
   const totalCost = tokenCost + webSearchCost;
   const exceedsCap = cap > 0 && totalCost > cap;
   const modelName = model.includes('haiku') ? 'Claude Haiku 4.5' : model.includes('opus') ? 'Claude Opus 4' : 'Claude Sonnet 4';
@@ -22,10 +23,6 @@ export default function CostConfirmModal({ tokenCost, webSearchCost, cap, model,
           <div className="flex justify-between text-gray-300">
             <span>Model</span>
             <span className="font-mono text-gray-100">{modelName}</span>
-          </div>
-          <div className="flex justify-between text-gray-300">
-            <span>Max tokens / stage</span>
-            <span className="font-mono text-gray-100">{maxTokens.toLocaleString()}</span>
           </div>
           <div className="border-t border-gray-700 pt-2 mt-2 space-y-1.5">
             <div className="flex justify-between text-gray-300">
@@ -48,14 +45,18 @@ export default function CostConfirmModal({ tokenCost, webSearchCost, cap, model,
           </div>
           {cap > 0 && (
             <div className="flex justify-between text-gray-500 text-xs pt-1">
-              <span>Prices from LiteLLM · may vary</span>
+              <span>
+                {source === 'history'
+                  ? `Based on ${runsUsed} previous run${runsUsed === 1 ? '' : 's'} (+25% buffer)`
+                  : 'Estimated (no run history)'}
+              </span>
               <span>Cap: ${cap.toFixed(2)}</span>
             </div>
           )}
         </div>
         {exceedsCap && (
           <div className="p-3 bg-amber-900/40 border border-amber-700 rounded text-amber-300 text-sm">
-            ⚠ Estimated cost exceeds your cap of ${cap.toFixed(2)}. You can still proceed.
+            Estimated cost exceeds your cap of ${cap.toFixed(2)}. You can still proceed.
           </div>
         )}
         <div className="flex gap-3 justify-end pt-1">

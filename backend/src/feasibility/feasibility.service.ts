@@ -177,6 +177,47 @@ export class FeasibilityService {
    * Calculate total cost across all completed feasibility stages for a project.
    * Used for server-side cost cap enforcement.
    */
+  /**
+   * Return average token counts per stage from historical runs,
+   * or static fallback values if no completed runs exist.
+   */
+  async getCostEstimate(projectId: string) {
+    const completedRuns = await this.prisma.feasibilityRun.findMany({
+      where: { projectId, status: 'COMPLETE' },
+      include: {
+        stages: {
+          where: { status: 'COMPLETE', inputTokens: { not: null }, outputTokens: { not: null } },
+          select: { inputTokens: true, outputTokens: true, estimatedCostUsd: true },
+        },
+      },
+    });
+
+    const allStages = completedRuns.flatMap(r => r.stages);
+    if (allStages.length > 0) {
+      const avgInput = Math.round(allStages.reduce((s, st) => s + (st.inputTokens ?? 0), 0) / allStages.length);
+      const avgOutput = Math.round(allStages.reduce((s, st) => s + (st.outputTokens ?? 0), 0) / allStages.length);
+      const avgCostPerStage = allStages.reduce((s, st) => s + (st.estimatedCostUsd ?? 0), 0) / allStages.length;
+      return {
+        hasHistory: true,
+        runsUsed: completedRuns.length,
+        stagesUsed: allStages.length,
+        avgInputTokens: avgInput,
+        avgOutputTokens: avgOutput,
+        avgCostPerStage,
+      };
+    }
+
+    // Static fallback — derived from actual Haiku run data
+    return {
+      hasHistory: false,
+      runsUsed: 0,
+      stagesUsed: 0,
+      avgInputTokens: 19500,
+      avgOutputTokens: 3500,
+      avgCostPerStage: 0,
+    };
+  }
+
   async getProjectCumulativeCost(projectId: string): Promise<number> {
     const stages = await this.prisma.feasibilityStage.findMany({
       where: {

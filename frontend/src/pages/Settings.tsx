@@ -32,9 +32,14 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showUsptoKey, setShowUsptoKey] = useState(false);
+  const [odpUsage, setOdpUsage] = useState<{
+    thisWeek: { totalQueries: number; totalResults: number; rateLimitHits: number; errorCount: number; callCount: number };
+    lastUsed: string | null;
+  } | null>(null);
 
   useEffect(() => {
     loadSettings();
+    api.settings.odpUsage().then(setOdpUsage).catch(() => {});
   }, []);
 
   async function loadSettings() {
@@ -144,6 +149,38 @@ export default function Settings() {
 
         </div>
 
+        {/* ODP API Usage */}
+        {odpUsage && settings.usptoApiKey && (
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">USPTO API Usage (Last 7 Days)</h2>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-gray-500 text-xs">Queries</div>
+                <div className="text-gray-100 text-lg font-mono">{odpUsage.thisWeek.totalQueries}</div>
+              </div>
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-gray-500 text-xs">Results Found</div>
+                <div className="text-gray-100 text-lg font-mono">{odpUsage.thisWeek.totalResults}</div>
+              </div>
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-gray-500 text-xs">Searches</div>
+                <div className="text-gray-100 text-lg font-mono">{odpUsage.thisWeek.callCount}</div>
+              </div>
+              <div className="bg-gray-800 rounded p-3">
+                <div className="text-gray-500 text-xs">Last Used</div>
+                <div className="text-gray-100 text-sm font-mono">
+                  {odpUsage.lastUsed ? new Date(odpUsage.lastUsed).toLocaleDateString() : 'Never'}
+                </div>
+              </div>
+            </div>
+            {odpUsage.thisWeek.rateLimitHits > 0 && (
+              <p className="text-amber-400 text-xs">
+                {odpUsage.thisWeek.rateLimitHits} rate limit hit{odpUsage.thisWeek.rateLimitHits > 1 ? 's' : ''} this week
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Models */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Models</h2>
@@ -223,10 +260,10 @@ export default function Settings() {
               type="text"
               value={settings.exportPath || ''}
               onChange={e => update('exportPath', e.target.value)}
-              placeholder="Leave blank to use Desktop"
+              placeholder="Server path for MD/HTML export"
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
             />
-            <p className="text-xs text-gray-500 mt-1">Folder where reports are saved. Leave blank to use your Desktop.</p>
+            <p className="text-xs text-gray-500 mt-1">Server folder for MD/HTML file export. Word downloads go to your browser's download folder.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Cost Cap (USD)</label>

@@ -81,6 +81,11 @@ export class FeasibilityController {
     res.send(buffer);
   }
 
+  @Get('cost-estimate')
+  getCostEstimate(@Param('id') projectId: string) {
+    return this.feasibilityService.getCostEstimate(projectId);
+  }
+
   @Get(':version')
   getByVersion(
     @Param('id') projectId: string,

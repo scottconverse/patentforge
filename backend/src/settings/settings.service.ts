@@ -78,4 +78,38 @@ export class SettingsService implements OnModuleInit {
       usptoApiKey: decrypt(raw.usptoApiKey, this.salt),
     };
   }
+
+  /**
+   * Get ODP API usage summary for the last 7 days.
+   */
+  async getOdpUsageSummary() {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const usage = await this.prisma.odpApiUsage.findMany({
+      where: { calledAt: { gte: weekAgo } },
+      orderBy: { calledAt: 'desc' },
+    });
+
+    const totalQueries = usage.reduce((s, u) => s + u.queriesAttempted, 0);
+    const totalResults = usage.reduce((s, u) => s + u.resultsFound, 0);
+    const rateLimitHits = usage.filter(u => u.hadRateLimit).length;
+    const errorCount = usage.filter(u => u.hadError).length;
+    const lastUsed = usage.length > 0 ? usage[0].calledAt : null;
+
+    return {
+      thisWeek: {
+        totalQueries,
+        totalResults,
+        rateLimitHits,
+        errorCount,
+        callCount: usage.length,
+      },
+      lastUsed,
+      weeklyLimits: {
+        patentFileWrapperDocs: 1_200_000,
+        metadataRetrievals: 5_000_000,
+      },
+    };
+  }
 }

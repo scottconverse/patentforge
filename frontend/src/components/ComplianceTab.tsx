@@ -40,6 +40,8 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   const [acknowledged, setAcknowledged] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(RULE_ORDER));
+  const [docxLoading, setDocxLoading] = useState(false);
+  const [docxError, setDocxError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCheck();
@@ -149,6 +151,26 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     </div>
   );
 
+  async function handleDownloadDocx() {
+    setDocxLoading(true);
+    setDocxError(null);
+    try {
+      const blob = await api.compliance.exportToDocx(projectId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'compliance.docx';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    } catch (e: any) {
+      setDocxError(e.message || 'Word export failed');
+    } finally {
+      setDocxLoading(false);
+    }
+  }
+
   // ----- Results view -----
   function renderResults() {
     if (!check || !check.results) return null;
@@ -164,6 +186,23 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
 
     return (
       <div className="space-y-4">
+        {/* Export button */}
+        <div className="flex items-center justify-end">
+          <button
+            onClick={handleDownloadDocx}
+            disabled={docxLoading}
+            className="px-3 py-1.5 text-sm bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white rounded transition-colors"
+          >
+            {docxLoading ? 'Preparing...' : 'Export Word'}
+          </button>
+        </div>
+
+        {docxError && (
+          <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
+            Word export failed: {docxError}
+          </div>
+        )}
+
         {/* UPL disclaimer banner */}
         <div className="bg-amber-900/20 border border-amber-800 rounded-lg p-3 text-center">
           <p className="text-amber-300 text-xs font-semibold uppercase tracking-wider">

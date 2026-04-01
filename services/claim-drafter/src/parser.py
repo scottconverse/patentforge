@@ -114,21 +114,20 @@ def parse_claims(raw_text: str) -> list[Claim]:
             ))
 
     # Fix duplicate numbering (e.g. Haiku outputting multiple "Claim 1" entries).
-    # Build a mapping from original -> sequential numbers, then renumber parent refs.
-    seen: dict[int, int] = {}
-    old_to_new: dict[tuple[int, int], int] = {}  # (original_num, index) -> new_num
-    for idx, c in enumerate(claims):
-        if c.claim_number in seen:
-            # Duplicate number detected — assign next sequential
-            next_num = max(seen.values()) + 1 if seen else 1
-            old_to_new[(c.claim_number, idx)] = next_num
-            seen[next_num] = next_num
-            c.claim_number = next_num
-        else:
-            old_to_new[(c.claim_number, idx)] = c.claim_number
-            seen[c.claim_number] = c.claim_number
+    # Renumber all claims sequentially 1..N, then fix parent references.
+    has_dupes = len({c.claim_number for c in claims}) < len(claims)
+    if has_dupes:
+        old_to_new: dict[int, int] = {}
+        for idx, c in enumerate(claims):
+            new_num = idx + 1
+            # Track first occurrence mapping (parent refs point to original numbers)
+            if c.claim_number not in old_to_new:
+                old_to_new[c.claim_number] = new_num
+            c.claim_number = new_num
 
-    # Renumber parent references for dependent claims whose parents were renumbered
-    # (only needed if the original numbering was already correct for parent refs)
+        # Update parent references using the mapping
+        for c in claims:
+            if c.parent_claim_number is not None and c.parent_claim_number in old_to_new:
+                c.parent_claim_number = old_to_new[c.parent_claim_number]
 
     return claims

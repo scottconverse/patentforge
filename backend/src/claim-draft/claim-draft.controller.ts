@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Param, Body, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, ParseIntPipe, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { ClaimDraftService } from './claim-draft.service';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 
@@ -17,6 +18,15 @@ export class ClaimDraftController {
   @Get()
   getLatest(@Param('id') projectId: string) {
     return this.service.getLatest(projectId);
+  }
+
+  /** GET /api/projects/:id/claims/export/docx — Export claims as Word document */
+  @Get('export/docx')
+  async exportToDocx(@Param('id') projectId: string, @Res() res: Response) {
+    const { buffer, filename } = await this.service.getDocxBuffer(projectId);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
   }
 
   /** GET /api/projects/:id/claims/:version — Get specific version */

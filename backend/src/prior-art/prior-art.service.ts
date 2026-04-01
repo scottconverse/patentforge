@@ -77,8 +77,21 @@ export class PriorArtService {
       let rawResults: PatentsViewPatent[];
       let source: string;
       if (usptoApiKey) {
-        rawResults = await searchODPMulti(queries, usptoApiKey);
+        const odpResult = await searchODPMulti(queries, usptoApiKey);
+        rawResults = odpResult.results;
         source = 'USPTO ODP';
+
+        // Log ODP usage for tracking
+        await this.prisma.odpApiUsage.create({
+          data: {
+            projectId,
+            queriesAttempted: odpResult.metadata.queriesAttempted,
+            resultsFound: odpResult.metadata.resultsFound,
+            hadRateLimit: odpResult.metadata.hadRateLimit,
+            hadError: odpResult.metadata.hadError,
+            errorMessage: odpResult.metadata.errorMessage ?? null,
+          },
+        }).catch(err => console.warn('[ODP] Failed to log usage:', err.message));
       } else {
         throw new Error(
           'No USPTO API key configured. The PatentsView API has been shut down. ' +

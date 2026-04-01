@@ -140,3 +140,35 @@ class TestParseClaimsComplex:
         # Dependency chain
         claim4 = next(c for c in claims if c.claim_number == 4)
         assert claim4.parent_claim_number == 2
+
+    def test_duplicate_numbering_renumbered_sequentially(self):
+        """Haiku sometimes outputs multiple claims with the same number."""
+        raw = """1. (Independent - Broad - Method) A method for connecting frames.
+
+1. (Independent - Medium - System) A system comprising a frame.
+
+2. (Dependent on 1) The method of claim 1, further comprising a connector."""
+
+        claims = parse_claims(raw)
+        assert len(claims) == 3
+        # Should be renumbered 1, 2, 3
+        assert claims[0].claim_number == 1
+        assert claims[1].claim_number == 2
+        assert claims[2].claim_number == 3
+        # Dependent's parent ref should point to renumbered claim 1 (not 2)
+        assert claims[2].parent_claim_number == 1
+        assert claims[2].claim_type == "DEPENDENT"
+
+    def test_duplicate_numbering_preserves_unique_sequence(self):
+        """When no duplicates, numbering is left as-is."""
+        raw = """1. (Independent - Broad - Method) A method.
+
+2. (Dependent on 1) The method of claim 1, with a step.
+
+3. (Independent - Medium - System) A system."""
+
+        claims = parse_claims(raw)
+        assert claims[0].claim_number == 1
+        assert claims[1].claim_number == 2
+        assert claims[2].claim_number == 3
+        assert claims[1].parent_claim_number == 1

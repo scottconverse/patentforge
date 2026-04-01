@@ -61,6 +61,9 @@ export const api = {
       }
       return res.blob();
     },
+    costEstimate: (projectId: string) =>
+      req<{ hasHistory: boolean; runsUsed: number; stagesUsed: number; avgInputTokens: number; avgOutputTokens: number; avgCostPerStage: number }>(
+        'GET', `/projects/${projectId}/feasibility/cost-estimate`),
     runs: (projectId: string) => req<any[]>('GET', `/projects/${projectId}/feasibility/runs`),
     getVersion: (projectId: string, version: number) =>
       req<any>('GET', `/projects/${projectId}/feasibility/${version}`),
@@ -92,6 +95,16 @@ export const api = {
       req<any>('PUT', `/projects/${projectId}/claims/edit/${claimId}`, { text }),
     regenerateClaim: (projectId: string, claimNumber: number) =>
       req<any>('POST', `/projects/${projectId}/claims/${claimNumber}/regenerate`),
+    exportToDocx: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/claims/export/docx`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
+      return res.blob();
+    },
   },
   compliance: {
     startCheck: (projectId: string, draftVersion?: number) =>
@@ -100,9 +113,24 @@ export const api = {
       req<any>('GET', `/projects/${projectId}/compliance`),
     getVersion: (projectId: string, version: number) =>
       req<any>('GET', `/projects/${projectId}/compliance/${version}`),
+    exportToDocx: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/compliance/export/docx`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
+      return res.blob();
+    },
   },
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),
+    odpUsage: () => req<{
+      thisWeek: { totalQueries: number; totalResults: number; rateLimitHits: number; errorCount: number; callCount: number };
+      lastUsed: string | null;
+      weeklyLimits: { patentFileWrapperDocs: number; metadataRetrievals: number };
+    }>('GET', '/settings/odp-usage'),
   },
 };

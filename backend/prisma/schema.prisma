@@ -20,6 +20,7 @@ model Project {
   complianceChecks ComplianceCheck[]
   applications     PatentApplication[]
   prosecutionEvents ProsecutionEvent[]
+  odpApiUsage      OdpApiUsage[]
 }
 
 model InventionInput {
@@ -197,6 +198,20 @@ model PatentFamily {
   patentNumber String   @unique
   members      String   // JSON array of family members
   fetchedAt    DateTime @default(now())
+}
+
+model OdpApiUsage {
+  id               String   @id @default(uuid())
+  projectId        String?
+  project          Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  queriesAttempted Int
+  resultsFound     Int
+  hadRateLimit     Boolean  @default(false)
+  hadError         Boolean  @default(false)
+  errorMessage     String?
+  calledAt         DateTime @default(now())
+
+  @@index([calledAt])
 }
 
 model AppSettings {

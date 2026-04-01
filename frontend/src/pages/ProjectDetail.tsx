@@ -115,16 +115,28 @@ const WEB_SEARCH_COST_PER_SEARCH = 0.01;
 const ESTIMATED_SEARCHES_PER_RUN = 15;
 const ESTIMATED_WEB_SEARCH_COST = ESTIMATED_SEARCHES_PER_RUN * WEB_SEARCH_COST_PER_SEARCH;
 
-async function estimateRunCosts(model: string, maxTokens: number): Promise<{ tokenCost: number; webSearchCost: number }> {
-  const pricing = await fetchLivePricing();
+const COST_BUFFER = 1.25; // 25% buffer over estimate
+
+async function estimateRunCosts(projectId: string, model: string): Promise<{ tokenCost: number; webSearchCost: number; source: 'history' | 'static'; runsUsed: number }> {
+  const [pricing, estimate] = await Promise.all([
+    fetchLivePricing(),
+    api.feasibility.costEstimate(projectId),
+  ]);
   const p = pricing[model] ?? _fallbackPricing[model] ?? { inputPer1M: 3.00, outputPer1M: 15.00 };
-  const avgInputTokens = 8000;
   const stages = 6;
+
+  if (estimate.hasHistory && estimate.avgCostPerStage > 0) {
+    // Use actual historical cost data, add 25% buffer
+    const tokenCost = stages * estimate.avgCostPerStage * COST_BUFFER;
+    return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'history', runsUsed: estimate.runsUsed };
+  }
+
+  // Static fallback using realistic token averages
   const tokenCost = stages * (
-    (avgInputTokens / 1_000_000) * p.inputPer1M +
-    (maxTokens / 1_000_000) * p.outputPer1M
-  );
-  return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST };
+    (estimate.avgInputTokens / 1_000_000) * p.inputPer1M +
+    (estimate.avgOutputTokens / 1_000_000) * p.outputPer1M
+  ) * COST_BUFFER;
+  return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'static', runsUsed: 0 };
 }
 
 type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims' | 'compliance';
@@ -160,7 +172,7 @@ export default function ProjectDetail() {
 
   // Cost confirmation modal
   const [costModal, setCostModal] = useState<{
-    tokenCost: number; webSearchCost: number; cap: number; model: string; maxTokens: number; stageCount?: number;
+    tokenCost: number; webSearchCost: number; cap: number; model: string; source: 'history' | 'static'; runsUsed: number; stageCount?: number;
   } | null>(null);
   const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -297,16 +309,15 @@ export default function ProjectDetail() {
     }
 
     const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
-    const maxTokens = appSettings.maxTokens || 32000;
     const cap = appSettings.costCapUsd ?? 5.00;
-    const { tokenCost, webSearchCost } = await estimateRunCosts(model, maxTokens);
+    const { tokenCost, webSearchCost, source, runsUsed } = await estimateRunCosts(id, model);
 
     // Store run closure and show modal
     pendingRunRef.current = async () => {
       setCostModal(null);
       await proceedWithRun(appSettings, inv);
     };
-    setCostModal({ tokenCost, webSearchCost, cap, model, maxTokens });
+    setCostModal({ tokenCost, webSearchCost, cap, model, source, runsUsed });
   }
 
   // Resume a failed/interrupted run from the first incomplete stage,
@@ -341,11 +352,10 @@ export default function ProjectDetail() {
     }
 
     const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
-    const maxTokens = appSettings.maxTokens || 32000;
     const cap = appSettings.costCapUsd ?? 5.00;
     const remainingStages = 6 - resumeFrom + 1;
     // Estimate cost only for remaining stages
-    const { tokenCost, webSearchCost } = await estimateRunCosts(model, maxTokens);
+    const { tokenCost, webSearchCost, source, runsUsed } = await estimateRunCosts(id, model);
     const partialTokenCost = parseFloat((tokenCost * remainingStages / 6).toFixed(3));
     const partialWebCost = parseFloat((webSearchCost * remainingStages / 6).toFixed(2));
 
@@ -353,7 +363,7 @@ export default function ProjectDetail() {
       setCostModal(null);
       await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
     };
-    setCostModal({ tokenCost: partialTokenCost, webSearchCost: partialWebCost, cap, model, maxTokens, stageCount: remainingStages });
+    setCostModal({ tokenCost: partialTokenCost, webSearchCost: partialWebCost, cap, model, source, runsUsed, stageCount: remainingStages });
   }
 
   async function proceedWithRun(appSettings: AppSettings, inv: InventionInput, startFromStage = 1, previousOutputs: Record<number, string> = {}) {
@@ -1317,7 +1327,8 @@ export default function ProjectDetail() {
           webSearchCost={costModal.webSearchCost}
           cap={costModal.cap}
           model={costModal.model}
-          maxTokens={costModal.maxTokens}
+          source={costModal.source}
+          runsUsed={costModal.runsUsed}
           stageCount={costModal.stageCount}
           onConfirm={() => { pendingRunRef.current?.(); }}
           onCancel={() => setCostModal(null)}

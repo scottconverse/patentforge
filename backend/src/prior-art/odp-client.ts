@@ -63,11 +63,16 @@ function sleep(ms: number): Promise<void> {
  * Execute a single ODP search query. Returns raw results.
  * Handles 429 with a single retry after a 10-second wait.
  */
+interface QueryODPResult {
+  results: ODPSearchResult[];
+  wasRateLimited: boolean;
+}
+
 async function queryODP(
   queryText: string,
   apiKey: string,
   retryCount = 0,
-): Promise<ODPSearchResult[]> {
+): Promise<QueryODPResult> {
   const body: ODPSearchBody = {
     q: `applicationMetaData.inventionTitle:${queryText}`,
     filters: [
@@ -100,31 +105,32 @@ async function queryODP(
       if (retryCount < MAX_RETRIES_ON_429) {
         console.warn(`[ODP] Rate limited (429) for query "${queryText}", waiting ${RETRY_DELAY_ON_429_MS / 1000}s before retry...`);
         await sleep(RETRY_DELAY_ON_429_MS);
-        return queryODP(queryText, apiKey, retryCount + 1);
+        const retried = await queryODP(queryText, apiKey, retryCount + 1);
+        return { ...retried, wasRateLimited: true }; // preserve rate-limit signal even if retry succeeded
       }
       console.warn(`[ODP] Rate limited (429) for query "${queryText}" after ${MAX_RETRIES_ON_429} retry, skipping`);
-      return [];
+      return { results: [], wasRateLimited: true };
     }
 
     if (res.status === 403) {
       console.warn('[ODP] API key rejected (403). Check that the USPTO API key is valid.');
-      return [];
+      return { results: [], wasRateLimited: false };
     }
 
     if (!res.ok) {
       console.warn(`[ODP] HTTP ${res.status} for query "${queryText}"`);
-      return [];
+      return { results: [], wasRateLimited: false };
     }
 
     const data = (await res.json()) as ODPSearchResponse;
-    return data.patentFileWrapperDataBag ?? [];
+    return { results: data.patentFileWrapperDataBag ?? [], wasRateLimited: false };
   } catch (err: any) {
     if (err.name === 'AbortError') {
       console.warn(`[ODP] Timeout for query "${queryText}"`);
     } else {
       console.warn(`[ODP] Error for query "${queryText}":`, err.message);
     }
-    return [];
+    return { results: [], wasRateLimited: false };
   } finally {
     clearTimeout(timer);
   }
@@ -151,17 +157,28 @@ function mapToPatentsViewPatent(result: ODPSearchResult): PatentsViewPatent | nu
   };
 }
 
+export interface OdpSearchMetadata {
+  queriesAttempted: number;
+  resultsFound: number;
+  hadRateLimit: boolean;
+  hadError: boolean;
+  errorMessage?: string;
+}
+
 /**
  * Search the USPTO Open Data Portal for patents matching the given queries.
  * Runs queries sequentially with delays to respect rate limits.
- * Returns results in the same PatentsViewPatent format for compatibility.
+ * Returns results + metadata for usage tracking.
  */
 export async function searchODPMulti(
   queries: string[],
   apiKey: string,
-): Promise<PatentsViewPatent[]> {
+): Promise<{ results: PatentsViewPatent[]; metadata: OdpSearchMetadata }> {
   const seen = new Set<string>();
   const combined: PatentsViewPatent[] = [];
+  let hadRateLimit = false;
+  let hadError = false;
+  let errorMessage: string | undefined;
 
   // Limit to 3 queries to stay within rate limits
   const limitedQueries = queries.slice(0, 3);
@@ -170,7 +187,8 @@ export async function searchODPMulti(
     if (i > 0) await sleep(DELAY_BETWEEN_QUERIES_MS);
 
     try {
-      const results = await queryODP(limitedQueries[i], apiKey);
+      const { results, wasRateLimited } = await queryODP(limitedQueries[i], apiKey);
+      if (wasRateLimited) hadRateLimit = true;
       for (const r of results) {
         const mapped = mapToPatentsViewPatent(r);
         if (mapped && !seen.has(mapped.patent_id)) {
@@ -179,9 +197,20 @@ export async function searchODPMulti(
         }
       }
     } catch (err) {
-      console.warn(`[ODP] Query "${limitedQueries[i]}" failed:`, (err as Error).message);
+      hadError = true;
+      errorMessage = (err as Error).message;
+      console.warn(`[ODP] Query "${limitedQueries[i]}" failed:`, errorMessage);
     }
   }
 
-  return combined;
+  return {
+    results: combined,
+    metadata: {
+      queriesAttempted: limitedQueries.length,
+      resultsFound: combined.length,
+      hadRateLimit,
+      hadError,
+      errorMessage,
+    },
+  };
 }
