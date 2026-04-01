@@ -26,11 +26,13 @@ Optional:
 
 2. **Install dependencies** (all four services)
    ```bash
-   cd backend && npm install && cd ..
-   cd services/feasibility && npm install && cd ../..
+   cd backend && npm ci && cd ..
+   cd services/feasibility && npm ci && cd ../..
    cd services/claim-drafter && pip install -e ".[dev]" && cd ../..
    cd frontend && npm install && cd ..
    ```
+
+   > **Note:** The frontend uses `npm install` (not `npm ci`) because esbuild includes platform-specific optional binaries. A lockfile generated on one OS won't contain binaries for other platforms, causing `npm ci` to fail with `EBADPLATFORM`. The backend and feasibility services don't have this issue and can use `npm ci`.
 
 3. **Set up the database**
    ```bash
@@ -117,9 +119,12 @@ bash scripts/cleanroom-e2e.sh
 
 ### Playwright E2E Setup
 
-The E2E tests launch all three services automatically via Playwright's `webServer` config. First run requires Chromium:
+The E2E tests launch all four services (backend, feasibility, claim-drafter, frontend) automatically via Playwright's `webServer` config. Tests run with `workers: 1` because they share a SQLite database that can't handle concurrent writes.
+
+First run requires Chromium and Python dependencies:
 
 ```bash
+cd services/claim-drafter && pip install . && cd ../..
 cd frontend && npx playwright install chromium
 ```
 

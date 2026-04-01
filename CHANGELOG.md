@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2026-03-31
 
+### Fixed (CI & Testing)
+- **CI frontend install** — switched from `npm ci` to `npm install` for the frontend in GitHub Actions. `npm ci` fails cross-platform because esbuild's platform-specific optional binaries aren't all present in a lockfile generated on a different OS.
+- **CI claim-drafter setup** — added Python 3.12 setup and `pip install .` to the E2E job, which was missing the claim-drafter service entirely.
+- **Cross-platform export-path test** — `resolveExportDir('C:\\Windows\\System32')` assertion now platform-conditional. On Linux, `path.resolve` treats Windows paths as relative, so the test only asserts on Windows.
+- **Playwright workers serialized** — set `workers: 1` to prevent SQLite race conditions when multiple test files share the same database.
+- **Playwright claim-drafter webServer** — added claim-drafter to the Playwright webServer config so E2E tests launch all 4 services.
+- **Cross-platform uvicorn startup** — changed claim-drafter webServer command from `uvicorn` to `python -m uvicorn` so it works on Windows (where the venv `Scripts/` dir may not be on PATH).
+- **ODP mock test sequencing** — changed persistent `mockResolvedValue` to chained `mockResolvedValueOnce` calls, preventing mock bleed across sequential queries.
+- **ODP rate-limit delay assertions** — multi-query and 429-retry tests now use `jest.useFakeTimers()` with `jest.spyOn(global, 'setTimeout')` to verify the 1.5s inter-query delay and 10s 429-retry delay actually fire.
+- **Claim-draft test async leak** — added missing `claimDraft.findUnique` mock and a `setImmediate` drain loop to prevent the fire-and-forget pipeline IIFE from crashing after Jest teardown.
+
 ### Added
 - **AI-assisted claim drafting** — new Python + LangGraph service with 3 AI agents (Planner, Writer, Examiner) that generates patent claim drafts from feasibility analysis and prior art
 - **Three independent claims** — broad (method), medium (system), and narrow (apparatus/CRM) scope, informed by prior art avoidance analysis
