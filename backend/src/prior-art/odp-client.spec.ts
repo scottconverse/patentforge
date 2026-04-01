@@ -121,7 +121,10 @@ describe('searchODPMulti', () => {
   });
 
   it('limits to 3 queries maximum', async () => {
-    mockFetch.mockResolvedValue(makeODPResponse([]));
+    mockFetch
+      .mockResolvedValueOnce(makeODPResponse([]))
+      .mockResolvedValueOnce(makeODPResponse([]))
+      .mockResolvedValueOnce(makeODPResponse([]));
 
     await searchODPMulti(['q1', 'q2', 'q3', 'q4', 'q5'], FAKE_API_KEY);
 
@@ -129,28 +132,37 @@ describe('searchODPMulti', () => {
   });
 
   it('handles HTTP 429 with retry after delay', async () => {
+    jest.useFakeTimers();
     mockFetch
       .mockResolvedValueOnce({ ok: false, status: 429 })
       .mockResolvedValueOnce(makeODPResponse([
         makeODPPatent('10234567', 'After Retry'),
       ]));
 
-    const results = await searchODPMulti(['test'], FAKE_API_KEY);
+    const resultPromise = searchODPMulti(['test'], FAKE_API_KEY);
+    // Advance past the 10-second retry delay and the 1.5-second inter-query delay
+    await jest.advanceTimersByTimeAsync(12_000);
+    const results = await resultPromise;
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(results).toHaveLength(1);
     expect(results[0].patent_title).toBe('After Retry');
-  }, 20000);
+    jest.useRealTimers();
+  });
 
   it('gives up after max retries on 429', async () => {
+    jest.useFakeTimers();
     mockFetch
       .mockResolvedValueOnce({ ok: false, status: 429 })
       .mockResolvedValueOnce({ ok: false, status: 429 });
 
-    const results = await searchODPMulti(['test'], FAKE_API_KEY);
+    const resultPromise = searchODPMulti(['test'], FAKE_API_KEY);
+    await jest.advanceTimersByTimeAsync(12_000);
+    const results = await resultPromise;
 
     expect(results).toHaveLength(0);
-  }, 20000);
+    jest.useRealTimers();
+  });
 
   it('handles HTTP 403 (bad API key) gracefully', async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 403 });

@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: 0,
+  workers: 1, // serialize — shared SQLite DB can't handle concurrent writes
   outputDir: './e2e-results',
   use: {
     baseURL: 'http://localhost:8080',
@@ -34,6 +35,12 @@ export default defineConfig({
     {
       command: 'cd ../services/feasibility && node dist/server.js',
       port: 3001,
+      timeout: 15_000,
+      reuseExistingServer: true,
+    },
+    {
+      command: 'cd ../services/claim-drafter && uvicorn src.server:app --port 3002',
+      port: 3002,
       timeout: 15_000,
       reuseExistingServer: true,
     },

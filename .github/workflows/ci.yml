@@ -39,7 +39,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: cd frontend && npm ci
+        run: cd frontend && npm install
 
       - name: Run tests
         run: cd frontend && npm test
@@ -79,7 +79,7 @@ jobs:
         run: cd services/feasibility && npm ci && npm run build
 
       - name: Install and build frontend
-        run: cd frontend && npm ci && npm run build
+        run: cd frontend && npm install && npm run build
 
       - name: Install claim-drafter dependencies (verify pip install works)
         run: cd services/claim-drafter && pip install .
@@ -93,12 +93,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Install all Node dependencies
         run: |
           cd backend && npm ci && cd ..
           cd services/feasibility && npm ci && cd ../..
-          cd frontend && npm ci
+          cd frontend && npm install
+
+      - name: Install claim-drafter dependencies
+        run: cd services/claim-drafter && pip install .
 
       - name: Set up database
         run: |

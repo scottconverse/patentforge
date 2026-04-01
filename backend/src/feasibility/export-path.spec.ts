@@ -21,7 +21,11 @@ describe('resolveExportDir', () => {
 
   it('rejects paths outside home directory', () => {
     expect(() => resolveExportDir('/etc')).toThrow(/home directory/);
-    expect(() => resolveExportDir('C:\\Windows\\System32')).toThrow(/home directory/);
+    // Windows-style absolute paths are only meaningful on Windows;
+    // on Linux, path.resolve treats them as relative (resolving under cwd)
+    if (process.platform === 'win32') {
+      expect(() => resolveExportDir('C:\\Windows\\System32')).toThrow(/home directory/);
+    }
   });
 
   it('rejects path traversal attempts', () => {
