@@ -2,14 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "patentforge-backend",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["--env-file=.env", "dist/main"],
-      "port": 3000,
-      "cwd": "backend"
-    },
-    {
-      "name": "patentforge-frontend",
+      "name": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 8080,

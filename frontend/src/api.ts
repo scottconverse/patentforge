@@ -8,7 +8,15 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
     headers: body ? { 'Content-Type': 'application/json' } : {},
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      message = json.message || json.error || text;
+    } catch {}
+    throw new Error(message);
+  }
   if (res.status === 204) return undefined as T;
   return res.json();
 }
@@ -45,7 +53,12 @@ export const api = {
       req<{ folderPath: string; mdFile: string; htmlFile: string }>('POST', `/projects/${projectId}/feasibility/export`),
     exportToDocx: async (projectId: string): Promise<Blob> => {
       const res = await fetch(`${BASE}/projects/${projectId}/feasibility/export/docx`);
-      if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
       return res.blob();
     },
     runs: (projectId: string) => req<any[]>('GET', `/projects/${projectId}/feasibility/runs`),

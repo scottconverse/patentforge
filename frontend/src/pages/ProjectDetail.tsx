@@ -1271,7 +1271,8 @@ export default function ProjectDetail() {
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `${slug}-stage-${selectedStage.stageNumber}.md`;
+                      const stageName = selectedStage.stageName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                      a.download = `${slug}-${selectedStage.stageNumber}-${stageName}.md`;
                       a.click();
                       setTimeout(() => URL.revokeObjectURL(url), 2000);
                     }}

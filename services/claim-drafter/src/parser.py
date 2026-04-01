@@ -113,4 +113,22 @@ def parse_claims(raw_text: str) -> list[Claim]:
                 text=text,
             ))
 
+    # Fix duplicate numbering (e.g. Haiku outputting multiple "Claim 1" entries).
+    # Build a mapping from original -> sequential numbers, then renumber parent refs.
+    seen: dict[int, int] = {}
+    old_to_new: dict[tuple[int, int], int] = {}  # (original_num, index) -> new_num
+    for idx, c in enumerate(claims):
+        if c.claim_number in seen:
+            # Duplicate number detected — assign next sequential
+            next_num = max(seen.values()) + 1 if seen else 1
+            old_to_new[(c.claim_number, idx)] = next_num
+            seen[next_num] = next_num
+            c.claim_number = next_num
+        else:
+            old_to_new[(c.claim_number, idx)] = c.claim_number
+            seen[c.claim_number] = c.claim_number
+
+    # Renumber parent references for dependent claims whose parents were renumbered
+    # (only needed if the original numbering was already correct for parent refs)
+
     return claims

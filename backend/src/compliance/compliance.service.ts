@@ -222,7 +222,7 @@ export class ComplianceService implements OnModuleInit {
       });
     }
 
-    // Update check status
+    // Update check status with cost
     const hasFailure = result.results.some((r: any) => r.status === 'FAIL');
     await this.prisma.complianceCheck.update({
       where: { id: checkId },
@@ -230,6 +230,7 @@ export class ComplianceService implements OnModuleInit {
         status: 'COMPLETE',
         completedAt: new Date(),
         overallPass: !hasFailure,
+        estimatedCostUsd: result.total_estimated_cost_usd ?? null,
       },
     });
   }

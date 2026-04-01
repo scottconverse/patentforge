@@ -132,8 +132,9 @@ model ComplianceCheck {
   draftVersion Int
   startedAt    DateTime?
   completedAt  DateTime?
-  results      ComplianceResult[]
-  overallPass  Boolean            @default(false)
+  results          ComplianceResult[]
+  overallPass      Boolean            @default(false)
+  estimatedCostUsd Float?
 }
 
 model ComplianceResult {
@@ -201,7 +202,7 @@ model PatentFamily {
 model AppSettings {
   id                     String @id @default("singleton")
   anthropicApiKey        String @default("")
-  defaultModel           String @default("")
+  defaultModel           String @default("claude-haiku-4-5-20251001")
   researchModel          String @default("")
   maxTokens              Int    @default(32000)
   interStageDelaySeconds Int    @default(5)

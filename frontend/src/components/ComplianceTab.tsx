@@ -111,35 +111,8 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     );
   }
 
-  // State 2: Ready (no check yet, or last check is COMPLETE/ERROR — show run button)
-  if (!check || check.status === 'COMPLETE' || check.status === 'ERROR') {
-    // If complete, show results; if no check or error, show run button
-    if (check?.status === 'COMPLETE') {
-      return renderResults();
-    }
-
-    return (
-      <div className="text-center py-12">
-        {check?.status === 'ERROR' && (
-          <p className="text-red-400 mb-3">Compliance check failed.</p>
-        )}
-        {!check && (
-          <p className="text-gray-400 mb-4">No compliance check yet. Run a check against your claim drafts.</p>
-        )}
-        <button
-          onClick={handleRunCheck}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
-        >
-          {check?.status === 'ERROR' ? 'Try Again' : 'Run Compliance Check'}
-        </button>
-        {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
-        {renderModal()}
-      </div>
-    );
-  }
-
-  // State 3: Running
-  if (running || check.status === 'RUNNING') {
+  // State 2: Running (must come before !check — running can be true while check is null)
+  if (running || check?.status === 'RUNNING') {
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
@@ -151,8 +124,30 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     );
   }
 
-  // Fallback
-  return null;
+  // State 3: Complete — show results
+  if (check?.status === 'COMPLETE') {
+    return renderResults();
+  }
+
+  // State 4: Error or no check yet — show run button
+  return (
+    <div className="text-center py-12">
+      {check?.status === 'ERROR' && (
+        <p className="text-red-400 mb-3">Compliance check failed.</p>
+      )}
+      {!check && (
+        <p className="text-gray-400 mb-4">No compliance check yet. Run a check against your claim drafts.</p>
+      )}
+      <button
+        onClick={handleRunCheck}
+        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
+      >
+        {check?.status === 'ERROR' ? 'Try Again' : 'Run Compliance Check'}
+      </button>
+      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
+      {renderModal()}
+    </div>
+  );
 
   // ----- Results view -----
   function renderResults() {

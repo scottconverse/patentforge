@@ -75,8 +75,11 @@ async def check_compliance(request: ComplianceRequest):
     """Run the compliance checking pipeline synchronously. Returns the complete result."""
     claims_parts = []
     for c in request.claims:
-        prefix = f"{c.claim_number}. " if c.claim_type == "INDEPENDENT" else f"{c.claim_number}. (Depends on claim {c.parent_claim_number}) "
-        claims_parts.append(f"{prefix}{c.text}")
+        if c.claim_type == "INDEPENDENT":
+            prefix = f"Claim {c.claim_number} (Independent):"
+        else:
+            prefix = f"Claim {c.claim_number} (Dependent on Claim {c.parent_claim_number}):"
+        claims_parts.append(f"{prefix}\n{c.text}")
     claims_text = "\n\n".join(claims_parts)
 
     return await run_compliance_pipeline(

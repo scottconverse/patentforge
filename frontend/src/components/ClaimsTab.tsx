@@ -135,6 +135,19 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
     );
   }
 
+  // State: Generating (must come before !draft check — generating can be true while draft is null)
+  if (generating || draft?.status === 'RUNNING') {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-gray-300">Generating claim drafts...</span>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims.</p>
+      </div>
+    );
+  }
+
   // State: No draft yet — show generate button
   if (!draft) {
     return (
@@ -148,19 +161,6 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         </button>
         {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
         {renderModal()}
-      </div>
-    );
-  }
-
-  // State: Generating
-  if (generating || draft.status === 'RUNNING') {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-300">Generating claim drafts...</span>
-        </div>
-        <p className="text-xs text-gray-500 mt-3">This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims.</p>
       </div>
     );
   }
