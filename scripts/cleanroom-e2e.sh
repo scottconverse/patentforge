@@ -138,7 +138,7 @@ log "=== Phase 4: Backend unit tests (Jest) ==="
 
 cd "$BACKEND"
 set +e
-JEST_OUTPUT=$(npx jest --forceExit --no-cache 2>&1)
+JEST_OUTPUT=$(npx jest --no-cache 2>&1)
 JEST_EXIT=$?
 set -e
 

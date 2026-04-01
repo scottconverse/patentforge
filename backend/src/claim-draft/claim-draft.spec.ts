@@ -5,6 +5,11 @@
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { ClaimDraftService } from './claim-draft.service';
 
+// Mock fetch globally so the fire-and-forget IIFE in startDraft rejects
+// immediately and predictably instead of hitting the network.
+const mockFetch = jest.fn().mockRejectedValue(new Error('mocked fetch rejection'));
+global.fetch = mockFetch as any;
+
 const mockPrisma = {
   claim: {
     findFirst: jest.fn(),
