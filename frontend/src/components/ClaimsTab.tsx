@@ -5,6 +5,7 @@ import ClaimTree from './ClaimTree';
 interface ClaimsTabProps {
   projectId: string;
   hasFeasibility: boolean; // Whether a completed feasibility run exists
+  priorArtTitles?: Array<{ patentNumber: string; title: string }>;
 }
 
 interface ClaimData {
@@ -29,10 +30,11 @@ interface DraftData {
   revisionNotes: string | null;
 }
 
-export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps) {
+export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }: ClaimsTabProps) {
   const [draft, setDraft] = useState<DraftData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [regenerating, setRegenerating] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -96,6 +98,18 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
       await loadDraft();
     } catch (e: any) {
       setError(e.message);
+    }
+  }
+
+  async function handleRegenerate(claimNumber: number) {
+    try {
+      setRegenerating(claimNumber);
+      await api.claimDraft.regenerateClaim(projectId, claimNumber);
+      await loadDraft();
+    } catch (e: any) {
+      setError(`Failed to regenerate claim ${claimNumber}: ${e.message}`);
+    } finally {
+      setRegenerating(null);
     }
   }
 
@@ -247,13 +261,42 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
                 </div>
               </div>
             ) : (
-              <p
-                className="text-sm text-gray-300 leading-relaxed cursor-pointer hover:bg-gray-800/50 rounded p-1 -m-1"
-                onClick={() => { setEditingClaim(indep.id); setEditText(indep.text); }}
-                title="Click to edit"
-              >
-                {indep.text}
-              </p>
+              <div>
+                <p
+                  className="text-sm text-gray-300 leading-relaxed cursor-pointer hover:bg-gray-800/50 rounded p-1 -m-1"
+                  onClick={() => { setEditingClaim(indep.id); setEditText(indep.text); }}
+                  title="Click to edit"
+                >
+                  {indep.text}
+                </p>
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    onClick={() => handleRegenerate(indep.claimNumber)}
+                    disabled={regenerating === indep.claimNumber}
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                  >
+                    {regenerating === indep.claimNumber ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        Regenerating...
+                      </span>
+                    ) : (
+                      'Regenerate'
+                    )}
+                  </button>
+                </div>
+                {(() => {
+                  const overlappingArt = findOverlaps(indep.text, priorArtTitles ?? []);
+                  return overlappingArt.length > 0 ? (
+                    <div className="mt-1 flex items-center gap-1 text-amber-400 text-xs" title={`Potential overlap with: ${overlappingArt.map(a => a.patentNumber).join(', ')}`}>
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                      <span>Potential prior art overlap</span>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
             )}
           </div>
 
@@ -278,13 +321,42 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
                   </div>
                 </div>
               ) : (
-                <p
-                  className="text-xs text-gray-400 leading-relaxed cursor-pointer hover:bg-gray-800/50 rounded p-1 -m-1"
-                  onClick={() => { setEditingClaim(dep.id); setEditText(dep.text); }}
-                  title="Click to edit"
-                >
-                  {dep.text}
-                </p>
+                <div>
+                  <p
+                    className="text-xs text-gray-400 leading-relaxed cursor-pointer hover:bg-gray-800/50 rounded p-1 -m-1"
+                    onClick={() => { setEditingClaim(dep.id); setEditText(dep.text); }}
+                    title="Click to edit"
+                  >
+                    {dep.text}
+                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button
+                      onClick={() => handleRegenerate(dep.claimNumber)}
+                      disabled={regenerating === dep.claimNumber}
+                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                    >
+                      {regenerating === dep.claimNumber ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          Regenerating...
+                        </span>
+                      ) : (
+                        'Regenerate'
+                      )}
+                    </button>
+                  </div>
+                  {(() => {
+                    const overlappingArt = findOverlaps(dep.text, priorArtTitles ?? []);
+                    return overlappingArt.length > 0 ? (
+                      <div className="mt-1 flex items-center gap-1 text-amber-400 text-xs" title={`Potential overlap with: ${overlappingArt.map(a => a.patentNumber).join(', ')}`}>
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                        <span>Potential prior art overlap</span>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
               )}
             </div>
           ))}
@@ -379,6 +451,16 @@ export default function ClaimsTab({ projectId, hasFeasibility }: ClaimsTabProps)
       </div>
     );
   }
+}
+
+function findOverlaps(claimText: string, priorArt: Array<{ patentNumber: string; title: string }>) {
+  if (!priorArt?.length) return [];
+  const stopWords = new Set(['method', 'system', 'device', 'apparatus', 'comprising', 'wherein', 'claim', 'said', 'based', 'using', 'having', 'includes', 'providing']);
+  const claimLower = claimText.toLowerCase();
+  return priorArt.filter(art => {
+    const titleWords = art.title.toLowerCase().split(/\s+/).filter(w => w.length >= 4 && !stopWords.has(w));
+    return titleWords.some(word => claimLower.includes(word));
+  });
 }
 
 function CollapsibleSection({ title, isOpen, onToggle, content }: {

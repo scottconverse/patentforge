@@ -1205,6 +1205,7 @@ export default function ProjectDetail() {
               <ClaimsTab
                 projectId={id!}
                 hasFeasibility={!!latestRun && latestRun.status === 'COMPLETE'}
+                priorArtTitles={priorArtSearch?.results?.map(r => ({ patentNumber: r.patentNumber, title: r.title }))}
               />
             </div>
           )}
