@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PriorArtSseService } from './prior-art-sse.service';
-import { searchPatentsViewMulti, PatentsViewPatent } from './patentsview-client';
+import { PatentsViewPatent } from './patentsview-client';
 import { searchODPMulti } from './odp-client';
 
 @Injectable()
@@ -71,15 +71,19 @@ export class PriorArtService {
 
       this.sse.emit(projectId, { type: 'prior_art_queries', queries });
 
-      // Step 2: Query patent database — prefer ODP if key is available, fall back to PatentsView
+      // Step 2: Query patent database via USPTO Open Data Portal
+      // PatentsView API has been shut down (HTTP 410) — ODP is the only working source.
       const allTerms = queries.flatMap(q => q.toLowerCase().split(/\s+/));
       let rawResults: PatentsViewPatent[];
-      let source = 'PatentsView';
+      let source: string;
       if (usptoApiKey) {
         rawResults = await searchODPMulti(queries, usptoApiKey);
         source = 'USPTO ODP';
       } else {
-        rawResults = await searchPatentsViewMulti(queries);
+        throw new Error(
+          'No USPTO API key configured. The PatentsView API has been shut down. ' +
+          'Add a USPTO Open Data Portal API key in Settings to enable prior art search.'
+        );
       }
 
       // Emit progress (one event per query equivalent)
@@ -119,10 +123,16 @@ export class PriorArtService {
 
       this.sse.emit(projectId, { type: 'prior_art_complete', searchId: search.id, totalResults: scored.length });
     } catch (err) {
-      await this.prisma.priorArtSearch.update({
-        where: { id: search.id },
-        data: { status: 'ERROR' },
-      });
+      // Update search status to ERROR — but the record may already be gone
+      // if the project was deleted while this background search was running.
+      try {
+        await this.prisma.priorArtSearch.update({
+          where: { id: search.id },
+          data: { status: 'ERROR' },
+        });
+      } catch {
+        // Record already deleted (cascade from project deletion) — nothing to update
+      }
       this.sse.emit(projectId, { type: 'prior_art_error', message: (err as Error).message });
     }
   }

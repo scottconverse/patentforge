@@ -117,11 +117,17 @@ describe('ClaimDraftService', () => {
         status: 'RUNNING',
       });
 
+      // Suppress expected console.error from the fire-and-forget IIFE
+      // (fetch fails in test env → logs "Pipeline failed for draft...")
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
       const result = await service.startDraft('project-1');
       expect(result.id).toBe('new-draft');
       // Let the fire-and-forget pipeline IIFE settle (multiple async hops:
-      // fetch attempt → catch → console.error → finally → findUnique)
-      for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r));
+      // fetch attempt → catch → console.error → finally → findUnique → update)
+      for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
+
+      errorSpy.mockRestore();
     });
   });
 });
