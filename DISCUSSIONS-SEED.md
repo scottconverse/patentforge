@@ -251,3 +251,38 @@ Five improvements focused on security, code quality, and developer experience:
 5. **Optional authentication** — set the `PATENTFORGE_TOKEN` environment variable to require Bearer token auth on all API requests. Off by default for single-user local installs, available for anyone running PatentForge on a network.
 
 187 total tests across 3 layers. The foundation is solid for v0.4 (claim drafting).
+
+---
+
+### Title: v0.4.1 — Claim Tree Visualization & Patent Family Lookup
+
+**Body:**
+
+Two additions to the claim drafting workflow:
+
+1. **Claim tree visualization** — SVG-based hierarchical view of patent claims showing independent/dependent relationships. Toggle between list and tree views in the Claims tab.
+
+2. **Patent family tree lookup** — continuity data (parents, children, continuations, divisionals) fetched from the USPTO Open Data Portal and displayed in the patent detail drawer. Results cached with 30-day TTL.
+
+Also fixed a flaky E2E test caused by a Vite proxy race condition during teardown.
+
+---
+
+### Title: v0.5.0 — Compliance Checking
+
+**Body:**
+
+New in v0.5.0: automated compliance checking for patent claim drafts.
+
+Four specialized checker agents validate claims against legal requirements:
+
+1. **35 USC 112(a)** — written description adequacy
+2. **35 USC 112(b)** — definiteness (antecedent basis, ambiguous terms)
+3. **MPEP 608** — formalities (claim format, numbering, dependency chains)
+4. **35 USC 101** — patent eligibility (Alice/Mayo framework)
+
+Results show as a traffic-light report (PASS/FAIL/WARN) per claim with MPEP citations and actionable fix suggestions. You can edit claims and re-check to verify fixes.
+
+Also added: individual claim regeneration and prior art overlap warnings on claims whose terms match known prior art references.
+
+New compliance-checker service runs on port 3004 (Python + FastAPI + LangGraph), authenticated via the same internal service secret as claim-drafter.

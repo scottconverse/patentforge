@@ -169,7 +169,7 @@ docker compose up --build
 - [x] **v0.3.4** — Scoring improvements, API key encryption, prompt integrity, CI pipeline, auth skeleton
 - [x] **v0.4.0** — AI-assisted claim drafting (Python + LangGraph, 3-agent pipeline)
 - [x] **v0.4.1** — Claim tree visualization, patent family tree lookup
-- [x] **v0.5** — Compliance review tooling
+- [x] **v0.5.0** — Compliance review tooling
 - [ ] **v0.6** — Full application document assembly
 
 ## Contributing

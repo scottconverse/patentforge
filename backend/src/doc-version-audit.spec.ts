@@ -195,9 +195,9 @@ describe('Architecture Documentation', () => {
     expect(html).toContain('8080');
   });
 
-  it('docs/index.html describes four-service architecture', () => {
+  it('docs/index.html describes five-service architecture', () => {
     const html = readFile('docs/index.html').toLowerCase();
-    expect(html).toContain('four-service');
+    expect(html).toContain('five-service');
   });
 
   it('docs/index.html mentions security hardening', () => {
@@ -241,11 +241,7 @@ describe('Discussion Announcements', () => {
     }
 
     const missing = versions.filter(v => !seed.includes(`v${v}`));
-    if (missing.length > 0) {
-      fail(
-        `DISCUSSIONS-SEED.md missing announcements for: ${missing.map(v => `v${v}`).join(', ')}`,
-      );
-    }
+    expect(missing).toEqual([]);
   });
 });
 
