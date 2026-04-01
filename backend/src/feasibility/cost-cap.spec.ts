@@ -21,6 +21,8 @@ const mockPrisma = {
     count: jest.fn(),
     create: jest.fn(),
     findFirst: jest.fn(),
+    findUnique: jest.fn(),
+    update: jest.fn(),
   },
   project: {
     findUnique: jest.fn(),
@@ -147,6 +149,7 @@ describe('Cost Cap Enforcement', () => {
   describe('patchStage cost cap check', () => {
     it('returns costCapExceeded=true when cap is breached after stage', async () => {
       mockPrisma.feasibilityRun.findFirst.mockResolvedValue({ id: 'run-1' });
+      mockPrisma.feasibilityRun.findUnique.mockResolvedValue({ id: 'run-1', status: 'RUNNING', finalReport: null, stages: [] });
       mockPrisma.feasibilityStage.findFirst.mockResolvedValue({ id: 'stage-1' });
       mockPrisma.feasibilityStage.update.mockResolvedValue({ id: 'stage-1', stageNumber: 3 });
       mockSettings.getSettings.mockResolvedValue({ costCapUsd: 2.00 });
@@ -169,6 +172,7 @@ describe('Cost Cap Enforcement', () => {
 
     it('returns costCapExceeded=false when under cap', async () => {
       mockPrisma.feasibilityRun.findFirst.mockResolvedValue({ id: 'run-1' });
+      mockPrisma.feasibilityRun.findUnique.mockResolvedValue({ id: 'run-1', status: 'RUNNING', finalReport: null, stages: [] });
       mockPrisma.feasibilityStage.findFirst.mockResolvedValue({ id: 'stage-1' });
       mockPrisma.feasibilityStage.update.mockResolvedValue({ id: 'stage-1', stageNumber: 1 });
       mockSettings.getSettings.mockResolvedValue({ costCapUsd: 10.00 });

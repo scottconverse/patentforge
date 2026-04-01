@@ -360,6 +360,19 @@ export class FeasibilityService {
       throw new NotFoundException(`No feasibility runs found for project ${projectId}`);
     }
 
+    // Auto-heal: if run is stuck as RUNNING/ERROR but all stages are COMPLETE,
+    // fix the run status on read. Also backfill finalReport if missing.
+    const allStagesComplete = run.stages.length === 6 && run.stages.every(s => s.status === 'COMPLETE');
+    const needsStatusFix = run.status !== 'COMPLETE' && allStagesComplete;
+    const needsReportFix = run.status === 'COMPLETE' && !run.finalReport && allStagesComplete;
+    if (needsStatusFix || needsReportFix) {
+      await this.checkAndCompleteRun(run.id);
+      return this.prisma.feasibilityRun.findUnique({
+        where: { id: run.id },
+        include: { stages: { orderBy: { stageNumber: 'asc' } } },
+      });
+    }
+
     return run;
   }
 
@@ -415,10 +428,51 @@ export class FeasibilityService {
     if (dto.outputTokens !== undefined) updateData.outputTokens = dto.outputTokens;
     if (dto.estimatedCostUsd !== undefined) updateData.estimatedCostUsd = dto.estimatedCostUsd;
 
-    return this.prisma.feasibilityStage.update({
+    const updated = await this.prisma.feasibilityStage.update({
       where: { id: stage.id },
       data: updateData,
     });
+
+    // Auto-complete: if this stage was marked COMPLETE, check if all 6 are done.
+    // This handles the case where the SSE stream breaks but all stages finished.
+    if (dto.status === 'COMPLETE') {
+      await this.checkAndCompleteRun(run.id);
+    }
+
+    return updated;
+  }
+
+  /**
+   * Check if all 6 stages of a run are COMPLETE. If so, mark the run COMPLETE
+   * and generate finalReport from stage 6 output. This is the safety net for
+   * when the SSE stream breaks — stages complete individually but the run-level
+   * status never gets updated.
+   */
+  private async checkAndCompleteRun(runId: string) {
+    const run = await this.prisma.feasibilityRun.findUnique({
+      where: { id: runId },
+      include: { stages: { orderBy: { stageNumber: 'asc' } } },
+    });
+    if (!run) return;
+    // Skip only if COMPLETE and has a report — otherwise heal
+    if (run.status === 'COMPLETE' && run.finalReport) return;
+
+    const allComplete = run.stages.length === 6 && run.stages.every(s => s.status === 'COMPLETE');
+    if (!allComplete) return;
+
+    // All 6 stages done — mark run COMPLETE with stage 6 as the report
+    const stage6 = run.stages.find(s => s.stageNumber === 6);
+    const finalReport = run.finalReport || stage6?.outputText || null;
+
+    await this.prisma.feasibilityRun.update({
+      where: { id: runId },
+      data: {
+        status: 'COMPLETE',
+        completedAt: new Date(),
+        finalReport,
+      },
+    });
+    console.log(`[Feasibility] Auto-completed run ${runId} — all 6 stages finished`);
   }
 
   async patchRun(projectId: string, dto: PatchRunDto) {
