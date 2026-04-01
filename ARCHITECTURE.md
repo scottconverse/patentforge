@@ -511,7 +511,9 @@ Response:
 
 **Source**: Extracted from [Claude-Patent-Creator](https://github.com/RobThePCGuy/Claude-Patent-Creator) (MIT, 51 stars)
 
-**What it does**: Validates patent claims and specification against legal requirements using hybrid RAG over the Manual of Patent Examining Procedure (MPEP), Title 35 USC, and Title 37 CFR.
+**What it does**: Validates patent claims and specification against legal requirements.
+
+> **v0.5 Implementation Note:** The v0.5 compliance checker uses an **LLM-native approach** — Claude with structured prompts and four specialized checker agents — rather than the RAG architecture originally planned below. This approach was chosen for faster iteration and because Claude's training data already includes substantial patent law knowledge (MPEP, 35 USC, 37 CFR). The RAG architecture (FAISS + BM25 hybrid retrieval over MPEP/USC/CFR corpus) remains a planned enhancement for a future version to improve citation precision and reduce LLM hallucination of MPEP section numbers.
 
 **Checks performed**:
 
@@ -523,7 +525,7 @@ Response:
 | Formalities | MPEP 608 | Format, numbering, dependency chain errors |
 | Abstract eligibility | 35 USC 101 | Alice/Mayo framework — abstract idea without "significantly more" |
 
-**RAG Architecture** (from Claude-Patent-Creator):
+**Originally Planned RAG Architecture** (deferred to future version):
 ```
 Query (claim text + spec excerpt)
     │

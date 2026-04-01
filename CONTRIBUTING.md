@@ -7,7 +7,7 @@ Thank you for your interest in contributing to PatentForge! This guide will help
 ### Prerequisites
 
 - **Node.js** 18+ (recommended: 20 LTS)
-- **Python** 3.11+ (for the claim-drafter service)
+- **Python** 3.11+ (for the claim-drafter and compliance-checker services)
 - **npm** 9+
 - **Git**
 - **Anthropic API key** (for running the feasibility and claim drafting pipelines)
@@ -29,6 +29,7 @@ Optional:
    cd backend && npm ci && cd ..
    cd services/feasibility && npm ci && cd ../..
    cd services/claim-drafter && pip install -e ".[dev]" && cd ../..
+   cd services/compliance-checker && pip install -e ".[dev]" && cd ../..
    cd frontend && npm install && cd ..
    ```
 
@@ -59,7 +60,10 @@ Optional:
    # Terminal 2 — Feasibility service (port 3001)
    cd services/feasibility && npm run build && npm run start
 
-   # Terminal 3 — Frontend (port 8080)
+   # Terminal 3 — Compliance checker (port 3004)
+   cd services/compliance-checker && python -m uvicorn src.server:app --port 3004
+
+   # Terminal 4 — Frontend (port 8080)
    cd frontend && npm run dev
    ```
 
@@ -85,9 +89,13 @@ patentforge/
 ├── services/
 │   ├── feasibility/      # Express feasibility pipeline service (port 3001)
 │   │   └── src/prompts/  # Stage prompt templates (markdown)
-│   └── claim-drafter/    # Python + LangGraph claim drafting service (port 3002)
-│       ├── src/agents/   # Planner, Writer, Examiner agents
-│       ├── src/prompts/  # Agent prompt templates (CC BY-SA 4.0)
+│   ├── claim-drafter/    # Python + LangGraph claim drafting service (port 3002)
+│   │   ├── src/agents/   # Planner, Writer, Examiner agents
+│   │   ├── src/prompts/  # Agent prompt templates (CC BY-SA 4.0)
+│   │   └── tests/        # pytest test suite
+│   └── compliance-checker/ # Python + LangGraph compliance checking service (port 3004)
+│       ├── src/agents/   # 112a, 112b, 608, 101 checker agents
+│       ├── src/prompts/  # Checker prompt templates
 │       └── tests/        # pytest test suite
 ├── frontend/             # React + Vite + Tailwind frontend (port 8080)
 │   └── src/
@@ -110,6 +118,9 @@ cd frontend && npm test
 # Claim drafter tests (pytest)
 cd services/claim-drafter && python -m pytest tests/
 
+# Compliance checker tests (pytest)
+cd services/compliance-checker && pytest tests/ -v
+
 # Browser E2E tests (Playwright — requires services running)
 cd frontend && npx playwright test
 
@@ -119,12 +130,13 @@ bash scripts/cleanroom-e2e.sh
 
 ### Playwright E2E Setup
 
-The E2E tests launch all four services (backend, feasibility, claim-drafter, frontend) automatically via Playwright's `webServer` config. Tests run with `workers: 1` because they share a SQLite database that can't handle concurrent writes.
+The E2E tests launch all five services (backend, feasibility, claim-drafter, compliance-checker, frontend) automatically via Playwright's `webServer` config. Tests run with `workers: 1` because they share a SQLite database that can't handle concurrent writes.
 
 First run requires Chromium and Python dependencies:
 
 ```bash
 cd services/claim-drafter && pip install . && cd ../..
+cd services/compliance-checker && pip install . && cd ../..
 cd frontend && npx playwright install chromium
 ```
 

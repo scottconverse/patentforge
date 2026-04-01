@@ -5,6 +5,22 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-01
+
+### Added
+- **Compliance checking** — four automated checks validate patent claim drafts against legal requirements: 35 USC 112(a) written description adequacy, 35 USC 112(b) definiteness (antecedent basis, ambiguous terms), MPEP 608 formalities (claim format, numbering, dependency chains), and 35 USC 101 patent eligibility (Alice/Mayo framework)
+- **Traffic-light compliance report** — expandable results view with PASS/FAIL/WARN status per claim, MPEP section citations, and actionable fix suggestions
+- **Re-check after claim edits** — re-run compliance checks after editing claims to verify fixes
+- **Individual claim regeneration** — regenerate a single claim via the claim drafter without re-running the entire pipeline
+- **Prior art overlap warnings** — amber warning icons on claims whose terms overlap with known prior art references
+- **Compliance checker service** — new Python + FastAPI + LangGraph service (port 3004) with four specialized checker agents, internal service authentication, and per-check cost tracking
+- **UPL compliance modal** — per-project acknowledgment required before running compliance checks, consistent with claim drafting guardrails
+
+### Security
+- Compliance checker service authenticated via `INTERNAL_SERVICE_SECRET` (same pattern as claim-drafter)
+- Port 3004 internal only in Docker (not exposed to host)
+- "RESEARCH OUTPUT — NOT LEGAL ADVICE" header on all compliance results
+
 ## [0.4.1] - 2026-04-01
 
 ### Added

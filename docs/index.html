@@ -233,6 +233,10 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <p>Download findings as styled HTML, Word (.docx with full formatting), or Markdown. CSV export for prior art results. Bring structured research to your first attorney meeting.</p>
       </div>
       <div class="feature-card">
+        <h3>Compliance Checking</h3>
+        <p>Four automated checks validate claim drafts against 35 USC 112(a) written description, 112(b) definiteness, MPEP 608 formalities, and 101 eligibility. Traffic-light PASS/FAIL/WARN results with MPEP citations and fix suggestions.</p>
+      </div>
+      <div class="feature-card">
         <h3>187 Automated Tests</h3>
         <p>Jest backend tests, Vitest component tests, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
       </div>
@@ -311,14 +315,14 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.4.1</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.5.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>NEW:</strong> Claim tree visualization — SVG-based hierarchical view of claim dependencies with list/tree toggle</li>
-        <li><strong>NEW:</strong> Patent family tree lookup — continuity data (parents, children, continuations, divisionals) fetched from USPTO ODP, lazy-loaded in patent detail drawer</li>
+        <li><strong>NEW:</strong> Compliance checking — four automated checks (112a, 112b, MPEP 608, 101) with traffic-light PASS/FAIL/WARN results, MPEP citations, and fix suggestions</li>
+        <li><strong>NEW:</strong> Individual claim regeneration — rewrite a single claim without re-running the entire drafter</li>
+        <li><strong>NEW:</strong> Prior art overlap warnings — amber icons on claims with potential prior art overlap</li>
+        <li><strong>NEW:</strong> Re-check after edits — run compliance again after editing claims to verify fixes</li>
         <li>AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
-        <li>Claims tab with editable text, UPL acknowledgment modal, DRAFT watermarks</li>
-        <li>20-issue security and reliability audit — server-side cost cap, internal service auth, timing-safe tokens</li>
-        <li>Patent claims lazy-loading from USPTO Documents API</li>
+        <li>Claim tree visualization, patent family tree lookup, 20-issue security audit</li>
         <li>GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
@@ -327,7 +331,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section class="architecture">
     <h2>Architecture</h2>
-    <p class="desc">Four-service federated architecture. Each service is independently deployable. Internal services authenticated via shared secret. SSE streaming proxied through the backend. SQLite for development, PostgreSQL for Docker.</p>
+    <p class="desc">Five-service federated architecture. Each service is independently deployable. Internal services authenticated via shared secret. SSE streaming proxied through the backend. SQLite for development, PostgreSQL for Docker.</p>
 
     <!-- Inline SVG architecture diagram -->
     <div class="arch-svg-wrap">
@@ -401,7 +405,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <text x="620" y="175" fill="#a78bfa" font-size="9" font-family="system-ui,sans-serif">REST</text>
         <!-- Data flow summary -->
         <rect x="40" y="350" width="800" height="110" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
-        <text x="440" y="376" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700" font-family="system-ui,sans-serif">Data Flow: Invention → Research Report → Claim Drafts</text>
+        <text x="440" y="376" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700" font-family="system-ui,sans-serif">Data Flow: Invention → Research → Claims → Compliance</text>
         <!-- Flow steps -->
         <rect x="60" y="392" width="110" height="50" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
         <text x="115" y="413" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="600" font-family="system-ui,sans-serif">Inventor</text>
@@ -450,6 +454,12 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <h4>Claim Drafter</h4>
         <div class="port">:3002</div>
         <p>3-agent claim drafting pipeline: Planner (strategy), Writer (claims), Examiner (review). LangGraph state machine with conditional revision loop. Generates up to 20 claims per draft.</p>
+        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK</div>
+      </div>
+      <div class="arch-card">
+        <h4>Compliance Checker</h4>
+        <div class="port">:3004</div>
+        <p>4 specialized checker agents validate claims against 35 USC 112(a), 112(b), MPEP 608, and 101. LLM-native approach using Claude with structured prompts. Per-check cost tracking.</p>
         <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK</div>
       </div>
     </div>

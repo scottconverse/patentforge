@@ -19,6 +19,7 @@ PatentForge is a self-hosted web application that helps inventors organize their
 - **AI-assisted claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates patent claim drafts informed by your feasibility analysis and prior art, with per-claim examiner review
 - **Claim tree visualization** — SVG-based hierarchical view of claim dependencies with list/tree toggle
 - **Patent family lookup** — continuity data (parents, children, continuations, divisionals) fetched from USPTO ODP and displayed in the patent detail drawer
+- **Compliance checking** — automated validation of claim drafts against 35 USC 112(a) written description, 35 USC 112(b) definiteness, MPEP 608 formalities, and 35 USC 101 eligibility (Alice/Mayo framework), with traffic-light PASS/FAIL/WARN results, MPEP citations, and actionable fix suggestions
 - **Self-hosted** — runs on your machine; invention data stays local except for Anthropic API calls
 - **Configurable** — choose your model (Sonnet, Opus, Haiku), set max tokens, adjust inter-stage delays
 
@@ -50,6 +51,7 @@ cd patentforge
 cd backend && npm install && cd ..
 cd services/feasibility && npm install && cd ../..
 cd services/claim-drafter && pip install . && cd ../..
+cd services/compliance-checker && pip install . && cd ../..
 cd frontend && npm install && cd ..
 
 # Set up the database (SQLite, zero config)
@@ -63,6 +65,7 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 cd backend && npm run build && npm run start                         # port 3000
 cd services/feasibility && npm run build && npm run start             # port 3001
 cd services/claim-drafter && python -m uvicorn src.server:app --port 3002  # port 3002
+cd services/compliance-checker && python -m uvicorn src.server:app --port 3004  # port 3004
 cd frontend && npm run dev                                            # port 8080
 ```
 
@@ -108,18 +111,20 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
                                 │                       ▼
                                 │                Anthropic Claude API
                                 ▼
-                        ┌─────────────────┐
-                        │  Claim Drafter  │
-                        │  (Python/       │
-                        │   LangGraph)    │
-                        │  port 3002      │
-                        └─────────────────┘
+                        ┌─────────────────┐     ┌─────────────────┐
+                        │  Claim Drafter  │     │  Compliance     │
+                        │  (Python/       │     │  Checker        │
+                        │   LangGraph)    │     │  (Python/       │
+                        │  port 3002      │     │   LangGraph)    │
+                        └─────────────────┘     │  port 3004      │
+                                                └─────────────────┘
 ```
 
 - **Frontend** — React 18, TypeScript, Tailwind CSS, Vite
 - **Backend** — NestJS, Prisma ORM, SQLite (dev) / PostgreSQL (Docker)
 - **Feasibility Service** — Express, Anthropic SSE streaming, 6 prompt templates
 - **Claim Drafter** — Python, FastAPI, LangGraph, 3-agent pipeline (Planner/Writer/Examiner)
+- **Compliance Checker** — Python, FastAPI, LangGraph, 4 specialized checker agents (port 3004)
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
 
@@ -144,7 +149,7 @@ For network deployments, set the `PATENTFORGE_TOKEN` environment variable to req
 
 ### Internal Service Security
 
-The feasibility service (port 3001) and claim-drafter service (port 3002) are internal-only — the frontend communicates through the NestJS backend, which proxies SSE streams. Set `INTERNAL_SERVICE_SECRET` to require a shared secret header on all internal service calls. In local dev, it's optional.
+The feasibility service (port 3001), claim-drafter service (port 3002), and compliance-checker service (port 3004) are internal-only — the frontend communicates through the NestJS backend, which proxies requests. Set `INTERNAL_SERVICE_SECRET` to require a shared secret header on all internal service calls. The backend uses `COMPLIANCE_CHECKER_URL` (default `http://localhost:3004`) to reach the compliance checker. In local dev, the shared secret is optional.
 
 **Docker deployments:** The default secret is `patentforge-internal` — a known public value. **Set a custom secret** before deploying:
 
@@ -164,7 +169,7 @@ docker compose up --build
 - [x] **v0.3.4** — Scoring improvements, API key encryption, prompt integrity, CI pipeline, auth skeleton
 - [x] **v0.4.0** — AI-assisted claim drafting (Python + LangGraph, 3-agent pipeline)
 - [x] **v0.4.1** — Claim tree visualization, patent family tree lookup
-- [ ] **v0.5** — Compliance review tooling
+- [x] **v0.5** — Compliance review tooling
 - [ ] **v0.6** — Full application document assembly
 
 ## Contributing
