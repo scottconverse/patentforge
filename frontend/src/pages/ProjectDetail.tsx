@@ -9,6 +9,7 @@ import StreamingOutput from '../components/StreamingOutput';
 import Toast from '../components/Toast';
 import CostConfirmModal from '../components/CostConfirmModal';
 import ClaimsTab from '../components/ClaimsTab';
+import ComplianceTab from '../components/ComplianceTab';
 import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import { formatCost } from '../utils/format';
@@ -126,7 +127,7 @@ async function estimateRunCosts(model: string, maxTokens: number): Promise<{ tok
   return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST };
 }
 
-type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims';
+type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims' | 'compliance';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -171,6 +172,9 @@ export default function ProjectDetail() {
   // Prior art
   const [priorArtSearch, setPriorArtSearch] = useState<PriorArtSearch | null>(null);
 
+  // Claim draft status (for compliance tab)
+  const [claimDraftStatus, setClaimDraftStatus] = useState<{ status: string; claims?: any[] } | null>(null);
+
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
 
@@ -185,6 +189,9 @@ export default function ProjectDetail() {
 
       // Load prior art search state
       api.priorArt.get(id).then(pa => setPriorArtSearch(pa)).catch(() => {});
+
+      // Load claim draft status (for compliance tab)
+      api.claimDraft.getLatest(id).then(d => setClaimDraftStatus(d)).catch(() => {});
 
       // Determine initial view mode
       const latestRun = getLatestRun(data);
@@ -907,6 +914,14 @@ export default function ProjectDetail() {
             >
               Claims
             </button>
+            <button
+              onClick={() => setViewMode('compliance')}
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                viewMode === 'compliance' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+              }`}
+            >
+              Compliance
+            </button>
           </div>
         </aside>
 
@@ -1206,6 +1221,25 @@ export default function ProjectDetail() {
                 projectId={id!}
                 hasFeasibility={!!latestRun && latestRun.status === 'COMPLETE'}
                 priorArtTitles={priorArtSearch?.results?.map(r => ({ patentNumber: r.patentNumber, title: r.title }))}
+              />
+            </div>
+          )}
+
+          {/* Compliance tab */}
+          {viewMode === 'compliance' && (
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-100">Compliance Check</h2>
+                <button
+                  onClick={() => setViewMode('overview')}
+                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  ← Back
+                </button>
+              </div>
+              <ComplianceTab
+                projectId={id!}
+                hasClaims={!!claimDraftStatus && claimDraftStatus.status === 'COMPLETE' && Array.isArray(claimDraftStatus.claims) && claimDraftStatus.claims.length > 0}
               />
             </div>
           )}
