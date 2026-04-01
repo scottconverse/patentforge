@@ -16,9 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cross-platform uvicorn startup** — changed claim-drafter webServer command from `uvicorn` to `python -m uvicorn` so it works on Windows (where the venv `Scripts/` dir may not be on PATH).
 - **ODP mock test sequencing** — changed persistent `mockResolvedValue` to chained `mockResolvedValueOnce` calls, preventing mock bleed across sequential queries.
 - **ODP rate-limit delay assertions** — multi-query and 429-retry tests now use `jest.useFakeTimers()` with `jest.spyOn(global, 'setTimeout')` to verify the 1.5s inter-query delay and 10s 429-retry delay actually fire.
-- **Claim-draft test async leak** — added missing `claimDraft.findUnique` mock and a `setImmediate` drain loop to prevent the fire-and-forget pipeline IIFE from crashing after Jest teardown.
+- **Claim-draft test async leak** — added missing `claimDraft.findUnique` mock, `console.error` spy, and a 10-iteration `setImmediate` drain loop to prevent the fire-and-forget pipeline IIFE from crashing after Jest teardown.
+- **Cleanroom E2E includes Playwright** — cleanroom script now starts all 4 services and runs the full 31-test Playwright E2E suite as Phase 7 before declaring safe to push.
+
+### Fixed
+- **PriorArtSearch P2025 race condition** — background prior art search crashed with "Record to update not found" when a project was deleted while the search was still running. The catch block's status update is now wrapped in a try-catch to handle cascade-deleted records gracefully.
+- **Dead PatentsView API removed as fallback** — PatentsView API has been shut down (HTTP 410 Gone). Prior art search no longer silently fails when no USPTO key is configured — it now throws a clear error directing users to add a USPTO Open Data Portal API key in Settings.
 
 ### Added
+- **Feasibility pipeline E2E tests** — 6 new Playwright tests exercise the full pipeline flow (form → cost modal → streaming → stage progression → report rendering) using route interception to mock the SSE stream without calling the real Anthropic API. Tests cover: full 6-stage run, stage progression, error handling, connection-lost recovery, no-API-key blocking, and cost cap warnings.
 - **AI-assisted claim drafting** — new Python + LangGraph service with 3 AI agents (Planner, Writer, Examiner) that generates patent claim drafts from feasibility analysis and prior art
 - **Three independent claims** — broad (method), medium (system), and narrow (apparatus/CRM) scope, informed by prior art avoidance analysis
 - **Dependent claims** — hierarchical claims derived from each independent, capped at 20 total (USPTO fee boundary)
