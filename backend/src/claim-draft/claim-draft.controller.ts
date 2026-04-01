@@ -38,4 +38,14 @@ export class ClaimDraftController {
   ) {
     return this.service.updateClaim(projectId, claimId, dto.text);
   }
+
+  /** POST /api/projects/:id/claims/:claimNumber/regenerate — Regenerate a single claim */
+  @Post(':claimNumber/regenerate')
+  @HttpCode(HttpStatus.OK)
+  regenerateClaim(
+    @Param('id') projectId: string,
+    @Param('claimNumber', ParseIntPipe) claimNumber: number,
+  ) {
+    return this.service.regenerateClaim(projectId, claimNumber);
+  }
 }

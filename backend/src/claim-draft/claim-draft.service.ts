@@ -284,6 +284,85 @@ export class ClaimDraftService implements OnModuleInit {
   }
 
   /**
+   * Regenerate a single claim by re-calling the claim drafter with focused instructions.
+   */
+  async regenerateClaim(projectId: string, claimNumber: number) {
+    const draft = await this.prisma.claimDraft.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { claims: { orderBy: { claimNumber: 'asc' } } },
+    });
+    if (!draft) throw new NotFoundException('No completed claim draft found');
+
+    const claim = draft.claims.find(c => c.claimNumber === claimNumber);
+    if (!claim) throw new NotFoundException(`Claim ${claimNumber} not found in latest draft`);
+
+    const settings = await this.settingsService.getSettings();
+    if (!settings.anthropicApiKey) {
+      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
+    }
+
+    // Build context: all claims text for reference
+    const allClaimsText = draft.claims.map(c =>
+      `${c.claimNumber}. ${c.text}`
+    ).join('\n\n');
+
+    // Get invention narrative
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { invention: true },
+    });
+    const inv = project?.invention;
+    const narrative = inv ? [
+      `Title: ${inv.title}`,
+      `Description: ${inv.description}`,
+    ].filter(Boolean).join('\n\n') : '';
+
+    // Call claim drafter with regeneration instruction
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (INTERNAL_SECRET) {
+      headers['X-Internal-Secret'] = INTERNAL_SECRET;
+    }
+
+    const res = await fetch(`${CLAIM_DRAFTER_URL}/draft/sync`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        invention_narrative: `REGENERATE CLAIM ${claimNumber} ONLY.\n\nContext — all current claims:\n${allClaimsText}\n\nInvention:\n${narrative}`,
+        feasibility_stage_5: '',
+        feasibility_stage_6: '',
+        prior_art_results: [],
+        settings: {
+          api_key: settings.anthropicApiKey,
+          default_model: settings.defaultModel,
+          research_model: settings.researchModel || '',
+          max_tokens: settings.maxTokens,
+        },
+      }),
+      signal: AbortSignal.timeout(120_000),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new BadRequestException(`Claim regeneration failed: ${text}`);
+    }
+
+    const result = await res.json();
+    if (result.status === 'ERROR' || !result.claims?.length) {
+      throw new BadRequestException('Claim regeneration produced no results');
+    }
+
+    // Find the matching claim number in the result, or take the first one
+    const newClaim = result.claims.find((c: any) => c.claim_number === claimNumber) || result.claims[0];
+
+    // Update claim text in DB
+    return this.prisma.claim.update({
+      where: { id: claim.id },
+      data: { text: newClaim.text },
+    });
+  }
+
+  /**
    * Update a claim's text (user editing).
    * Verifies the claim belongs to the given project before updating.
    */

@@ -2,7 +2,7 @@
  * Tests for ClaimDraftService — ownership checks, validation, concurrency guards.
  */
 
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { ClaimDraftService } from './claim-draft.service';
 
 // Mock fetch globally so the fire-and-forget IIFE in startDraft rejects
@@ -133,6 +133,33 @@ describe('ClaimDraftService', () => {
       for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
 
       errorSpy.mockRestore();
+    });
+  });
+
+  describe('regenerateClaim', () => {
+    it('throws NotFoundException when no completed draft exists', async () => {
+      mockPrisma.claimDraft.findFirst.mockResolvedValue(null);
+
+      await expect(service.regenerateClaim('project-1', 1))
+        .rejects.toThrow(NotFoundException);
+      await expect(service.regenerateClaim('project-1', 1))
+        .rejects.toThrow(/No completed claim draft found/);
+    });
+
+    it('throws NotFoundException when claim number does not exist in draft', async () => {
+      mockPrisma.claimDraft.findFirst.mockResolvedValue({
+        id: 'draft-1',
+        status: 'COMPLETE',
+        claims: [
+          { id: 'c1', claimNumber: 1, text: 'Claim 1 text' },
+          { id: 'c2', claimNumber: 2, text: 'Claim 2 text' },
+        ],
+      });
+
+      await expect(service.regenerateClaim('project-1', 99))
+        .rejects.toThrow(NotFoundException);
+      await expect(service.regenerateClaim('project-1', 99))
+        .rejects.toThrow(/Claim 99 not found/);
     });
   });
 });
