@@ -126,6 +126,28 @@ export const api = {
       return res.blob();
     },
   },
+  application: {
+    start: (projectId: string) =>
+      req<any>('POST', `/projects/${projectId}/application/generate`),
+    getLatest: (projectId: string) =>
+      req<any>('GET', `/projects/${projectId}/application`),
+    getVersion: (projectId: string, version: number) =>
+      req<any>('GET', `/projects/${projectId}/application/${version}`),
+    updateSection: (projectId: string, name: string, text: string) =>
+      req<any>('PUT', `/projects/${projectId}/application/sections/${name}`, { text }),
+    exportDocx: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/application/export/docx`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
+      return res.blob();
+    },
+    exportMarkdown: (projectId: string) =>
+      req<string>('GET', `/projects/${projectId}/application/export/markdown`),
+  },
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),
