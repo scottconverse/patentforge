@@ -8,14 +8,36 @@ PatentForge is a full-lifecycle patent analysis web platform being built from sc
 2. **ARCHITECTURE.md** — system design, database schema, service specs, UX wireframes
 3. **PRD.md** — product requirements, priorities, release phases, API spec
 
-## Current Phase: v0.1 (MVP Web Feasibility Analyzer)
+## Current Phase: v0.6 (Application Generation) — IN PROGRESS
 
-Build a web-based patent feasibility analyzer that replaces the existing Windows-only WPF desktop app. This involves:
+v0.1–v0.5 are **complete and code-stable** (v0.5.2). v0.6 application generator is built and tested but not yet live-tested with real LLM calls.
 
-1. Use **AutoBE** to generate the central NestJS + Prisma backend (project CRUD, feasibility run tracking, settings, SSE events)
-2. **Port** the existing C# patent analysis pipeline to TypeScript (6-stage Anthropic streaming pipeline)
-3. Build a **React frontend** using the AutoBE-generated type-safe SDK
-4. Wire it all together with **Docker Compose**
+### What's Been Built (v0.1–v0.5.2)
+- **v0.1**: NestJS + Prisma backend, 6-stage feasibility pipeline (TS), React frontend, Docker Compose
+- **v0.2**: Prior art search (PQAI integration)
+- **v0.3**: USPTO patent detail lookup, versioning, stage re-run
+- **v0.4**: Claim drafting service (Python, LangGraph multi-agent: Planner→Writer→Examiner)
+- **v0.5**: Compliance checking (Python, 4 checks: §112a, §112b, MPEP 608, §101), DOCX export, cost tracking
+
+### What's In Progress (v0.6)
+- **Application generator service** (Python, FastAPI, LangGraph) — assembles all upstream artifacts into USPTO-formatted patent application
+- **Backend integration** — NestJS controller/service/module
+- **Frontend** — ApplicationTab with section navigation, inline editing, Word/PDF/Markdown export
+- 26 tests passing, all compiles clean, not yet live-tested with real Anthropic API calls
+- See **v0.6-SCOPE.md** for full spec and migration roadmap
+
+### Critical Architectural Decision (made in v0.6 session)
+The endgame is a **standalone double-click Windows installer** for non-technical users. This means:
+- All new services are **Python** (PyInstaller bundles to .exe trivially)
+- The existing **TS backend + feasibility service are packaging debt** — will be ported to Python in v0.8
+- **PostgreSQL → SQLite** swap planned for v0.7 (standalone mode)
+- See v0.6-SCOPE.md §Migration Roadmap for the full plan
+
+### Workflow
+1. Claude commits to **local git** on a feature branch
+2. Report changes to user for review
+3. User decides when to push to public github.com (`scottconverse/patentforge`)
+4. **Never push to github.com without explicit user approval**
 
 ## File Locations
 
