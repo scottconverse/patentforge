@@ -118,7 +118,7 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
           <span className="text-gray-300">Running compliance checks...</span>
         </div>
         <p className="text-xs text-gray-500 mt-3">This may take 1-3 minutes. Checking claims against patent rules.</p>

@@ -139,7 +139,7 @@ export default function ProjectList() {
       {/* Loading */}
       {loading ? (
         <div className="flex items-center justify-center py-16 text-gray-500">
-          <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" />
+          <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" aria-label="Loading" />
           Loading projects...
         </div>
       ) : projects.length === 0 ? (
@@ -178,7 +178,7 @@ export default function ProjectList() {
                   disabled={deletingId === project.id}
                   className="px-3 py-1.5 bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white rounded text-sm font-medium transition-colors"
                 >
-                  {deletingId === project.id ? '...' : 'Delete'}
+                  {deletingId === project.id ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>

@@ -5,6 +5,25 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-04-02
+
+### Fixed
+- **Production blocker**: hardcoded `localhost:3000` URLs in Prior Art panel now use `/api` proxy
+- **CORS**: all services now read `ALLOWED_ORIGINS` env var (defaults to `http://localhost:8080`)
+- **Claim parser**: stops at AI-appended revision notes (`---`, `## CLAIM SUMMARY`, etc.) instead of including them in claim text
+- **Claim text length**: enforces 5000-char max per claim with `[...text truncated]` marker
+- **Report iframe**: shows loading spinner while report renders; no more blank flash
+- **Button labels**: standardized "Re-run" everywhere (was "Retry"/"re-run"/"Run Again")
+- **Accessibility**: `aria-label="Loading"` on all spinners, keyboard nav for claim tree, `role="status"` on toasts
+- **Console noise**: removed `console.error`/`console.warn` from production frontend code
+
+### Changed
+- PatentForge.ps1 launcher: auto-installs missing npm dependencies, verifies all ports after startup, shows per-service status
+- README.md: complete quick start with all 5 services, Python deps, troubleshooting section
+- CONTRIBUTING.md: fixed paths, added all 5 services, Docker-is-optional note
+- Added `.env.example` with all configurable env vars documented
+- Docker-compose.yml: security warnings for `INTERNAL_SERVICE_SECRET`
+
 ## [0.5.0] - 2026-04-01
 
 ### Added

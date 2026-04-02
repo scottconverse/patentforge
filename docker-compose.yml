@@ -45,7 +45,9 @@ services:
       FEASIBILITY_URL: http://feasibility:3001
       CLAIM_DRAFTER_URL: http://claim-drafter:3002
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
+      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
       NODE_ENV: production
     restart: unless-stopped
 
@@ -55,6 +57,7 @@ services:
     environment:
       PORT: 3001
       NODE_ENV: production
+      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
@@ -65,6 +68,7 @@ services:
     environment:
       PORT: 3002
       HOST: "0.0.0.0"
+      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
@@ -75,6 +79,7 @@ services:
     environment:
       PORT: 3004
       HOST: "0.0.0.0"
+      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped

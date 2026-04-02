@@ -78,7 +78,7 @@ export default function Settings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-500">
-        <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" />
+        <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" aria-label="Loading" />
         Loading settings...
       </div>
     );

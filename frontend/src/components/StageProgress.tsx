@@ -20,7 +20,7 @@ function StatusIcon({ status }: { status: RunStatus }) {
   if (status === 'RUNNING') {
     return (
       <span className="flex items-center justify-center w-6 h-6">
-        <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+        <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" aria-label="Loading" />
       </span>
     );
   }
@@ -97,7 +97,7 @@ export default function StageProgress({ stages, activeStage, onStageClick, onRer
                     className="text-xs text-amber-600 hover:text-amber-400 transition-colors"
                     title={`Re-run from Stage ${stage.stageNumber}`}
                   >
-                    re-run
+                    Re-run
                   </button>
                 )}
               </div>

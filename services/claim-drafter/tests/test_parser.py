@@ -172,3 +172,47 @@ class TestParseClaimsComplex:
         assert claims[1].claim_number == 2
         assert claims[2].claim_number == 3
         assert claims[1].parent_claim_number == 1
+
+
+class TestParseClaimsRevisionNotes:
+    def test_truncates_claims_with_appended_revision_notes(self):
+        """Revision notes after --- and ## CLAIM SUMMARY must not leak into claims."""
+        raw = """1. (Independent - Broad - Method) A method comprising: step a; and step b.
+
+2. (Dependent on 1) The method of claim 1, wherein step a uses a processor.
+
+3. (Independent - Medium - System) A system comprising: a processor and a memory.
+
+---
+
+## CLAIM SUMMARY
+
+This set contains 3 claims covering method and system aspects.
+
+## KEY REVISIONS
+
+Revised claim 2 for clarity."""
+
+        claims = parse_claims(raw)
+        assert len(claims) == 3
+        for c in claims:
+            assert "CLAIM SUMMARY" not in c.text
+            assert "KEY REVISIONS" not in c.text
+            assert "Revised claim" not in c.text
+
+    def test_truncates_claim_text_exceeding_max_length(self):
+        """Claims longer than 5000 chars are truncated with a marker."""
+        long_body = "A method comprising: " + ("x " * 3500)  # well over 5000 chars
+        raw = f"1. (Independent - Broad - Method) {long_body}"
+        claims = parse_claims(raw)
+        assert len(claims) == 1
+        assert len(claims[0].text) <= 5000 + len(" [...text truncated]")
+        assert claims[0].text.endswith("[...text truncated]")
+
+    def test_normal_claims_under_5000_chars_not_truncated(self):
+        """Claims under the limit pass through unchanged."""
+        raw = "1. (Independent - Broad - Method) A method comprising: receiving input and processing it."
+        claims = parse_claims(raw)
+        assert len(claims) == 1
+        assert "[...text truncated]" not in claims[0].text
+        assert claims[0].text.startswith("A method")

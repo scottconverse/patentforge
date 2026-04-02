@@ -33,6 +33,8 @@ export default function Toast({ message, detail, type = 'success', duration = 60
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={`fixed bottom-6 right-6 z-50 max-w-sm border rounded-lg px-4 py-3 shadow-xl transition-opacity duration-300 ${colors} ${visible ? 'opacity-100' : 'opacity-0'}`}
     >
       <div className="flex items-start gap-3">

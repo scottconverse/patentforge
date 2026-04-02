@@ -27,11 +27,11 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
   useEffect(() => {
     // Open SSE stream if search is running or pending
     if (!search || search.status === 'RUNNING' || search.status === 'PENDING') {
-      const es = new EventSource(`http://localhost:3000/projects/${projectId}/prior-art/stream`);
+      const es = new EventSource(`/api/projects/${projectId}/prior-art/stream`);
       esRef.current = es;
 
       const refresh = () => {
-        fetch(`http://localhost:3000/projects/${projectId}/prior-art`)
+        fetch(`/api/projects/${projectId}/prior-art`)
           .then(r => r.json())
           .then(data => onUpdate(data))
           .catch(() => {});
@@ -65,7 +65,7 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 p-4 bg-blue-900/30 border border-blue-800 rounded-lg">
-          <span className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin flex-shrink-0" />
+          <span className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin flex-shrink-0" aria-label="Loading" />
           <div>
             <p className="text-sm font-medium text-blue-300">Searching USPTO patent database...</p>
             {queries.length > 0 && (

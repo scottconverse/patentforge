@@ -146,9 +146,11 @@ export default function ClaimTree({ claims, onClaimClick }: ClaimTreeProps) {
             <g
               key={node.claim.id}
               onClick={() => onClaimClick?.(node.claim.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClaimClick?.(node.claim.id); } }}
               className="cursor-pointer"
               role="button"
               tabIndex={0}
+              aria-label={`Claim ${node.claim.claimNumber}`}
             >
               <rect
                 x={node.x}

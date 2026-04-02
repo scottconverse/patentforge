@@ -5,8 +5,12 @@ import { InventionInput, AnalysisSettings } from './models';
 import { getPromptHashes } from './prompts/loader';
 
 const app = express();
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'OPTIONS'],
 }));
 app.use(express.json({ limit: '10mb' }));

@@ -24,7 +24,7 @@ Optional:
    cd patentforge
    ```
 
-2. **Install dependencies** (all four services)
+2. **Install dependencies** (all five services)
    ```bash
    cd backend && npm ci && cd ..
    cd services/feasibility && npm ci && cd ../..
@@ -38,9 +38,9 @@ Optional:
 3. **Set up the database**
    ```bash
    cd backend
-   cp ../.env.example .env
-   # Edit .env if needed (defaults to SQLite for local dev)
-   npx prisma migrate deploy
+   # Create .env for local SQLite dev (the repo-root .env.example targets PostgreSQL/Docker)
+   echo 'DATABASE_URL="file:./prisma/dev.db"' > .env
+   npx prisma db push
    npx prisma generate
    cd ..
    ```
@@ -60,10 +60,13 @@ Optional:
    # Terminal 2 — Feasibility service (port 3001)
    cd services/feasibility && npm run build && npm run start
 
-   # Terminal 3 — Compliance checker (port 3004)
-   cd services/compliance-checker && python -m uvicorn src.server:app --port 3004
+   # Terminal 3 — Claim drafter (port 3002)
+   cd services/claim-drafter && py -m uvicorn src.server:app --port 3002
 
-   # Terminal 4 — Frontend (port 8080)
+   # Terminal 4 — Compliance checker (port 3004)
+   cd services/compliance-checker && py -m uvicorn src.server:app --port 3004
+
+   # Terminal 5 — Frontend (port 8080)
    cd frontend && npm run dev
    ```
 
@@ -71,7 +74,9 @@ Optional:
 
 6. **Configure your API key** in Settings (gear icon) before running any analysis.
 
-### Docker Setup (alternative)
+### Docker Setup (optional alternative)
+
+Docker is not required for local development. The `PatentForge.bat` launcher handles starting all services locally. Docker is available as an alternative if you prefer containerized deployment.
 
 ```bash
 docker compose up --build
@@ -115,11 +120,11 @@ cd backend && npm test
 # Frontend unit tests (Vitest)
 cd frontend && npm test
 
-# Claim drafter tests (pytest)
-cd services/claim-drafter && python -m pytest tests/
+# Claim drafter tests (pytest — use py on Windows)
+cd services/claim-drafter && py -m pytest tests/ -v
 
 # Compliance checker tests (pytest)
-cd services/compliance-checker && pytest tests/ -v
+cd services/compliance-checker && py -m pytest tests/ -v
 
 # Browser E2E tests (Playwright — requires services running)
 cd frontend && npx playwright test

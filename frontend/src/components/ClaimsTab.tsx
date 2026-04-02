@@ -142,7 +142,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
           <span className="text-gray-300">Generating claim drafts...</span>
         </div>
         <p className="text-xs text-gray-500 mt-3">This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims.</p>
@@ -314,7 +314,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                   >
                     {regenerating === indep.claimNumber ? (
                       <span className="inline-flex items-center gap-1">
-                        <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
                         Regenerating...
                       </span>
                     ) : (
@@ -374,7 +374,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                     >
                       {regenerating === dep.claimNumber ? (
                         <span className="inline-flex items-center gap-1">
-                          <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
                           Regenerating...
                         </span>
                       ) : (

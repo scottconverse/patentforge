@@ -286,3 +286,23 @@ Results show as a traffic-light report (PASS/FAIL/WARN) per claim with MPEP cita
 Also added: individual claim regeneration and prior art overlap warnings on claims whose terms match known prior art references.
 
 New compliance-checker service runs on port 3004 (Python + FastAPI + LangGraph), authenticated via the same internal service secret as claim-drafter.
+
+### Title: v0.5.1 — Public Release Polish
+
+**Body:**
+
+v0.5.1 is a patch release focused on production readiness and polish.
+
+**Fixed:**
+- Hardcoded localhost URLs in Prior Art panel (broke any non-localhost deployment)
+- CORS now configurable via `ALLOWED_ORIGINS` env var across all services
+- Claim parser stops at AI-appended revision notes instead of including them in claim text
+- Report iframe shows loading spinner instead of blank flash
+- Consistent button labels ("Re-run" everywhere)
+- Accessibility: aria-labels on spinners, keyboard nav for claim tree, status roles on toasts
+
+**Improved:**
+- PatentForge.ps1 launcher auto-installs missing npm dependencies, verifies all ports after startup
+- README quick start covers all 5 services with troubleshooting section
+- CONTRIBUTING.md fixed for current 5-service architecture
+- Added `.env.example` documenting all configurable environment variables

@@ -39,8 +39,8 @@ PatentForge is a **research and preparation tool**, not a legal service. It does
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+ (recommended: 20 LTS)
-- [Python](https://python.org/) 3.11+ (for claim drafting service)
-- [Anthropic API key](https://console.anthropic.com/)
+- [Python](https://python.org/) 3.11+ (for claim-drafter and compliance-checker services)
+- [Anthropic API key](https://console.anthropic.com/) (set in the Settings UI after first launch)
 
 ### Install and Run
 
@@ -48,29 +48,44 @@ PatentForge is a **research and preparation tool**, not a legal service. It does
 git clone https://github.com/scottconverse/patentforge.git
 cd patentforge
 
-# Install all dependencies
+# Install Node dependencies
 cd backend && npm install && cd ..
-cd services/feasibility && npm install && cd ../..
-cd services/claim-drafter && pip install . && cd ../..
-cd services/compliance-checker && pip install . && cd ../..
+cd services/feasibility && npm install && cd ..
 cd frontend && npm install && cd ..
 
-# Set up the database (SQLite, zero config)
-cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
+# Install Python dependencies (claim-drafter and compliance-checker)
+pip install uvicorn fastapi anthropic
+
+# Create backend .env (SQLite, zero config)
+echo 'DATABASE_URL="file:./prisma/dev.db"' > backend/.env
+
+# Set up the database
+cd backend && npx prisma db push && npx prisma generate && cd ..
 ```
 
-**On Windows** — double-click `PatentForge.bat` (builds and starts everything, opens browser).
+**On Windows** — double-click `PatentForge.bat` (builds and starts all 5 services, opens browser).
+
+The launcher automatically checks for missing `node_modules` and installs them, verifies Python dependencies, and confirms each service port is bound before opening the browser.
 
 **Manual start** (any OS) — run each in a separate terminal:
 ```bash
-cd backend && npm run build && npm run start                         # port 3000
-cd services/feasibility && npm run build && npm run start             # port 3001
-cd services/claim-drafter && python -m uvicorn src.server:app --port 3002  # port 3002
-cd services/compliance-checker && python -m uvicorn src.server:app --port 3004  # port 3004
-cd frontend && npm run dev                                            # port 8080
+# Terminal 1: Backend (port 3000)
+cd backend && npm run build && npm start
+
+# Terminal 2: Feasibility service (port 3001)
+cd services/feasibility && npm run build && npm start
+
+# Terminal 3: Claim drafter (port 3002)
+cd services/claim-drafter && py -m uvicorn src.server:app --port 3002
+
+# Terminal 4: Compliance checker (port 3004)
+cd services/compliance-checker && py -m uvicorn src.server:app --port 3004
+
+# Terminal 5: Frontend (port 8080)
+cd frontend && npm run dev
 ```
 
-Open http://localhost:8080, go to Settings, enter your Anthropic API key, and create your first project.
+Open http://localhost:8080, go to **Settings** (gear icon), enter your Anthropic API key, and create your first project.
 
 ### Docker (alternative)
 
@@ -82,6 +97,13 @@ docker compose up --build
 ```
 
 Open http://localhost:8080. Uses PostgreSQL instead of SQLite.
+
+### Troubleshooting
+
+- **Port already in use** — kill the process occupying the port (`Get-NetTCPConnection -LocalPort 3000` on Windows, `lsof -i :3000` on Mac/Linux), or change the port in the service config.
+- **"No API key configured"** — open Settings (gear icon) and enter your Anthropic API key. The key is encrypted at rest.
+- **Python services won't start** — ensure uvicorn and fastapi are installed: `pip install uvicorn fastapi anthropic`
+- **Prisma errors** — run `cd backend && npx prisma db push && npx prisma generate` to reset the database schema.
 
 ## How It Works
 
@@ -171,6 +193,7 @@ docker compose up --build
 - [x] **v0.4.0** — AI-assisted claim drafting (Python + LangGraph, 3-agent pipeline)
 - [x] **v0.4.1** — Claim tree visualization, patent family tree lookup
 - [x] **v0.5.0** — Compliance review tooling
+- [x] **v0.5.1** — Public release polish (CORS, installer, parser quality, accessibility)
 - [ ] **v0.6** — Full application document assembly
 
 ## Contributing

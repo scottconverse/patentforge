@@ -26,6 +26,7 @@ function slugify(title: string): string {
 export default function ReportViewer({ report: _report, preRenderedHtml: _html, projectTitle, projectId }: ReportViewerProps) {
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
+  const [iframeLoading, setIframeLoading] = useState(true);
   const slug = slugify(projectTitle);
 
   // Report HTML is served directly by the backend — no client-side markdown parsing
@@ -73,12 +74,23 @@ export default function ReportViewer({ report: _report, preRenderedHtml: _html, 
         </div>
       )}
 
-      <iframe
-        src={reportHtmlUrl}
-        title="Feasibility Report"
-        className="w-full rounded-lg border border-gray-800"
-        style={{ height: 'calc(100vh - 200px)', minHeight: '600px', background: '#030712' }}
-      />
+      <div className="relative">
+        {iframeLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-950 rounded-lg border border-gray-800">
+            <div className="flex items-center gap-3 text-gray-400">
+              <span className="w-5 h-5 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin" aria-label="Loading" />
+              Loading report...
+            </div>
+          </div>
+        )}
+        <iframe
+          src={reportHtmlUrl}
+          title="Feasibility Report"
+          className={`w-full rounded-lg border border-gray-800 transition-opacity duration-300 ${iframeLoading ? 'opacity-0' : 'opacity-100'}`}
+          style={{ height: 'calc(100vh - 180px)', minHeight: '600px', background: '#030712' }}
+          onLoad={() => setIframeLoading(false)}
+        />
+      </div>
     </div>
   );
 }

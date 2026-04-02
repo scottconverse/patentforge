@@ -7,9 +7,14 @@ Handles the standard claim format:
 """
 
 from __future__ import annotations
+import logging
 import re
 
 from .models import Claim
+
+logger = logging.getLogger(__name__)
+
+MAX_CLAIM_TEXT_LENGTH = 5000
 
 
 def parse_claims(raw_text: str) -> list[Claim]:
@@ -18,6 +23,11 @@ def parse_claims(raw_text: str) -> list[Claim]:
     Handles numbered claims with optional metadata annotations.
     """
     claims: list[Claim] = []
+
+    # Strip AI-appended revision notes that appear after claims.
+    # Look for markdown horizontal rules (---) or H2 headings (## ) that are NOT
+    # claim headings, and truncate everything from the first such marker onward.
+    raw_text = _strip_trailing_notes(raw_text)
 
     # Try two formats:
     # Format A: "### CLAIM 1 (metadata)\n\nClaim text..."  (markdown heading)
@@ -130,4 +140,46 @@ def parse_claims(raw_text: str) -> list[Claim]:
             if c.parent_claim_number is not None and c.parent_claim_number in old_to_new:
                 c.parent_claim_number = old_to_new[c.parent_claim_number]
 
+    # Enforce max claim text length
+    for c in claims:
+        if len(c.text) > MAX_CLAIM_TEXT_LENGTH:
+            logger.warning(
+                "Claim %d text is %d chars — truncating to %d",
+                c.claim_number, len(c.text), MAX_CLAIM_TEXT_LENGTH,
+            )
+            c.text = c.text[:MAX_CLAIM_TEXT_LENGTH] + " [...text truncated]"
+
     return claims
+
+
+def _strip_trailing_notes(raw_text: str) -> str:
+    """
+    Remove AI-appended sections (revision notes, summaries, assessments) that
+    appear after the last claim.  Looks for ``---`` or ``## `` lines that are
+    NOT claim headings and truncates from the first such marker onward.
+    """
+    # Identify positions of all claim-like starts so we know where
+    # "after the last claim" begins.
+    claim_starts = [
+        m.start()
+        for m in re.finditer(
+            r'(?:^|\n)(?:#{1,4}\s*CLAIM\s+\d+|(?:Claim\s+)?\d+\.)',
+            raw_text,
+            re.IGNORECASE,
+        )
+    ]
+    if not claim_starts:
+        return raw_text  # No claims found — nothing to strip
+
+    after_last_claim = claim_starts[-1]
+
+    # Scan for stop markers after the last claim start
+    stop_pattern = re.compile(r'^(?:---|## )', re.MULTILINE)
+    for m in stop_pattern.finditer(raw_text, after_last_claim):
+        line_text = raw_text[m.start():].split('\n', 1)[0]
+        # Allow ``---`` and ``## `` that are NOT claim headings
+        if re.match(r'^#{1,4}\s*CLAIM\s+\d+', line_text, re.IGNORECASE):
+            continue
+        return raw_text[:m.start()].rstrip()
+
+    return raw_text

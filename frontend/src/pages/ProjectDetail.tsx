@@ -199,7 +199,7 @@ export default function ProjectDetail() {
         setFullReportContent(data.report || null);
         setReportHtml(data.html || null);
       }).catch(err => {
-        console.error('[Report] Failed to load report:', err);
+        // Report load failure is non-fatal — UI already shows "Loading report..." fallback
       });
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
@@ -609,7 +609,7 @@ export default function ProjectDetail() {
 
                 // If cost cap exceeded, cancel the pipeline
                 if (patchResult?.costCapExceeded) {
-                  console.warn(`[CostCap] Cumulative cost $${patchResult.cumulativeCost.toFixed(2)} exceeds cap $${patchResult.costCapUsd.toFixed(2)}. Cancelling pipeline.`);
+                  // Cost cap exceeded — cancel pipeline and show UI error (below)
                   try { await api.feasibility.cancel(id); } catch {}
                   setError(`Cost cap reached ($${patchResult.cumulativeCost.toFixed(2)} of $${patchResult.costCapUsd.toFixed(2)}). Pipeline stopped. Increase the cap in Settings to continue.`);
                   setViewMode('overview');
@@ -737,7 +737,7 @@ export default function ProjectDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-500">
-        <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" />
+        <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" aria-label="Loading" />
         Loading project...
       </div>
     );
@@ -814,7 +814,7 @@ export default function ProjectDetail() {
                 }`}>
                   {latestRun?.status === 'COMPLETE' ? '✓' :
                    latestRun?.status === 'RUNNING' ? (
-                     <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                     <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
                    ) : '2'}
                 </span>
                 <span className={latestRun?.status === 'COMPLETE' ? 'text-green-400' : latestRun?.status === 'RUNNING' ? 'text-blue-300' : 'text-gray-400'}>
@@ -1072,7 +1072,7 @@ export default function ProjectDetail() {
                     onClick={() => handleRunFeasibility()}
                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
                   >
-                    Retry
+                    Re-run
                   </button>
                 </div>
               )}
@@ -1084,7 +1084,7 @@ export default function ProjectDetail() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
+                  <span className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" aria-label="Loading" />
                   <h2 className="text-lg font-semibold text-gray-100">Running Feasibility Analysis</h2>
                 </div>
                 <button
@@ -1156,7 +1156,7 @@ export default function ProjectDetail() {
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
                   <div className="inline-flex items-center gap-3 text-gray-400">
-                    <div className="w-5 h-5 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin" aria-label="Loading" />
                     Loading report...
                   </div>
                   <button
