@@ -4,7 +4,7 @@ import { SettingsService } from '../settings/settings.service';
 import { Document, Packer, Paragraph, HeadingLevel, TextRun } from 'docx';
 
 const COMPLIANCE_CHECKER_URL = process.env.COMPLIANCE_CHECKER_URL || 'http://localhost:3004';
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
+const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
 
 /**
  * Request body sent to the Python compliance-checker service.
@@ -186,19 +186,35 @@ export class ComplianceService implements OnModuleInit {
       headers['X-Internal-Secret'] = INTERNAL_SECRET;
     }
 
-    const res = await fetch(`${COMPLIANCE_CHECKER_URL}/check`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(300_000), // 5-minute timeout
+    // Use http.request for full timeout control — fetch has a ~5 min socket timeout
+    const result = await new Promise<any>((resolve, reject) => {
+      const url = new URL(`${COMPLIANCE_CHECKER_URL}/check`);
+      const http = require('http');
+      const data = JSON.stringify(requestBody);
+      const req = http.request({
+        hostname: url.hostname,
+        port: url.port,
+        path: url.pathname,
+        method: 'POST',
+        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+        timeout: 600_000,
+      }, (res: any) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString();
+          if (res.statusCode !== 200) {
+            reject(new Error(`Compliance checker returned ${res.statusCode}: ${body}`));
+            return;
+          }
+          try { resolve(JSON.parse(body)); } catch { reject(new Error(`Invalid JSON from compliance checker`)); }
+        });
+      });
+      req.on('timeout', () => { req.destroy(); reject(new Error('Compliance check timed out (10 min)')); });
+      req.on('error', (e: Error) => reject(new Error(`Compliance checker request failed: ${e.message}`)));
+      req.write(data);
+      req.end();
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Compliance checker returned ${res.status}: ${text}`);
-    }
-
-    const result = await res.json();
 
     if (result.status === 'ERROR') {
       await this.prisma.complianceCheck.update({

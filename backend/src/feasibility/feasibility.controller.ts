@@ -16,7 +16,7 @@ import { FeasibilityService } from './feasibility.service';
 import { SettingsService } from '../settings/settings.service';
 
 const FEASIBILITY_URL = process.env.FEASIBILITY_URL || 'http://localhost:3001';
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
+const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
 import { PriorArtService } from '../prior-art/prior-art.service';
 import { PatchStageDto } from './dto/patch-stage.dto';
 import { PatchRunDto } from './dto/patch-run.dto';

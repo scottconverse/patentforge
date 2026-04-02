@@ -2,9 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException, 
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { Document, Packer, Paragraph, HeadingLevel, TextRun } from 'docx';
-
 const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:3002';
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || '';
+const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
 
 /**
  * Request body sent to the Python claim-drafter service.
@@ -208,19 +207,36 @@ export class ClaimDraftService implements OnModuleInit {
       headers['X-Internal-Secret'] = INTERNAL_SECRET;
     }
 
-    const res = await fetch(`${CLAIM_DRAFTER_URL}/draft/sync`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(300_000), // 5-minute timeout
+    // Use http.request for full timeout control — fetch has a ~5 min socket timeout
+    // that can't be overridden, but AI claim drafting takes 5-8 minutes.
+    const result = await new Promise<any>((resolve, reject) => {
+      const url = new URL(`${CLAIM_DRAFTER_URL}/draft/sync`);
+      const http = require('http');
+      const data = JSON.stringify(requestBody);
+      const req = http.request({
+        hostname: url.hostname,
+        port: url.port,
+        path: url.pathname,
+        method: 'POST',
+        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+        timeout: 600_000, // 10 minutes
+      }, (res: any) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString();
+          if (res.statusCode !== 200) {
+            reject(new Error(`Claim drafter returned ${res.statusCode}: ${body}`));
+            return;
+          }
+          try { resolve(JSON.parse(body)); } catch { reject(new Error(`Invalid JSON from claim drafter: ${body.slice(0, 200)}`)); }
+        });
+      });
+      req.on('timeout', () => { req.destroy(); reject(new Error('Claim drafter request timed out (10 min)')); });
+      req.on('error', (e: Error) => reject(new Error(`Claim drafter request failed: ${e.message}`)));
+      req.write(data);
+      req.end();
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Claim drafter returned ${res.status}: ${text}`);
-    }
-
-    const result = await res.json();
 
     if (result.status === 'ERROR') {
       await this.prisma.claimDraft.update({
