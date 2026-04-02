@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Honor OS color scheme preference (U1).
+ * PatentForge is dark-themed. We set color-scheme: dark so browser chrome
+ * (scrollbars, form controls, color-picker, select dropdowns) renders in
+ * dark mode to match. When the OS is in light mode, we apply a slightly
+ * lighter base surface so the app doesn't feel completely alien.
+ */
+:root { color-scheme: dark; }
+
+@media (prefers-color-scheme: light) {
+  :root { color-scheme: light dark; }
+  body {
+    background-color: #1a1a2e; /* slightly lighter than gray-950 */
+  }
+}
+
 /* Markdown content styling */
 .markdown-content h1 { @apply text-2xl font-bold text-blue-400 border-b border-gray-700 pb-2 mt-6 mb-3; }
 .markdown-content h2 { @apply text-xl font-semibold text-blue-300 border-b border-gray-800 pb-1 mt-5 mb-2; }

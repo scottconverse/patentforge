@@ -306,3 +306,20 @@ v0.5.1 is a patch release focused on production readiness and polish.
 - README quick start covers all 5 services with troubleshooting section
 - CONTRIBUTING.md fixed for current 5-service architecture
 - Added `.env.example` documenting all configurable environment variables
+
+### Title: v0.5.2 — Quality Patch (13 Items from Tech/UI/QA Review)
+
+**Body:**
+
+v0.5.2 addresses 13 specific items identified in an external tech/UI/QA review. No new features — all polish and hardening.
+
+**Highlights:**
+- Shared `<Alert>` component replaces inconsistent error styling across 5 components
+- Styled delete confirmation modal replaces browser `confirm()` dialog
+- Claim editing now discoverable: pencil icon on hover, text cursor, border highlight
+- Tablet-responsive layout at 768px breakpoint
+- Encryption self-test on startup warns loudly if database was moved between machines
+- Prior-art API calls now timeout at 60 seconds instead of hanging indefinitely
+- Docker Compose no longer ships with a default internal secret — must be generated
+- CI now tests the compliance-checker service
+- 396 automated tests (up from 394)

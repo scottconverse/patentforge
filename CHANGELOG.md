@@ -5,6 +5,29 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-04-02
+
+### Added
+- **Shared `<Alert>` component** — consistent error/warning/info/success styling across ProjectList, InventionForm, ClaimsTab, ComplianceTab, and PriorArtPanel
+- **Styled delete confirmation modal** — replaces browser `confirm()` dialog with a dark-themed modal matching the existing CostConfirmModal pattern
+- **Claim editing pencil icon** — visible edit icon on hover with `cursor: text` and border, so users can discover click-to-edit
+- **Tablet-responsive layout** — project detail sidebar stacks above content at `<768px` via Tailwind `md:` breakpoints
+- **Encryption startup self-test** — backend logs `ERROR` on startup if encrypt/decrypt round-trip fails (e.g. database moved between machines), prompting user to re-enter API keys
+- **Encryption migration tests** — 2 new tests for corrupted ciphertext and truncated hex fallback paths (total: 396 tests)
+- **Compliance checker CI job** — GitHub Actions now runs compliance-checker pytest suite and installs it for E2E tests
+- **Invention description character cap** — 8,000-character limit on description field with live remaining-character counter (amber at 500 remaining)
+
+### Fixed
+- **ComplianceTab function hoisting** — `handleDownloadDocx` moved above conditional returns so it's always initialized before use
+- **Prior-art API timeout** — Anthropic API calls in `extractSearchQueries` now have a 60-second `AbortSignal.timeout` to prevent hanging
+- **README Stage 4 description** — corrected from "AI/ML and 3D printing" to "domain-specific landscape analysis" (the prompt is adaptive)
+- **Docker secret default** — replaced insecure `patentforge-internal` fallback with `${INTERNAL_SERVICE_SECRET:?...}` that errors if unset, with documented `openssl rand -hex 32` command
+- **Missing database migration** — `OdpApiUsage` and `PatentFamily` tables were in the Prisma schema but had no migration, causing 500 errors on `/settings/odp-usage` and patent family lookups from a fresh database
+
+### Changed
+- **OS color scheme** — added `color-scheme: dark` declaration and subtle light-mode body adjustment via `prefers-color-scheme` media query
+- **CI E2E job** — compliance-checker now installed alongside claim-drafter in the Playwright E2E pipeline
+
 ## [0.5.1] - 2026-04-02
 
 ### Fixed

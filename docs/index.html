@@ -315,16 +315,12 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.5.1</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.5.2</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>NEW:</strong> Compliance checking — four automated checks (112a, 112b, MPEP 608, 101) with traffic-light PASS/FAIL/WARN results, MPEP citations, and fix suggestions</li>
-        <li><strong>NEW:</strong> Claims and compliance Word export — download formatted .docx files for attorney review</li>
-        <li><strong>NEW:</strong> Accurate cost estimates — modal uses historical run data (within 25% of actual cost)</li>
-        <li><strong>NEW:</strong> ODP API usage tracking — queries, results, and rate limits tracked per search with weekly summary in Settings</li>
-        <li><strong>NEW:</strong> Individual claim regeneration, prior art overlap warnings, re-check after edits</li>
-        <li>AI-assisted claim drafting — 3-agent pipeline (Planner, Writer, Examiner) generates patent claims from your analysis</li>
-        <li>Claim tree visualization, patent family tree lookup, 20-issue security audit</li>
-        <li>391 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
+        <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
+        <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
+        <li>396 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>

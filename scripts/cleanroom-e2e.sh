@@ -27,6 +27,7 @@ BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
 FEASIBILITY="$ROOT/services/feasibility"
 CLAIM_DRAFTER="$ROOT/services/claim-drafter"
+COMPLIANCE_CHECKER="$ROOT/services/compliance-checker"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -82,6 +83,11 @@ done
 log "  pip install in services/claim-drafter ..."
 (cd "$CLAIM_DRAFTER" && python3 -m pip install -e ".[dev]" --quiet 2>&1 | tail -1)
 pass "pip install: services/claim-drafter"
+
+# Install compliance-checker Python dependencies
+log "  pip install in services/compliance-checker ..."
+(cd "$COMPLIANCE_CHECKER" && python3 -m pip install -e ".[dev]" --quiet 2>&1 | tail -1)
+pass "pip install: services/compliance-checker"
 
 # ============================================================================
 # Phase 2: Prisma migrate + generate
@@ -192,6 +198,25 @@ else
 fi
 
 # ============================================================================
+# Phase 5c: Compliance checker unit tests (pytest)
+# ============================================================================
+log "=== Phase 5c: Compliance checker unit tests (pytest) ==="
+
+cd "$COMPLIANCE_CHECKER"
+set +e
+PYTEST_CC_OUTPUT=$(python3 -m pytest tests/ -v 2>&1)
+PYTEST_CC_EXIT=$?
+set -e
+
+echo "$PYTEST_CC_OUTPUT"
+
+if [ $PYTEST_CC_EXIT -eq 0 ]; then
+  pass "Compliance checker tests passed"
+else
+  fail "Compliance checker tests FAILED (exit code $PYTEST_CC_EXIT)"
+fi
+
+# ============================================================================
 # Phase 6: Start services and run API smoke tests
 # ============================================================================
 log "=== Phase 6: Start services and API smoke tests ==="
@@ -213,6 +238,12 @@ cd "$CLAIM_DRAFTER"
 python3 -m uvicorn src.server:app --port 3002 &
 PIDS+=($!)
 log "  Claim-drafter starting (PID ${PIDS[-1]})..."
+
+# Start compliance-checker service
+cd "$COMPLIANCE_CHECKER"
+python3 -m uvicorn src.server:app --port 3004 &
+PIDS+=($!)
+log "  Compliance-checker starting (PID ${PIDS[-1]})..."
 
 # Start Vite dev server for Playwright
 cd "$FRONTEND"

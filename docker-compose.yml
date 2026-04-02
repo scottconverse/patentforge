@@ -6,8 +6,13 @@
 #   docker compose down                # stop all services
 #   docker compose down -v             # stop and wipe database
 #
+# Required: generate a service secret before first run:
+#   export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+#
 # Optional: set your Anthropic API key in the environment before starting:
 #   export ANTHROPIC_API_KEY=sk-ant-...
+#
+# Then:
 #   docker compose up --build
 #
 # Or set it later via the Settings page at http://localhost:8080/settings
@@ -45,8 +50,8 @@ services:
       FEASIBILITY_URL: http://feasibility:3001
       CLAIM_DRAFTER_URL: http://claim-drafter:3002
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
-      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
       NODE_ENV: production
     restart: unless-stopped
@@ -57,8 +62,8 @@ services:
     environment:
       PORT: 3001
       NODE_ENV: production
-      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
@@ -68,8 +73,8 @@ services:
     environment:
       PORT: 3002
       HOST: "0.0.0.0"
-      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
@@ -79,8 +84,8 @@ services:
     environment:
       PORT: 3004
       HOST: "0.0.0.0"
-      # WARNING: Change INTERNAL_SERVICE_SECRET to a random string for production deployments
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-patentforge-internal}
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 

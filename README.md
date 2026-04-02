@@ -114,7 +114,7 @@ PatentForge runs a 6-stage sequential analysis pipeline using the Anthropic Clau
 | 1 | Technical Intake & Restatement | Restates your invention in precise technical language |
 | 2 | Prior Art Research | Searches for existing patents, papers, and products |
 | 3 | Patentability Review | Identifies potential issues under 35 USC 101, 102, 103, and 112 |
-| 4 | Deep Dive Analysis | Examines AI/ML and 3D printing aspects in detail |
+| 4 | Deep Dive Analysis | Domain-specific landscape analysis tailored to the invention's technical areas |
 | 5 | Strategy Notes | Summarizes filing considerations, cost factors, and open questions |
 | 6 | Consolidated Report | Assembles all findings into a single structured document |
 
@@ -194,6 +194,7 @@ docker compose up --build
 - [x] **v0.4.1** — Claim tree visualization, patent family tree lookup
 - [x] **v0.5.0** — Compliance review tooling
 - [x] **v0.5.1** — Public release polish (CORS, installer, parser quality, accessibility)
+- [x] **v0.5.2** — Quality patch (13 items from tech/UI/QA review)
 - [ ] **v0.6** — Full application document assembly
 
 ## Contributing

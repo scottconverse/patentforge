@@ -178,6 +178,7 @@ Output format: ["query one", "query two", "query three"]`;
           max_tokens: 200,
           messages: [{ role: 'user', content: prompt }],
         }),
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (!res.ok) throw new Error(`Anthropic API ${res.status}`);

@@ -111,7 +111,7 @@ patentforge/
 
 ## Running Tests
 
-**GitHub Actions CI** runs backend, frontend, and claim-drafter tests automatically on every push and PR.
+**GitHub Actions CI** runs backend, frontend, claim-drafter, and compliance-checker tests automatically on every push and PR.
 
 ```bash
 # Backend unit tests (Jest)

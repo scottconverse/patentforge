@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import Alert from './Alert';
 
 interface ComplianceTabProps {
   projectId: string;
@@ -99,6 +100,26 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     });
   }
 
+  async function handleDownloadDocx() {
+    setDocxLoading(true);
+    setDocxError(null);
+    try {
+      const blob = await api.compliance.exportToDocx(projectId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'compliance.docx';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    } catch (e: any) {
+      setDocxError(e.message || 'Word export failed');
+    } finally {
+      setDocxLoading(false);
+    }
+  }
+
   if (loading) {
     return <div className="text-gray-500 py-8 text-center">Loading compliance data...</div>;
   }
@@ -151,26 +172,6 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     </div>
   );
 
-  async function handleDownloadDocx() {
-    setDocxLoading(true);
-    setDocxError(null);
-    try {
-      const blob = await api.compliance.exportToDocx(projectId);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'compliance.docx';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
-    } catch (e: any) {
-      setDocxError(e.message || 'Word export failed');
-    } finally {
-      setDocxLoading(false);
-    }
-  }
-
   // ----- Results view -----
   function renderResults() {
     if (!check || !check.results) return null;
@@ -198,9 +199,7 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
         </div>
 
         {docxError && (
-          <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
-            Word export failed: {docxError}
-          </div>
+          <Alert variant="error">Word export failed: {docxError}</Alert>
         )}
 
         {/* UPL disclaimer banner */}

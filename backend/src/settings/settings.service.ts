@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { encrypt, decrypt, generateSalt } from './encryption';
@@ -7,6 +7,7 @@ const SINGLETON_ID = 'singleton';
 
 @Injectable()
 export class SettingsService implements OnModuleInit {
+  private readonly logger = new Logger(SettingsService.name);
   private salt: string = '';
 
   constructor(private readonly prisma: PrismaService) {}
@@ -29,9 +30,25 @@ export class SettingsService implements OnModuleInit {
         where: { id: SINGLETON_ID },
         data: { encryptionSalt: this.salt },
       });
-      console.log('[Settings] Generated new encryption salt');
+      this.logger.log('Generated new encryption salt');
     } else {
       this.salt = settings.encryptionSalt;
+    }
+
+    // Self-test: verify encryption round-trip works on this machine.
+    // If the database was copied from another machine, the machine-derived
+    // key will differ and decryption of existing API keys will silently
+    // return ciphertext. Warn loudly so the user knows to re-enter keys.
+    const probe = '__patentforge_encryption_probe__';
+    const encrypted = encrypt(probe, this.salt);
+    const decrypted = decrypt(encrypted, this.salt);
+    if (decrypted !== probe) {
+      this.logger.error(
+        'ENCRYPTION SELF-TEST FAILED — encrypt/decrypt round-trip returned wrong value. ' +
+        'If you moved the database from another machine, re-enter your API keys in Settings.',
+      );
+    } else {
+      this.logger.log('Encryption self-test passed');
     }
   }
 

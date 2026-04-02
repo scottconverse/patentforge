@@ -778,9 +778,9 @@ export default function ProjectDetail() {
         </span>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* ---- LEFT SIDEBAR ---- */}
-        <aside className="w-64 shrink-0 space-y-4">
+        <aside className="w-full md:w-64 shrink-0 space-y-4">
           {/* Pipeline nav */}
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Pipeline</h3>

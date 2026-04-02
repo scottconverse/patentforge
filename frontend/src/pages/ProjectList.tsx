@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { Project } from '../types';
+import Alert from '../components/Alert';
+import ConfirmModal from '../components/ConfirmModal';
 
 const statusColors: Record<string, string> = {
   INTAKE: 'bg-gray-700 text-gray-300',
@@ -31,6 +33,7 @@ export default function ProjectList() {
   const [newTitle, setNewTitle] = useState('');
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -67,11 +70,16 @@ export default function ProjectList() {
   }
 
   async function handleDelete(project: Project) {
-    if (!confirm(`Delete "${project.title}"? This cannot be undone.`)) return;
+    setDeleteTarget(project);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
     try {
-      setDeletingId(project.id);
-      await api.projects.delete(project.id);
-      setProjects(prev => prev.filter(p => p.id !== project.id));
+      setDeletingId(deleteTarget.id);
+      setDeleteTarget(null);
+      await api.projects.delete(deleteTarget.id);
+      setProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
     } catch (e: any) {
       setError(e.message || 'Failed to delete project');
     } finally {
@@ -131,9 +139,7 @@ export default function ProjectList() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 p-3 bg-red-900/40 border border-red-800 rounded-lg text-red-300 text-sm">
-          {error}
-        </div>
+        <Alert variant="error" className="mb-4">{error}</Alert>
       )}
 
       {/* Loading */}
@@ -184,6 +190,16 @@ export default function ProjectList() {
             </div>
           ))}
         </div>
+      )}
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete Project"
+          message={`Delete "${deleteTarget.title}"? All analysis data, claims, and compliance results will be permanently removed. This cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

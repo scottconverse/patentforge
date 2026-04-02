@@ -53,6 +53,31 @@ describe('encrypt/decrypt', () => {
     const key = 'key-with-unicode-🔑';
     expect(decrypt(encrypt(key, TEST_SALT), TEST_SALT)).toBe(key);
   });
+
+  it('returns corrupted ciphertext unchanged on decryption failure (migration fallback)', () => {
+    const encrypted = encrypt('test-key', TEST_SALT);
+    // Corrupt the ciphertext by flipping bits in the data portion
+    const corrupted = encrypted.slice(0, -4) + 'ffff';
+    // Should not throw — returns the corrupted string as-is
+    const result = decrypt(corrupted, TEST_SALT);
+    expect(result).toBe(corrupted);
+    expect(result).not.toBe('test-key');
+  });
+
+  it('returns truncated hex string unchanged (migration fallback)', () => {
+    const encrypted = encrypt('secret-key', TEST_SALT);
+    // Truncate to just IV + partial tag — valid hex but too short for real ciphertext
+    const truncated = encrypted.slice(0, 60);
+    // isEncrypted sees it as potentially encrypted (valid hex, sufficient length)
+    // but decrypt should fail gracefully and return it unchanged
+    if (isEncrypted(truncated)) {
+      const result = decrypt(truncated, TEST_SALT);
+      expect(result).toBe(truncated);
+    } else {
+      // If too short for isEncrypted, decrypt treats as plaintext passthrough
+      expect(decrypt(truncated, TEST_SALT)).toBe(truncated);
+    }
+  });
 });
 
 describe('generateSalt', () => {

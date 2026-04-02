@@ -1,6 +1,6 @@
 {
   "name": "patentforge-feasibility",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "scripts": {
     "build": "tsc && cp src/prompts/*.md dist/prompts/",

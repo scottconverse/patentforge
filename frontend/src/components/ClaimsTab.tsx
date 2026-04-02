@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import Alert from './Alert';
 import ClaimTree from './ClaimTree';
 
 interface ClaimsTabProps {
@@ -245,9 +246,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
       </div>
 
       {docxError && (
-        <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
-          Word export failed: {docxError}
-        </div>
+        <Alert variant="error">Word export failed: {docxError}</Alert>
       )}
 
       {/* Tree view */}
@@ -299,13 +298,16 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
               </div>
             ) : (
               <div>
-                <p
-                  className="text-sm text-gray-300 leading-relaxed cursor-pointer hover:bg-gray-800/50 rounded p-1 -m-1"
+                <div
+                  className="group relative text-sm text-gray-300 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
                   onClick={() => { setEditingClaim(indep.id); setEditText(indep.text); }}
                   title="Click to edit"
                 >
+                  <svg className="absolute top-1 right-1 w-3.5 h-3.5 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
                   {indep.text}
-                </p>
+                </div>
                 <div className="flex items-center gap-3 mt-2">
                   <button
                     onClick={() => handleRegenerate(indep.claimNumber)}
@@ -359,13 +361,16 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                 </div>
               ) : (
                 <div>
-                  <p
-                    className="text-xs text-gray-400 leading-relaxed cursor-pointer hover:bg-gray-800/50 rounded p-1 -m-1"
+                  <div
+                    className="group relative text-xs text-gray-400 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
                     onClick={() => { setEditingClaim(dep.id); setEditText(dep.text); }}
                     title="Click to edit"
                   >
+                    <svg className="absolute top-1 right-1 w-3 h-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
                     {dep.text}
-                  </p>
+                  </div>
                   <div className="flex items-center gap-3 mt-1">
                     <button
                       onClick={() => handleRegenerate(dep.claimNumber)}

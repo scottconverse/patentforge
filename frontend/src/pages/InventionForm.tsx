@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { InventionInput } from '../types';
+import Alert from '../components/Alert';
 
 interface InventionFormProps {
   projectId: string;
@@ -110,11 +111,15 @@ export default function InventionForm({ projectId, initialData, onSaved, onRunFe
         </label>
         <textarea
           value={description}
-          onChange={e => setDescription(e.target.value)}
+          onChange={e => setDescription(e.target.value.slice(0, 8000))}
+          maxLength={8000}
           placeholder="Provide a detailed description of your invention..."
           rows={7}
           className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm resize-y"
         />
+        <p className={`text-xs mt-1 text-right ${description.length > 7500 ? 'text-amber-400' : 'text-gray-500'}`}>
+          {(8000 - description.length).toLocaleString()} characters remaining
+        </p>
       </div>
 
       <div className="border-t border-gray-800 pt-4">
@@ -135,17 +140,9 @@ export default function InventionForm({ projectId, initialData, onSaved, onRunFe
         </div>
       </div>
 
-      {error && (
-        <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="error">{error}</Alert>}
 
-      {saved && (
-        <div className="p-3 bg-green-900/40 border border-green-800 rounded text-green-300 text-sm">
-          Draft saved successfully.
-        </div>
-      )}
+      {saved && <Alert variant="success">Draft saved successfully.</Alert>}
 
       <div className="flex gap-3 pt-2">
         <button

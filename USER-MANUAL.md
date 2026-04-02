@@ -1,4 +1,4 @@
-# PatentForge User Manual — v0.5.1
+# PatentForge User Manual — v0.5.2
 
 A step-by-step guide for using PatentForge to research and prepare for a patent consultation.
 
@@ -97,9 +97,10 @@ To remove a project and all its data (invention form, analysis, claims, complian
 
 1. From the home screen (project list), find the project you want to delete
 2. Click the red **"Delete"** button next to that project
-3. The project and all associated data will be permanently removed
+3. A confirmation dialog will appear showing the project name and explaining what will be removed
+4. Click **"Delete"** to confirm, or **"Cancel"** to go back
 
-**Warning:** This cannot be undone. All analysis results, claim drafts, and compliance checks for that project will be deleted.
+**Warning:** This cannot be undone. All analysis results, claim drafts, and compliance checks for that project will be permanently deleted.
 
 ### Step 2: Fill In the Invention Form
 
@@ -108,7 +109,7 @@ The invention form has 11 fields. Only **Title** and **Description** are require
 | Field | What to Write |
 |-------|--------------|
 | **Title** | A short, descriptive name for your invention |
-| **Description** | A detailed explanation of what your invention is and how it works. Be as specific as possible. |
+| **Description** | A detailed explanation of what your invention is and how it works. Be as specific as possible. (8,000 character limit — a counter below the field shows how many characters remain.) |
 | **Problem Solved** | What problem does your invention solve? Why do people need it? |
 | **How It Works** | Technical details about how the invention operates |
 | **AI Components** | If your invention uses artificial intelligence or machine learning, describe those parts here |
@@ -227,7 +228,7 @@ Click the **"Export Word"** button at the top of the Claims tab to download a .d
 
 ### Editing Claims
 
-Click any claim text to edit it directly. Your changes are saved when you click the Save button.
+Hover over any claim text to see a pencil icon and a subtle border — this indicates the text is editable. Click the claim text to open an inline editor. Make your changes, then click **Save** to keep them or **Cancel** to discard.
 
 ### Claim Tree View
 
