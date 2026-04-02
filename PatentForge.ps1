@@ -42,7 +42,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Kill stale processes on all service ports
-foreach ($port in @(3000, 3001, 3002, 3004, 8080)) {
+foreach ($port in @(3000, 3001, 3002, 3003, 3004, 8080)) {
     $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
         Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
@@ -69,6 +69,11 @@ Write-Host "  Starting Compliance Checker (port 3004)..."
 $complianceDir = Join-Path $root "services\compliance-checker"
 Start-Process -FilePath "cmd.exe" -ArgumentList "/c set INTERNAL_SERVICE_SECRET=patentforge-internal && py -m uvicorn src.server:app --host 0.0.0.0 --port 3004" -WorkingDirectory $complianceDir -WindowStyle Hidden
 
+# Start application-generator service (Python/FastAPI)
+Write-Host "  Starting Application Generator (port 3003)..."
+$appGenDir = Join-Path $root "services\application-generator"
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c set INTERNAL_SERVICE_SECRET=patentforge-internal && py -m uvicorn src.server:app --host 0.0.0.0 --port 3003" -WorkingDirectory $appGenDir -WindowStyle Hidden
+
 # Start frontend dev server (Vite)
 Write-Host "  Starting Frontend (port 8080)..."
 $frontendDir = Join-Path $root "frontend"
@@ -80,11 +85,12 @@ Start-Sleep -Seconds 12
 
 # Verify each port is bound
 $services = @(
-    @{ Name = "Backend";            Port = 3000 },
-    @{ Name = "Feasibility";        Port = 3001 },
-    @{ Name = "Claim Drafter";      Port = 3002 },
-    @{ Name = "Compliance Checker"; Port = 3004 },
-    @{ Name = "Frontend";           Port = 8080 }
+    @{ Name = "Backend";               Port = 3000 },
+    @{ Name = "Feasibility";           Port = 3001 },
+    @{ Name = "Claim Drafter";         Port = 3002 },
+    @{ Name = "Application Generator"; Port = 3003 },
+    @{ Name = "Compliance Checker";    Port = 3004 },
+    @{ Name = "Frontend";              Port = 8080 }
 )
 
 $backendOk = $false
