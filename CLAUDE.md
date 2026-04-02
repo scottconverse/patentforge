@@ -5,8 +5,10 @@
 PatentForge is a full-lifecycle patent analysis web platform being built from scratch. Read these files first:
 
 1. **This file** — operational context, file locations, build instructions
-2. **ARCHITECTURE.md** — system design, database schema, service specs, UX wireframes
-3. **PRD.md** — product requirements, priorities, release phases, API spec
+2. **SESSION-CONTEXT.md** — current project state, decisions made, what's next, session handoff briefing. **READ THIS FIRST** at the start of every session.
+3. **ARCHITECTURE.md** — system design, database schema, service specs, UX wireframes
+4. **PRD.md** — product requirements, priorities, release phases, API spec
+5. **v0.6-SCOPE.md** — v0.6 spec + migration roadmap (TS→Python, standalone installer)
 
 ## Current Phase: v0.6 (Application Generation) — IN PROGRESS
 
