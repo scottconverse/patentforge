@@ -163,6 +163,11 @@ model PatentApplication {
   detailedDescription String?
   claims              String?
   figureDescriptions  String?
+  crossReferences     String?
+  idsTable            String?
+  estimatedCostUsd    Float?
+  completedAt         DateTime?
+  errorMessage        String?
   createdAt           DateTime  @default(now())
 }
 
