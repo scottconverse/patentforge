@@ -30,11 +30,13 @@ class TestInternalAuth:
             srv.INTERNAL_SECRET = original
 
     def test_generate_accepted_with_correct_secret(self):
+        """Verifies correct secret passes auth. Endpoint returns 500 because graph.py
+        doesn't exist yet — that's expected. The key assertion is it's NOT 403."""
         import src.server as srv
         original = srv.INTERNAL_SECRET
         srv.INTERNAL_SECRET = "test-secret-123"
         try:
-            client = TestClient(srv.app)
+            client = TestClient(srv.app, raise_server_exceptions=False)
             resp = client.post(
                 "/generate/sync",
                 json={
@@ -44,8 +46,8 @@ class TestInternalAuth:
                 },
                 headers={"X-Internal-Secret": "test-secret-123"},
             )
-            # Gets past auth — will fail at pipeline level (no graph yet or bad API key)
-            # We just verify it's not 403
+            # Gets past auth — returns 500 because graph.py doesn't exist yet.
+            # We just verify it's not 403 (auth passed).
             assert resp.status_code != 403
         finally:
             srv.INTERNAL_SECRET = original
