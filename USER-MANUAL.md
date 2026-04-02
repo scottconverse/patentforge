@@ -91,6 +91,16 @@ You must configure both an API key and a model before running any analysis. The 
 
 You'll be taken to the project detail page.
 
+### Deleting a Project
+
+To remove a project and all its data (invention form, analysis, claims, compliance results):
+
+1. From the home screen (project list), find the project you want to delete
+2. Click the red **"Delete"** button next to that project
+3. The project and all associated data will be permanently removed
+
+**Warning:** This cannot be undone. All analysis results, claim drafts, and compliance checks for that project will be deleted.
+
 ### Step 2: Fill In the Invention Form
 
 The invention form has 11 fields. Only **Title** and **Description** are required, but the more detail you provide, the better the research output will be.
@@ -129,10 +139,10 @@ The analysis runs through 6 stages sequentially. You'll see:
 
 1. **Technical Intake & Restatement** — Restates your invention in precise technical language
 2. **Prior Art Research** — Searches the web for existing patents, papers, and products
-3. **Patentability Assessment** — Maps your invention against the main patent law requirements (35 USC 101, 102, 103, 112)
+3. **Patentability Analysis** — Maps your invention against the main patent law requirements (35 USC 101, 102, 103, 112)
 4. **Deep Dive Analysis** — Detailed examination of domain-specific patent dynamics
-5. **IP Landscape Assessment** — Presents filing indicators, cost factors, and open questions
-6. **Consolidated Report** — Assembles all findings into a single structured document
+5. **IP Strategy & Recommendations** — Presents filing indicators, cost factors, and open questions
+6. **Comprehensive Report** — Assembles all findings into a single structured document
 
 ### Step 4: Review the Results
 
