@@ -7,8 +7,9 @@ import { PriorArtModule } from './prior-art/prior-art.module';
 import { PatentDetailModule } from './patent-detail/patent-detail.module';
 import { ClaimDraftModule } from './claim-draft/claim-draft.module';
 import { ComplianceModule } from './compliance/compliance.module';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
-  imports: [PrismaModule, ProjectsModule, FeasibilityModule, SettingsModule, PriorArtModule, PatentDetailModule, ClaimDraftModule, ComplianceModule],
+  imports: [PrismaModule, ProjectsModule, FeasibilityModule, SettingsModule, PriorArtModule, PatentDetailModule, ClaimDraftModule, ComplianceModule, ApplicationModule],
 })
 export class AppModule {}
