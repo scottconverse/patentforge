@@ -5,6 +5,14 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-02
+
+### Added
+- **Application generator service** — new Python/FastAPI service (port 3003) with a 5-node LangGraph pipeline that assembles a full patent application document from feasibility analysis and claim drafts; outputs cover sheet, specification, abstract, drawings description, brief description, and detailed description sections with paragraph numbering
+- **Application document export** — Word (.docx) and Markdown export of the generated application document
+- **Prior art IDS table** — information disclosure statement table (form PTO/SB/08) included in the application document
+- **Application generator Docker service** — `application-generator` added to `docker-compose.yml` with `APPLICATION_GENERATOR_URL` wired into the backend
+
 ## [0.5.2] - 2026-04-02
 
 ### Added
