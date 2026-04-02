@@ -108,6 +108,44 @@ export const api = {
       return res.blob();
     },
   },
+  application: {
+    start: (projectId: string) => req<any>('POST', `/projects/${projectId}/application`),
+    getLatest: (projectId: string) => req<any>('GET', `/projects/${projectId}/application`),
+    getVersion: (projectId: string, version: number) =>
+      req<any>('GET', `/projects/${projectId}/application/${version}`),
+    updateSection: (projectId: string, sectionName: string, content: string) =>
+      req<any>('PATCH', `/projects/${projectId}/application/sections/${sectionName}`, { content }),
+    exportToDocx: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/application/export/docx`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
+      return res.blob();
+    },
+    exportToPdf: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/application/export/pdf`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
+      return res.blob();
+    },
+    exportToMarkdown: async (projectId: string): Promise<Blob> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/application/export/markdown`);
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text;
+        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        throw new Error(message);
+      }
+      return res.blob();
+    },
+  },
   compliance: {
     startCheck: (projectId: string, draftVersion?: number) =>
       req<any>('POST', `/projects/${projectId}/compliance/check`, draftVersion ? { draftVersion } : {}),
