@@ -144,12 +144,14 @@ export class ComplianceService implements OnModuleInit {
     (async () => {
       try {
         await this.callComplianceChecker(check.id, {
-          claims: draft.claims.map(c => ({
-            claim_number: c.claimNumber,
-            claim_type: c.claimType,
-            parent_claim_number: c.parentClaimNumber,
-            text: c.text,
-          })),
+          claims: draft.claims
+            .filter(c => c.text.length <= 10_000) // Skip malformed claims with appended notes
+            .map(c => ({
+              claim_number: c.claimNumber,
+              claim_type: c.claimType,
+              parent_claim_number: c.parentClaimNumber,
+              text: c.text.slice(0, 10_000), // Safety truncation
+            })),
           specification_text: specText,
           invention_narrative: narrative,
           prior_art_context: '',

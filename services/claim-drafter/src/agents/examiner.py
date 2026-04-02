@@ -110,7 +110,7 @@ Quality must be one of: STRONG, ADEQUATE, NEEDS WORK."""
             max_tokens=state.max_tokens,
             system=prompt,
             messages=[{"role": "user", "content": user_message}],
-            timeout=120.0,
+            timeout=300.0,  # 5 min — examiner review with full claim text can take 2-4 min
         )
         feedback = response.content[0].text
         input_tokens = response.usage.input_tokens

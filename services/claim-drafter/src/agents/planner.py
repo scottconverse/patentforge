@@ -64,7 +64,7 @@ Based on the above, produce a claim strategy."""
             max_tokens=state.max_tokens,
             system=prompt,
             messages=[{"role": "user", "content": user_message}],
-            timeout=120.0,
+            timeout=300.0,  # 5 min — large context with feasibility stages takes 2-4 min
         )
         strategy = response.content[0].text
         input_tokens = response.usage.input_tokens

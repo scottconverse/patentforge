@@ -100,8 +100,18 @@ export class ClaimDraftService implements OnModuleInit {
       include: { stages: { orderBy: { stageNumber: 'asc' } } },
     });
 
-    const stage5 = feasRun?.stages?.find(s => s.stageNumber === 5)?.outputText ?? '';
-    const stage6 = feasRun?.stages?.find(s => s.stageNumber === 6)?.outputText ?? '';
+    // Truncate feasibility stages to keep the claim-drafter request under 30K chars.
+    // The planner agent uses these for context — the first 15K chars of each stage
+    // contain the key findings, novelty analysis, and recommendations.
+    const MAX_STAGE_CHARS = 15_000;
+    const rawStage5 = feasRun?.stages?.find(s => s.stageNumber === 5)?.outputText ?? '';
+    const rawStage6 = feasRun?.stages?.find(s => s.stageNumber === 6)?.outputText ?? '';
+    const stage5 = rawStage5.length > MAX_STAGE_CHARS
+      ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
+      : rawStage5;
+    const stage6 = rawStage6.length > MAX_STAGE_CHARS
+      ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
+      : rawStage6;
 
     // Get prior art results
     const priorArt = await this.prisma.priorArtSearch.findFirst({
@@ -219,7 +229,7 @@ export class ClaimDraftService implements OnModuleInit {
         path: url.pathname,
         method: 'POST',
         headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
-        timeout: 600_000, // 10 minutes
+        timeout: 900_000, // 15 minutes — 3 AI agents with large context can take 10+ min
       }, (res: any) => {
         const chunks: Buffer[] = [];
         res.on('data', (c: Buffer) => chunks.push(c));
@@ -239,6 +249,7 @@ export class ClaimDraftService implements OnModuleInit {
     });
 
     if (result.status === 'ERROR') {
+      console.error(`[ClaimDraft] Claim drafter returned ERROR for ${draftId}: ${result.error_message ?? 'no message'}`);
       await this.prisma.claimDraft.update({
         where: { id: draftId },
         data: { status: 'ERROR', completedAt: new Date() },

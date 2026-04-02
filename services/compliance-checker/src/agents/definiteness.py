@@ -67,7 +67,7 @@ Check each claim against 35 USC 112(b) definiteness requirements."""
             max_tokens=state.max_tokens,
             system=prompt,
             messages=[{"role": "user", "content": user_message}],
-            timeout=120.0,
+            timeout=300.0,
         )
         output = response.content[0].text
         input_tokens = response.usage.input_tokens
