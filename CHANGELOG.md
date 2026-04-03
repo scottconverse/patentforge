@@ -8,10 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2026-04-02
 
 ### Added
-- **Application generator service** — new Python/FastAPI service (port 3003) with a 5-node LangGraph pipeline that assembles a full patent application document from feasibility analysis and claim drafts; outputs cover sheet, specification, abstract, drawings description, brief description, and detailed description sections with paragraph numbering
-- **Application document export** — Word (.docx) and Markdown export of the generated application document
-- **Prior art IDS table** — information disclosure statement table (form PTO/SB/08) included in the application document
-- **Application generator Docker service** — `application-generator` added to `docker-compose.yml` with `APPLICATION_GENERATOR_URL` wired into the backend
+- **Patent application generator** — new Python/FastAPI service (port 3003) with 5 sequential LangGraph agents (background, summary, detailed description, abstract, figure descriptions) that assemble a complete USPTO-formatted patent application from feasibility analysis, prior art, and claim drafts
+- **Application tab** — new tab in project detail with section navigation (9 sections), inline editing, UPL disclaimer modal, and export toolbar
+- **USPTO-compliant DOCX export** — Word export follows 37 CFR 1.52: US Letter, Times New Roman 12pt, 1.5 line spacing, [NNNN] bold paragraph numbering, page numbers, claims/abstract on separate pages
+- **DOCX watermark** — every page includes diagonal "DRAFT — NOT LEGAL ADVICE — MUST BE REVIEWED BY PATENT ATTORNEY" watermark
+- **Markdown export** — full application as formatted Markdown with paragraph numbers and IDS table
+- **Information Disclosure Statement** — IDS table auto-generated from prior art search results
+- **Cross-references placeholder** — user-editable section for related application references with actionable empty state guidance
+- **Application generator Docker service** — `application-generator` added to `docker-compose.yml` on port 3003
+
+### Fixed
+- **Cost tracking** — fixed field name mismatch (`estimated_cost_usd` → `total_estimated_cost_usd`) that prevented API cost from being recorded
+- **Markdown headers in LLM output** — finalize node now strips `#` header lines from agent output before saving to database
+- **Stale claim status** — switching to Compliance or Application tabs now re-fetches claim draft status, fixing "Draft claims first" showing after claims were generated
+- **IDS section key mismatch** — fixed `ids` → `idsTable` mapping so IDS data renders when prior art exists
+- **IDS empty state** — shows actionable warning with USPTO API key signup URL and step-by-step instructions instead of silently showing empty section
+- **Mobile layout** — section navigation and content panel now stack vertically on mobile (was side-by-side and cramped)
+- **Cross-references empty state** — shows explanation of what belongs here and "Add Cross-References" button instead of generic "No content" message
+- **React Router deprecation warnings** — added v7 future flags (`v7_startTransition`, `v7_relativeSplatPath`) to suppress console warnings
+- **Edit button accessibility** — added `aria-label` with section name for screen readers
 
 ## [0.5.2] - 2026-04-02
 

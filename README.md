@@ -20,6 +20,7 @@ PatentForge is a self-hosted web application that helps inventors organize their
 - **Claim tree visualization** — SVG-based hierarchical view of claim dependencies with list/tree toggle
 - **Patent family lookup** — continuity data (parents, children, continuations, divisionals) fetched from USPTO ODP and displayed in the patent detail drawer
 - **Compliance checking** — automated validation of claim drafts against 35 USC 112(a) written description, 35 USC 112(b) definiteness, MPEP 608 formalities, and 35 USC 101 eligibility (Alice/Mayo framework), with traffic-light PASS/FAIL/WARN results, MPEP citations, and actionable fix suggestions
+- **Patent application generator** — 5-agent LangGraph pipeline assembles a complete USPTO-formatted patent application (background, summary, detailed description, abstract, figure descriptions, IDS) from feasibility analysis, prior art, and claim drafts; exports as USPTO-compliant Word (.docx) with paragraph numbering, watermark, and correct formatting per 37 CFR 1.52, or as Markdown
 - **ODP API usage tracking** — queries, results, and rate limit events tracked per search with weekly summary in Settings
 - **Self-hosted** — runs on your machine; invention data stays local except for Anthropic API calls
 - **Configurable** — choose your model (Sonnet, Opus, Haiku), set max tokens, adjust inter-stage delays
@@ -141,6 +142,13 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
                         │  port 3002      │     │   LangGraph)    │
                         └─────────────────┘     │  port 3004      │
                                                 └─────────────────┘
+                        ┌─────────────────┐
+                        │  Application    │
+                        │  Generator      │
+                        │  (Python/       │
+                        │   LangGraph)    │
+                        │  port 3003      │
+                        └─────────────────┘
 ```
 
 - **Frontend** — React 18, TypeScript, Tailwind CSS, Vite
@@ -148,6 +156,7 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 - **Feasibility Service** — Express, Anthropic SSE streaming, 6 prompt templates
 - **Claim Drafter** — Python, FastAPI, LangGraph, 3-agent pipeline (Planner/Writer/Examiner)
 - **Compliance Checker** — Python, FastAPI, LangGraph, 4 specialized checker agents (port 3004)
+- **Application Generator** — Python, FastAPI, LangGraph, 5-agent pipeline (port 3003)
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
 

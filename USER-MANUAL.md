@@ -320,6 +320,69 @@ All compliance results are marked "RESEARCH OUTPUT — NOT LEGAL ADVICE." **Alwa
 
 ---
 
+## Generating a Patent Application
+
+Once you have drafted claims for your invention, you can generate a complete patent application document.
+
+### What You'll Need First
+
+Before generating an application, you need:
+- A completed **feasibility analysis** (all 6 stages)
+- **Drafted claims** (from the Claims tab)
+
+You don't need to run compliance checks first, but it's recommended.
+
+### Step by Step
+
+1. Open your project and click the **Application** button in the left sidebar
+2. Click **Generate Application**
+3. A disclaimer will appear reminding you this is a research tool, not legal advice. Check the box and click **Generate Application**
+4. Wait while the AI generates your application sections. This takes 3-8 minutes — you'll see a spinner while it works
+5. When complete, you'll see your application with all sections listed in the left panel
+
+### Application Sections
+
+Your generated application includes these sections:
+
+- **Title** — pulled from your invention title
+- **Cross-References** — for references to related patent applications you've filed (this starts empty — click "Add Cross-References" to fill it in)
+- **Background of the Invention** — describes the field and existing solutions
+- **Summary of the Invention** — overview of what your invention does
+- **Detailed Description** — the full technical specification
+- **Claims** — your drafted claims from the Claims tab
+- **Abstract** — a 150-word summary
+- **Figure Descriptions** — placeholder descriptions for patent drawings
+- **Information Disclosure Statement (IDS)** — lists all prior art references found during your prior art search
+
+### Editing Sections
+
+Click **Edit** on any section to modify the text. Click **Save** when done, or **Cancel** to discard changes. The Cross-References section is intentionally empty — add references to any related patent applications you've filed (provisionals, continuations, etc.).
+
+### Exporting Your Application
+
+Click **Export Word** to download a formatted Word document (.docx) that follows USPTO formatting requirements:
+- US Letter size with correct margins
+- Times New Roman 12pt font with 1.5 line spacing
+- Sequential paragraph numbering [0001], [0002], etc.
+- Claims and Abstract on separate pages
+- A watermark on every page reminding you to have it reviewed by a patent attorney
+
+Click **Export Markdown** to download a plain text version.
+
+### If the IDS Is Empty
+
+If you see a yellow warning that the "Information Disclosure Statement is empty," it means no prior art search was completed. To fix this:
+
+1. Go to **Settings** and enter a USPTO Open Data Portal API key (free at [beta-data.uspto.gov/apis](https://beta-data.uspto.gov/apis))
+2. Go to the **Prior Art** tab and run a prior art search
+3. Come back to the Application tab and click **Regenerate**
+
+### Important Reminder
+
+The generated application is an **AI-drafted research document**. It is **not** a legal filing. Every section must be reviewed, revised, and finalized by a registered patent attorney before filing with the USPTO.
+
+---
+
 ## Re-running Individual Stages
 
 After a completed analysis, you can re-run any individual stage without restarting the entire pipeline. This is useful if you've updated your invention description and want to see how a specific stage's output changes.
