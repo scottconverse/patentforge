@@ -16,7 +16,7 @@ const SECTION_KEYS = [
   'claims',
   'abstract',
   'figureDescriptions',
-  'ids',
+  'idsTable',
 ] as const;
 
 const SECTION_LABELS: Record<string, string> = {
@@ -28,7 +28,7 @@ const SECTION_LABELS: Record<string, string> = {
   claims: 'Claims',
   abstract: 'Abstract',
   figureDescriptions: 'Figure Descriptions',
-  ids: 'IDS',
+  idsTable: 'Information Disclosure Statement',
 };
 
 export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabProps) {
@@ -243,6 +243,17 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
             This is an AI-generated patent application draft. It must be reviewed by a registered patent attorney.
           </p>
         </div>
+
+        {/* Prior art warning if IDS is empty */}
+        {application && !application.idsTable && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 text-center">
+            <p className="text-gray-400 text-xs">
+              <span className="text-yellow-400 font-semibold">No prior art data available.</span>
+              {' '}The Information Disclosure Statement is empty because no prior art search was completed for this project.
+              Run a prior art search from the Prior Art tab to populate the IDS.
+            </p>
+          </div>
+        )}
 
         {/* Two-column layout: nav + content */}
         <div className="flex gap-4">

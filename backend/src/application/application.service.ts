@@ -174,6 +174,9 @@ export class ApplicationService implements OnModuleInit {
       relevance_score: number;
       claims_text: string | null;
     }> = [];
+    if (!priorArt || !priorArt.results || priorArt.results.length === 0) {
+      console.warn(`[Application] No completed prior art search found for project ${projectId}. IDS will be empty.`);
+    }
     if (priorArt?.results) {
       for (const r of priorArt.results) {
         const cached = await this.prisma.patentDetail.findUnique({
