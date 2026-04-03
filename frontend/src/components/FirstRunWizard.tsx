@@ -11,11 +11,12 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const [error, setError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
   const [success, setSuccess] = useState(false);
-  const mountedRef = useRef(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Clean up the redirect timer on unmount
   useEffect(() => {
     return () => {
-      mountedRef.current = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
@@ -48,10 +49,8 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
       if (res.ok) {
         await api.settings.update({ anthropicApiKey: trimmed });
         setSuccess(true);
-        setTimeout(() => {
-          if (mountedRef.current) {
-            onComplete(true);
-          }
+        timerRef.current = setTimeout(() => {
+          onComplete(true);
         }, 1200);
       } else if (res.status === 401) {
         setError('Invalid API key. Please check the key and try again. Keys start with "sk-ant-".');
