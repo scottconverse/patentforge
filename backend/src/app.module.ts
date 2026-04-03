@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
 import { FeasibilityModule } from './feasibility/feasibility.module';
@@ -10,6 +12,24 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { ApplicationModule } from './application/application.module';
 
 @Module({
-  imports: [PrismaModule, ProjectsModule, FeasibilityModule, SettingsModule, PriorArtModule, PatentDetailModule, ClaimDraftModule, ComplianceModule, ApplicationModule],
+  imports: [
+    // Serve frontend static files in production mode only.
+    // Dev mode uses Vite's dev server on port 8080 instead.
+    ...(process.env.NODE_ENV === 'production'
+      ? [ServeStaticModule.forRoot({
+          rootPath: process.env.FRONTEND_DIST_PATH || join(__dirname, '..', '..', 'frontend', 'dist'),
+          exclude: ['/api/(.*)'],
+        })]
+      : []),
+    PrismaModule,
+    ProjectsModule,
+    FeasibilityModule,
+    SettingsModule,
+    PriorArtModule,
+    PatentDetailModule,
+    ClaimDraftModule,
+    ComplianceModule,
+    ApplicationModule,
+  ],
 })
 export class AppModule {}
