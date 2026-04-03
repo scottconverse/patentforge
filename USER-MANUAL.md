@@ -1,4 +1,4 @@
-# PatentForge User Manual — v0.6.0
+# PatentForge User Manual — v0.6.1
 
 A step-by-step guide for using PatentForge to research and prepare for a patent consultation.
 

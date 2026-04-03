@@ -5,6 +5,20 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-04-02
+
+### Fixed
+- **Docker data safety** — removed `--accept-data-loss` from Dockerfile startup command; schema changes that would drop columns or tables now fail explicitly instead of silently destroying data
+- **Configurable backend port** — backend reads `PORT` from environment (default: 3000) instead of hardcoding, supporting non-standard deployments and the upcoming installer
+- **Source maps at runtime** — added `--enable-source-maps` to all backend start commands (dev, production, Docker) so stack traces map to TypeScript source instead of compiled JS
+- **Startup environment validation** — backend now validates `DATABASE_URL` on boot and fails fast with actionable error messages instead of cryptic runtime failures; warns about missing `ANTHROPIC_API_KEY`; requires `INTERNAL_SERVICE_SECRET` in production
+- **Docker Compose deprecation** — removed deprecated `version: "3.9"` key (Compose v2+ ignores it)
+- **Form accessibility** — added `htmlFor`/`id` linkage on all InventionForm fields (title, description, 9 optional fields) so labels are properly associated with inputs for screen readers and keyboard navigation
+- **Modal accessibility** — added `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` to the disclaimer modal for proper screen reader announcement and focus management
+
+### Added
+- **Disclaimer E2E test** — new `disclaimer.spec.ts` with 3 Playwright tests exercising the real first-run flow (no localStorage bypass): modal appearance, accept-and-persist, and required legal content verification
+
 ## [0.6.0] - 2026-04-02
 
 ### Added

@@ -18,9 +18,9 @@ export default function DisclaimerModal() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
       <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6">
-        <h2 className="text-xl font-bold text-gray-100 mb-4">
+        <h2 id="disclaimer-title" className="text-xl font-bold text-gray-100 mb-4">
           Terms of Use
         </h2>
 

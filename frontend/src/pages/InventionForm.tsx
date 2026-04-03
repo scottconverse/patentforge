@@ -93,10 +93,11 @@ export default function InventionForm({ projectId, initialData, onSaved, onRunFe
   return (
     <form className="space-y-6 max-w-3xl">
       <div>
-        <label className="block text-sm font-medium text-gray-200 mb-1">
+        <label htmlFor="invention-title" className="block text-sm font-medium text-gray-200 mb-1">
           Title <span className="text-red-400">*</span>
         </label>
         <input
+          id="invention-title"
           type="text"
           value={title}
           onChange={e => setTitle(e.target.value)}
@@ -106,10 +107,11 @@ export default function InventionForm({ projectId, initialData, onSaved, onRunFe
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-200 mb-1">
+        <label htmlFor="invention-description" className="block text-sm font-medium text-gray-200 mb-1">
           Description <span className="text-red-400">*</span>
         </label>
         <textarea
+          id="invention-description"
           value={description}
           onChange={e => setDescription(e.target.value.slice(0, 8000))}
           maxLength={8000}
@@ -127,8 +129,9 @@ export default function InventionForm({ projectId, initialData, onSaved, onRunFe
         <div className="space-y-4">
           {optionalFields.map(field => (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{field.label}</label>
+              <label htmlFor={`invention-${field.key}`} className="block text-sm font-medium text-gray-400 mb-1">{field.label}</label>
               <textarea
+                id={`invention-${field.key}`}
                 value={optionals[field.key] || ''}
                 onChange={e => setOptionals(prev => ({ ...prev, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}

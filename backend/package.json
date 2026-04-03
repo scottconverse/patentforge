@@ -1,11 +1,11 @@
 {
   "name": "patentforge-backend",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "scripts": {
     "build": "nest build",
-    "start": "node --env-file=.env dist/main",
-    "start:dev": "node --env-file=.env node_modules/.bin/nest start --watch",
+    "start": "node --enable-source-maps --env-file=.env dist/main",
+    "start:dev": "node --enable-source-maps --env-file=.env node_modules/.bin/nest start --watch",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",

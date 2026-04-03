@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.6.0):**
+**Current status (v0.6.1):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -335,3 +335,19 @@ v0.6.0 ships the application generator — PatentForge can now draft a full pate
 - Prior art IDS table (PTO/SB/08 format) included automatically
 - Export to Word (.docx) or Markdown
 - Wired into Docker Compose and local launchers (PatentForge.ps1 / PatentForge.bat)
+
+### Title: v0.6.1 — Hardening Patch
+
+**Body:**
+
+v0.6.1 is a hardening patch based on an external sprint review. No new features — just making the existing stack safer and more accessible.
+
+**What changed:**
+- Docker no longer runs `--accept-data-loss` on startup — schema changes that would drop data now fail explicitly
+- Backend port is configurable via `PORT` environment variable (default: 3000)
+- Backend validates environment on boot and fails fast with actionable error messages
+- Runtime source maps enabled — stack traces now point to TypeScript source, not compiled JS
+- Form labels properly linked to inputs for screen readers and keyboard navigation
+- Disclaimer modal has correct ARIA dialog semantics
+- New Playwright E2E test exercises the real first-run disclaimer flow (no localStorage bypass)
+- Removed deprecated `version` key from docker-compose.yml

@@ -214,6 +214,7 @@ docker compose up --build
 - [x] **v0.5.1** — Public release polish (CORS, installer, parser quality, accessibility)
 - [x] **v0.5.2** — Quality patch (13 items from tech/UI/QA review)
 - [x] **v0.6.0** — Full application document assembly (5-node LangGraph pipeline, Word + Markdown export)
+- [x] **v0.6.1** — Hardening patch (Docker data safety, configurable port, startup validation, source maps, accessibility, disclaimer E2E test)
 
 ## Contributing
 

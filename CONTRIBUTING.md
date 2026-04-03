@@ -24,7 +24,7 @@ Optional:
    cd patentforge
    ```
 
-2. **Install dependencies** (all five services)
+2. **Install dependencies** (all six services)
    ```bash
    cd backend && npm ci && cd ..
    cd services/feasibility && npm ci && cd ../..
@@ -64,10 +64,13 @@ Optional:
    # Terminal 3 — Claim drafter (port 3002)
    cd services/claim-drafter && py -m uvicorn src.server:app --port 3002
 
-   # Terminal 4 — Compliance checker (port 3004)
+   # Terminal 4 — Application generator (port 3003)
+   cd services/application-generator && py -m uvicorn src.server:app --port 3003
+
+   # Terminal 5 — Compliance checker (port 3004)
    cd services/compliance-checker && py -m uvicorn src.server:app --port 3004
 
-   # Terminal 5 — Frontend (port 8080)
+   # Terminal 6 — Frontend (port 8080)
    cd frontend && npm run dev
    ```
 

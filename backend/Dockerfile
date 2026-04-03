@@ -10,4 +10,6 @@ RUN npm run build
 EXPOSE 3000
 # prisma db push applies schema directly (avoids SQLite-format migration files)
 # node dist/main used directly — env vars provided by docker-compose, no .env file needed
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/main"]
+# NOTE: --accept-data-loss was removed intentionally. If schema changes would
+# drop columns or tables, the push will fail and require explicit action.
+CMD ["sh", "-c", "npx prisma db push && node --enable-source-maps dist/main"]
