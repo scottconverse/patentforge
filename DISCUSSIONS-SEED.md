@@ -25,7 +25,7 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 455 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
+- 458 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
