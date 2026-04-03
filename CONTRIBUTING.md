@@ -7,7 +7,7 @@ Thank you for your interest in contributing to PatentForge! This guide will help
 ### Prerequisites
 
 - **Node.js** 18+ (recommended: 20 LTS)
-- **Python** 3.11+ (for the claim-drafter and compliance-checker services)
+- **Python** 3.11+ (for the claim-drafter, compliance-checker, and application-generator services)
 - **npm** 9+
 - **Git**
 - **Anthropic API key** (for running the feasibility and claim drafting pipelines)
@@ -30,6 +30,7 @@ Optional:
    cd services/feasibility && npm ci && cd ../..
    cd services/claim-drafter && pip install -e ".[dev]" && cd ../..
    cd services/compliance-checker && pip install -e ".[dev]" && cd ../..
+   cd services/application-generator && pip install -e ".[dev]" && cd ../..
    cd frontend && npm install && cd ..
    ```
 

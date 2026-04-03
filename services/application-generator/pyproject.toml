@@ -1,7 +1,7 @@
 [project]
-name = "patentforge-compliance-checker"
+name = "patentforge-application-generator"
 version = "0.6.0"
-description = "Patent claim compliance checking service for PatentForge"
+description = "Patent application generation service for PatentForge"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0,<1.0",
@@ -10,6 +10,7 @@ dependencies = [
     "anthropic>=0.42.0,<1.0",
     "pydantic>=2.0,<3.0",
     "sse-starlette>=2.0,<3.0",
+    "python-docx>=1.1.0,<2.0",
 ]
 
 [project.optional-dependencies]

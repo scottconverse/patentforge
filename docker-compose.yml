@@ -50,6 +50,7 @@ services:
       FEASIBILITY_URL: http://feasibility:3001
       CLAIM_DRAFTER_URL: http://claim-drafter:3002
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
+      APPLICATION_GENERATOR_URL: http://application-generator:3003
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
@@ -83,6 +84,17 @@ services:
     # No external port — only reachable by backend within the Docker network
     environment:
       PORT: 3004
+      HOST: "0.0.0.0"
+      # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped
+
+  application-generator:
+    build: ./services/application-generator
+    # No external port — only reachable by backend within the Docker network
+    environment:
+      PORT: 3003
       HOST: "0.0.0.0"
       # Set before first run: export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET — run: export INTERNAL_SERVICE_SECRET=$$(openssl rand -hex 32)}

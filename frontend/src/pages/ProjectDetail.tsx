@@ -10,6 +10,7 @@ import Toast from '../components/Toast';
 import CostConfirmModal from '../components/CostConfirmModal';
 import ClaimsTab from '../components/ClaimsTab';
 import ComplianceTab from '../components/ComplianceTab';
+import ApplicationTab from '../components/ApplicationTab';
 import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import { formatCost } from '../utils/format';
@@ -139,7 +140,7 @@ async function estimateRunCosts(projectId: string, model: string): Promise<{ tok
   return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'static', runsUsed: 0 };
 }
 
-type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims' | 'compliance';
+type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims' | 'compliance' | 'application';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -203,6 +204,13 @@ export default function ProjectDetail() {
       });
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
+
+  // Re-fetch claim draft status when switching to tabs that depend on it
+  useEffect(() => {
+    if ((viewMode === 'compliance' || viewMode === 'application') && id) {
+      api.claimDraft.getLatest(id).then(d => setClaimDraftStatus(d)).catch(() => {});
+    }
+  }, [viewMode, id]);
 
   // ----- Load project -----
   const loadProject = useCallback(async () => {
@@ -945,6 +953,14 @@ export default function ProjectDetail() {
             >
               Compliance
             </button>
+            <button
+              onClick={() => setViewMode('application')}
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                viewMode === 'application' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+              }`}
+            >
+              Application
+            </button>
           </div>
         </aside>
 
@@ -1265,6 +1281,25 @@ export default function ProjectDetail() {
                 </button>
               </div>
               <ComplianceTab
+                projectId={id!}
+                hasClaims={!!claimDraftStatus && claimDraftStatus.status === 'COMPLETE' && Array.isArray(claimDraftStatus.claims) && claimDraftStatus.claims.length > 0}
+              />
+            </div>
+          )}
+
+          {/* Application tab */}
+          {viewMode === 'application' && (
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-100">Patent Application</h2>
+                <button
+                  onClick={() => setViewMode('overview')}
+                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  ← Back
+                </button>
+              </div>
+              <ApplicationTab
                 projectId={id!}
                 hasClaims={!!claimDraftStatus && claimDraftStatus.status === 'COMPLETE' && Array.isArray(claimDraftStatus.claims) && claimDraftStatus.claims.length > 0}
               />

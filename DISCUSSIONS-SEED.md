@@ -323,3 +323,16 @@ v0.5.2 addresses 13 specific items identified in an external tech/UI/QA review. 
 - Docker Compose no longer ships with a default internal secret — must be generated
 - CI now tests the compliance-checker service
 - 396 automated tests (up from 394)
+
+### Title: v0.6.0 — Full Application Document Assembly
+
+**Body:**
+
+v0.6.0 ships the application generator — PatentForge can now draft a full patent application document from your feasibility analysis and claim drafts.
+
+**What's new:**
+- New `application-generator` service (Python/FastAPI, port 3003) with a 5-node LangGraph pipeline
+- Generates cover sheet, specification, abstract, description of drawings, and detailed description
+- Prior art IDS table (PTO/SB/08 format) included automatically
+- Export to Word (.docx) or Markdown
+- Wired into Docker Compose and local launchers (PatentForge.ps1 / PatentForge.bat)
