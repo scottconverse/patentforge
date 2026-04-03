@@ -9,11 +9,38 @@ import (
 
 	"fyne.io/systray"
 	"github.com/scottconverse/patentforge/tray/internal/assets"
+	"github.com/scottconverse/patentforge/tray/internal/config"
+	"github.com/scottconverse/patentforge/tray/internal/instance"
 )
 
-var version = "0.7.0-dev"
+var (
+	version = "0.7.0-dev"
+	cfg     *config.Config
+)
 
 func main() {
+	exe, err := os.Executable()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: cannot determine executable path: %v\n", err)
+		os.Exit(1)
+	}
+	baseDir := filepath.Dir(exe)
+
+	// Single-instance check — prevent duplicate launches
+	cleanup, err := instance.Lock(baseDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	defer cleanup()
+
+	// Load or generate configuration
+	cfg, err = config.Load(baseDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Config error: %v\n", err)
+		os.Exit(1)
+	}
+
 	systray.Run(onReady, onExit)
 }
 
@@ -100,6 +127,9 @@ func openFileExplorer(path string) error {
 }
 
 func getLogsDir() string {
+	if cfg != nil {
+		return cfg.LogsDir
+	}
 	exe, err := os.Executable()
 	if err != nil {
 		if home, homeErr := os.UserHomeDir(); homeErr == nil {
