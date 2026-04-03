@@ -2,6 +2,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 
+/**
+ * Directory containing prompt .md files.
+ * Defaults to __dirname (works for normal Node), but can be overridden via
+ * PROMPTS_DIR env var (required for SEA / standalone binary deployment where
+ * __dirname resolves to the executable's directory, not the prompts directory).
+ */
+const PROMPTS_DIR = process.env.PROMPTS_DIR || __dirname;
+
 let commonRules: string | null = null;
 const stagePrompts: Map<number, string> = new Map();
 
@@ -41,13 +49,13 @@ function loadFile(filePath: string, label: string): string {
 export function loadSystemPrompt(stageNumber: number): string {
   if (!commonRules) {
     commonRules = loadFile(
-      path.join(__dirname, 'common-rules.md'),
+      path.join(PROMPTS_DIR, 'common-rules.md'),
       'common-rules.md',
     );
   }
   if (!stagePrompts.has(stageNumber)) {
     const content = loadFile(
-      path.join(__dirname, `stage-${stageNumber}.md`),
+      path.join(PROMPTS_DIR, `stage-${stageNumber}.md`),
       `stage-${stageNumber}.md`,
     );
     stagePrompts.set(stageNumber, content);

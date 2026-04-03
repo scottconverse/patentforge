@@ -75,3 +75,9 @@ backend/sea-build/
 backend/sea-config.json
 backend/sea-prep.blob
 backend/ncc-out/
+patentforge-feasibility.exe
+patentforge-feasibility-prompts/
+services/feasibility/sea-build/
+services/feasibility/sea-config.json
+services/feasibility/sea-prep.blob
+services/feasibility/ncc-out/
