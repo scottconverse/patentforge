@@ -81,3 +81,6 @@ services/feasibility/sea-build/
 services/feasibility/sea-config.json
 services/feasibility/sea-prep.blob
 services/feasibility/ncc-out/
+
+# Portable Python runtime (built by scripts/bundle-python.sh)
+runtime/
