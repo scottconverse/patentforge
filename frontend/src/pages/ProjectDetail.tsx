@@ -351,7 +351,8 @@ export default function ProjectDetail() {
     // Find first stage that didn't complete
     const completedOutputs: Record<number, string> = {};
     let resumeFrom = 1;
-    for (const s of displayStages) {
+    const sortedStages = [...displayStages].sort((a, b) => a.stageNumber - b.stageNumber);
+    for (const s of sortedStages) {
       if (s.status === 'COMPLETE' && s.outputText) {
         completedOutputs[s.stageNumber] = s.outputText;
         resumeFrom = s.stageNumber + 1;

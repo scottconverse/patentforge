@@ -113,7 +113,7 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'compliance.docx';
+      a.download = `patentforge-compliance-${projectId.slice(0, 8)}.docx`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();

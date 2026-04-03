@@ -194,7 +194,7 @@ export default function ProjectList() {
       {deleteTarget && (
         <ConfirmModal
           title="Delete Project"
-          message={`Delete "${deleteTarget.title}"? All analysis data, claims, and compliance results will be permanently removed. This cannot be undone.`}
+          message={`Delete "${deleteTarget.title}"? All analysis data, claims, compliance results, and patent application drafts will be permanently removed. This cannot be undone.`}
           confirmLabel="Delete"
           variant="danger"
           onConfirm={confirmDelete}

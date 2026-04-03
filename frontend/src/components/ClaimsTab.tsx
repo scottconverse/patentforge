@@ -201,7 +201,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'claims.docx';
+      a.download = `patentforge-claims-${projectId.slice(0, 8)}.docx`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
