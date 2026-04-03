@@ -151,6 +151,7 @@ export const api = {
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),
+    validateKey: (apiKey: string) => req<{ valid: boolean; error?: string }>('POST', '/settings/validate-api-key', { apiKey }),
     odpUsage: () => req<{
       thisWeek: { totalQueries: number; totalResults: number; rateLimitHits: number; errorCount: number; callCount: number };
       lastUsed: string | null;

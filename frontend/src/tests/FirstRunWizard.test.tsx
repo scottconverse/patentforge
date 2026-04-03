@@ -7,6 +7,7 @@ vi.mock('../api', () => ({
     settings: {
       get: vi.fn(),
       update: vi.fn(),
+      validateKey: vi.fn(),
     },
   },
 }));
@@ -44,11 +45,8 @@ describe('FirstRunWizard', () => {
 
   it('validates and saves a valid key', async () => {
     vi.useFakeTimers();
+    (api.settings.validateKey as any).mockResolvedValue({ valid: true });
     (api.settings.update as any).mockResolvedValue({});
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ type: 'message' }),
-    }) as any;
 
     render(<FirstRunWizard onComplete={mockOnComplete} />);
     const input = screen.getByPlaceholderText(/sk-ant-/i);
@@ -68,11 +66,10 @@ describe('FirstRunWizard', () => {
   });
 
   it('shows error for invalid key', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: () => Promise.resolve({ error: { message: 'invalid x-api-key' } }),
-    }) as any;
+    (api.settings.validateKey as any).mockResolvedValue({
+      valid: false,
+      error: 'Invalid API key. Please check the key and try again.',
+    });
 
     render(<FirstRunWizard onComplete={mockOnComplete} />);
     const input = screen.getByPlaceholderText(/sk-ant-/i);

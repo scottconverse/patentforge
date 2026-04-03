@@ -31,39 +31,19 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
     setValidating(true);
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': trimmed,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1,
-          messages: [{ role: 'user', content: 'Hi' }],
-        }),
-      });
+      const result = await api.settings.validateKey(trimmed);
 
-      if (res.ok) {
+      if (result.valid) {
         await api.settings.update({ anthropicApiKey: trimmed });
         setSuccess(true);
         timerRef.current = setTimeout(() => {
           onComplete(true);
         }, 1200);
-      } else if (res.status === 401) {
-        setError('Invalid API key. Please check the key and try again. Keys start with "sk-ant-".');
-      } else if (res.status === 403) {
-        setError('This API key does not have permission to access the Anthropic API. Please check your account permissions at console.anthropic.com.');
       } else {
-        const data = await res.json().catch(() => ({}));
-        setError(
-          `Unexpected error (${res.status}). ${(data as any)?.error?.message || 'Please try again later.'}`
-        );
+        setError(result.error || 'Validation failed. Please try again.');
       }
     } catch {
-      setError('Could not reach the Anthropic API. Please check your internet connection and try again.');
+      setError('Could not reach the PatentForge server. Make sure the application is running.');
     } finally {
       setValidating(false);
     }
