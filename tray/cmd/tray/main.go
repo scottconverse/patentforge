@@ -11,11 +11,14 @@ import (
 	"github.com/scottconverse/patentforge/tray/internal/assets"
 	"github.com/scottconverse/patentforge/tray/internal/config"
 	"github.com/scottconverse/patentforge/tray/internal/instance"
+	"github.com/scottconverse/patentforge/tray/internal/services"
 )
 
 var (
 	version = "0.7.0-dev"
 	cfg     *config.Config
+	mgr     *services.Manager
+	mStatus *systray.MenuItem
 )
 
 func main() {
@@ -41,6 +44,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create the service manager
+	mgr = services.NewManager(cfg)
+
 	systray.Run(onReady, onExit)
 }
 
@@ -52,7 +58,7 @@ func onReady() {
 
 	// Menu items
 	mOpen := systray.AddMenuItem("Open PatentForge", "Open in browser")
-	mStatus := systray.AddMenuItem("Status: Starting...", "")
+	mStatus = systray.AddMenuItem("Status: Starting...", "")
 	mStatus.Disable()
 	systray.AddSeparator()
 	mLogs := systray.AddMenuItem("View Logs", "Open logs directory")
@@ -61,16 +67,26 @@ func onReady() {
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Stop all services and exit")
 
-	// Update status to Running (service management comes in Task 7)
-	mStatus.SetTitle("Status: Running")
-	systray.SetTooltip("PatentForge — Running")
+	// Start all services in background
+	go func() {
+		if err := mgr.StartAll(); err != nil {
+			fmt.Fprintf(os.Stderr, "Service startup failed: %v\n", err)
+			updateStatus()
+			return
+		}
+		updateStatus()
+		// Open browser once all services are ready
+		if err := openBrowser(fmt.Sprintf("http://localhost:%d", cfg.PortUI)); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
+		}
+	}()
 
 	// Handle menu clicks
 	go func() {
 		for {
 			select {
 			case <-mOpen.ClickedCh:
-				if err := openBrowser("http://localhost:3000"); err != nil {
+				if err := openBrowser(fmt.Sprintf("http://localhost:%d", cfg.PortUI)); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
 				}
 			case <-mLogs.ClickedCh:
@@ -78,9 +94,17 @@ func onReady() {
 					fmt.Fprintf(os.Stderr, "Failed to open logs directory: %v\n", err)
 				}
 			case <-mRestart.ClickedCh:
-				// Service management implemented in Task 7
-				mStatus.SetTitle("Status: Restarting...")
-				mStatus.SetTitle("Status: Running")
+				go func() {
+					mStatus.SetTitle("Status: Restarting...")
+					systray.SetTooltip("PatentForge — Restarting...")
+					mgr.StopAll()
+					// Create a fresh manager so context is not already cancelled
+					mgr = services.NewManager(cfg)
+					if err := mgr.StartAll(); err != nil {
+						fmt.Fprintf(os.Stderr, "Restart failed: %v\n", err)
+					}
+					updateStatus()
+				}()
 			case <-mAbout.ClickedCh:
 				if err := openBrowser("https://github.com/scottconverse/patentforge/releases"); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
@@ -93,8 +117,20 @@ func onReady() {
 }
 
 func onExit() {
-	// Cleanup implemented in Task 8
 	fmt.Println("PatentForge shutting down...")
+	if mgr != nil {
+		mgr.StopAll()
+	}
+}
+
+// updateStatus sets the tray menu and tooltip to reflect overall service health.
+func updateStatus() {
+	if mgr == nil || mStatus == nil {
+		return
+	}
+	status := mgr.OverallStatus()
+	mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
+	systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
 }
 
 func openBrowser(url string) error {
