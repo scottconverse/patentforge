@@ -326,7 +326,7 @@ export class ApplicationService implements OnModuleInit {
       where: { id: appId },
       data: {
         status: 'COMPLETE',
-        title: result.title ?? null,
+        title: result.title || requestBody.invention_narrative.split('\n')[0].replace(/^Title:\s*/i, '') || null,
         abstract: result.abstract ?? null,
         background: result.background ?? null,
         summary: result.summary ?? null,
