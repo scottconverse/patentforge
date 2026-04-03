@@ -67,3 +67,11 @@ IMPLEMENTATION-UPL-REVISIONS.md
 # Go build artifacts
 tray/patentforge-tray.exe
 tray/patentforge-tray
+
+# SEA build artifacts
+patentforge-backend.exe
+patentforge-backend-prisma/
+backend/sea-build/
+backend/sea-config.json
+backend/sea-prep.blob
+backend/ncc-out/
