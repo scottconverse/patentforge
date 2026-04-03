@@ -5,6 +5,28 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-04-03
+
+### Fixed
+- **Run targeting** — `patchRun` and `patchStage` now accept optional `runId` to prevent race conditions when multiple runs exist; previously always targeted the latest version, risking data corruption during rapid re-runs
+- **Cancel after abort** — `cancelRun` returns 200 OK when no running run is found instead of 404, eliminating the error toast when cancellation races with pipeline completion
+- **API key security** — first-run wizard now validates API keys via a backend endpoint (`POST /api/settings/validate-api-key`) instead of sending keys directly from the browser to Anthropic; removed `anthropic-dangerous-direct-browser-access` header
+- **SSE error handling** — upstream service crashes now send a `pipeline_error` SSE event instead of silently closing the stream, preventing indefinite "Loading" states
+- **Request timeouts** — all non-streaming API calls have a 30-second timeout with a user-friendly error message instead of hanging indefinitely
+- **Polling cleanup** — Claims, Compliance, and Application tabs stop polling on unmount, preventing state updates on unmounted components
+- **Cost cap scope** — cost cap now aggregates costs across feasibility, compliance, and application pipelines (previously only checked feasibility costs, allowing other pipelines to bypass the cap)
+- **Claim regeneration context** — regenerated claims now receive the same feasibility analysis (stages 5/6) and prior art context as the original draft, instead of empty strings
+- **Settings defaults** — UI defaults match database schema (32,000 max tokens, 5-second inter-stage delay); previously mismatched at 16,000 and 2 seconds
+- **Resume sort** — stage list sorted by number before resume iteration, preventing miscalculated resume points if stages arrive out of order
+- **DOCX filenames** — claims and compliance Word exports now include project ID in filename instead of generic `claims.docx` / `compliance.docx`
+- **Delete confirmation** — project deletion dialog now mentions patent application drafts alongside analysis data, claims, and compliance results
+- **Docker credentials** — PostgreSQL password parameterized via `${POSTGRES_PASSWORD:?...}` environment variable, matching the existing pattern for `INTERNAL_SERVICE_SECRET`
+- **statusColors duplication** — extracted to shared utility (`frontend/src/utils/statusColors.ts`) instead of duplicated in ProjectList and ProjectDetail
+- **USPTO URL** — standardized IDS warning link from beta endpoint to production (`data.uspto.gov/myodp`)
+- **Blockquote DOCX** — added blockquote (`> `) handling to the Word document parser with proper indentation
+- **marked() consistency** — all `marked()` calls use consistent synchronous pattern (matched to marked v17 behavior)
+- **finalReport type** — project list no longer type-corrupts `finalReport` from string to boolean; uses `hasReport` boolean flag instead
+
 ## [0.7.0] - 2026-04-02
 
 ### Added

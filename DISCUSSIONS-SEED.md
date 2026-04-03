@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.7.0):**
+**Current status (v0.7.1):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -28,6 +28,9 @@ Hey everyone! PatentForge is now open source.
 - 458 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v0.7.1:**
+- **18 bug fixes** from external code review — run targeting race conditions, API key security (backend validation), cost cap scope (all pipelines), SSE error handling, request timeouts, component polling cleanup, claim regeneration context, settings defaults, resume sort order, DOCX filenames, delete confirmation text, Docker password parameterization, shared utility extraction, USPTO URL standardization, blockquote Word support, marked() consistency, finalReport type corruption fix
 
 **What's new in v0.7.0:**
 - **One-click installer** — Windows (.exe), Mac (.dmg, beta), Linux (.AppImage, beta). Download, install, launch. No Node.js, Python, or git required.
