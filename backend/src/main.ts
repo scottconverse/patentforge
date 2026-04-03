@@ -57,6 +57,11 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  // All controllers serve under /api/* so the frontend's fetch calls
+  // to /api/projects, /api/settings, etc. work without a proxy rewrite.
+  // Required for production mode where backend serves frontend static files.
+  app.setGlobalPrefix('api');
+
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080')
     .split(',')
     .map(o => o.trim())
