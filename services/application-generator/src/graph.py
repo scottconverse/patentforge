@@ -18,37 +18,37 @@ from .agents.figures import run_figures
 from .formatter import format_ids_table
 
 
-async def format_ids(state: GraphState) -> GraphState:
+async def format_ids(state: GraphState) -> dict:
     """Format prior art into IDS table. No LLM call."""
-    state.step = "format_ids"
-    return state
+    return {"step": "format_ids"}
 
 
-async def finalize(state: GraphState) -> GraphState:
-    """Scrub API key and clean markdown artifacts from agent output."""
-    state.api_key = ""
+async def finalize(state: GraphState) -> dict:
+    """Scrub API key and clean markdown artifacts from agent output.
+    Returns a dict of updated fields so LangGraph properly merges them."""
 
-    # Strip markdown headers (# lines) and bold/italic markers from all text sections
     def clean_section(text: str) -> str:
         if not text:
             return text
-        # Remove lines that are markdown headers
         lines = text.split("\n")
         cleaned = [line for line in lines if not line.strip().startswith("#")]
         text = "\n".join(cleaned)
-        # Remove leading/trailing blank lines created by header removal
         while text.startswith("\n"):
             text = text[1:]
         return text
 
-    state.background = clean_section(state.background)
-    state.summary = clean_section(state.summary)
-    state.detailed_description = clean_section(state.detailed_description)
-    state.abstract = clean_section(state.abstract)
-    state.figure_descriptions = clean_section(state.figure_descriptions)
-
-    state.step = "finalize"
-    return state
+    return {
+        "api_key": "",
+        "background": clean_section(state.background),
+        "summary": clean_section(state.summary),
+        "detailed_description": clean_section(state.detailed_description),
+        "abstract": clean_section(state.abstract),
+        "figure_descriptions": clean_section(state.figure_descriptions),
+        "total_input_tokens": state.total_input_tokens,
+        "total_output_tokens": state.total_output_tokens,
+        "total_estimated_cost_usd": state.total_estimated_cost_usd,
+        "step": "finalize",
+    }
 
 
 def build_graph() -> StateGraph:
