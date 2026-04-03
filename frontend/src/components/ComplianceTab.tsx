@@ -51,9 +51,11 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   // Poll while running
   useEffect(() => {
     if (!running) return;
+    let isMounted = true;
     const interval = setInterval(async () => {
       try {
         const c = await api.compliance.getLatest(projectId);
+        if (!isMounted) return;
         if (c.status === 'COMPLETE' || c.status === 'ERROR') {
           setCheck(c);
           setRunning(false);
@@ -61,7 +63,10 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
         }
       } catch {}
     }, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [running, projectId]);
 
   async function loadCheck() {

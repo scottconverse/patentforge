@@ -53,9 +53,11 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   // Poll while generating
   useEffect(() => {
     if (!generating) return;
+    let isMounted = true;
     const interval = setInterval(async () => {
       try {
         const d = await api.claimDraft.getLatest(projectId);
+        if (!isMounted) return;
         if (d.status === 'COMPLETE' || d.status === 'ERROR') {
           setDraft(d);
           setGenerating(false);
@@ -63,7 +65,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         }
       } catch {}
     }, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [generating, projectId]);
 
   async function loadDraft() {

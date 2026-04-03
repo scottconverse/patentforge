@@ -52,9 +52,11 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   // Poll while generating
   useEffect(() => {
     if (!generating) return;
+    let isMounted = true;
     const interval = setInterval(async () => {
       try {
         const a = await api.application.getLatest(projectId);
+        if (!isMounted) return;
         if (a.status === 'COMPLETE' || a.status === 'ERROR') {
           setApplication(a);
           setGenerating(false);
@@ -62,7 +64,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         }
       } catch {}
     }, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [generating, projectId]);
 
   async function loadApplication() {

@@ -3,22 +3,30 @@ import { PriorArtSearch, PatentDetail } from './types';
 const BASE = '/api';
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    let message = text;
-    try {
-      const json = JSON.parse(text);
-      message = json.message || json.error || text;
-    } catch {}
-    throw new Error(message);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let message = text;
+      try {
+        const json = JSON.parse(text);
+        message = json.message || json.error || text;
+      } catch {}
+      throw new Error(message);
+    }
+    if (res.status === 204) return undefined as T;
+    return res.json();
+  } catch (e: any) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      throw new Error('Request timed out. The server may be busy — try again in a moment.');
+    }
+    throw e;
   }
-  if (res.status === 204) return undefined as T;
-  return res.json();
 }
 
 export const api = {

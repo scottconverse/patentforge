@@ -209,8 +209,15 @@ export class FeasibilityController {
           if (done) break;
           res.write(decoder.decode(value, { stream: true }));
         }
-      } catch {
-        // Client disconnected or upstream closed
+      } catch (err: any) {
+        console.error('[SSE] Stream error:', err?.message || err);
+        if (!res.writableEnded) {
+          try {
+            res.write(`event: pipeline_error\ndata: ${JSON.stringify({ error: 'Stream interrupted. Check service logs.' })}\n\n`);
+          } catch {
+            // Response already closed
+          }
+        }
       } finally {
         res.end();
       }
