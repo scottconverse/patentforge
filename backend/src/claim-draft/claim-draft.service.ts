@@ -75,7 +75,7 @@ export class ClaimDraftService implements OnModuleInit {
       throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
     }
 
-    // Enforce cost cap before starting claim drafting
+    // Enforce cost cap before starting claim drafting — aggregate ALL pipeline costs
     if (settings.costCapUsd > 0) {
       const stages = await this.prisma.feasibilityStage.findMany({
         where: {
@@ -84,7 +84,17 @@ export class ClaimDraftService implements OnModuleInit {
         },
         select: { estimatedCostUsd: true },
       });
-      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+      const complianceChecks = await this.prisma.complianceCheck.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const prevApps = await this.prisma.patentApplication.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
+        + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
+        + prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +

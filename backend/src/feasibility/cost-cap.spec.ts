@@ -28,6 +28,12 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  complianceCheck: {
+    findMany: jest.fn(),
+  },
+  patentApplication: {
+    findMany: jest.fn(),
+  },
 };
 
 // Mock SettingsService
@@ -59,6 +65,8 @@ describe('Cost Cap Enforcement', () => {
   describe('getProjectCumulativeCost', () => {
     it('returns 0 when no stages have cost data', async () => {
       mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
       expect(await service.getProjectCumulativeCost('p1')).toBe(0);
     });
 
@@ -69,6 +77,8 @@ describe('Cost Cap Enforcement', () => {
         { estimatedCostUsd: 0.25 },
         { estimatedCostUsd: 1.00 },
       ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
       expect(await service.getProjectCumulativeCost('p1')).toBe(2.50);
     });
 
@@ -78,7 +88,23 @@ describe('Cost Cap Enforcement', () => {
         { estimatedCostUsd: null },
         { estimatedCostUsd: 1.00 },
       ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
       expect(await service.getProjectCumulativeCost('p1')).toBe(1.50);
+    });
+
+    it('aggregates costs across all pipelines (feasibility + compliance + application)', async () => {
+      mockPrisma.feasibilityStage.findMany.mockResolvedValue([
+        { estimatedCostUsd: 1.00 },
+        { estimatedCostUsd: 0.50 },
+      ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([
+        { estimatedCostUsd: 0.75 },
+      ]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([
+        { estimatedCostUsd: 2.00 },
+      ]);
+      expect(await service.getProjectCumulativeCost('p1')).toBe(4.25);
     });
   });
 
@@ -94,6 +120,8 @@ describe('Cost Cap Enforcement', () => {
         { estimatedCostUsd: 3.00 },
         { estimatedCostUsd: 2.50 },
       ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
 
       await expect(controller.startRun('p1', {})).rejects.toThrow(BadRequestException);
       await expect(controller.startRun('p1', {})).rejects.toThrow(/Cost cap exceeded/);
@@ -107,6 +135,8 @@ describe('Cost Cap Enforcement', () => {
       mockPrisma.feasibilityStage.findMany.mockResolvedValue([
         { estimatedCostUsd: 1.00 },
       ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
       mockPrisma.project.findUnique.mockResolvedValue({ id: 'p1' });
       mockPrisma.feasibilityRun.count.mockResolvedValue(0);
       mockPrisma.feasibilityRun.create.mockResolvedValue({
@@ -159,6 +189,8 @@ describe('Cost Cap Enforcement', () => {
         { estimatedCostUsd: 1.00 },
         { estimatedCostUsd: 0.50 },
       ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
 
       const result = await controller.patchStage('p1', 3, {
         status: 'COMPLETE',
@@ -179,6 +211,8 @@ describe('Cost Cap Enforcement', () => {
       mockPrisma.feasibilityStage.findMany.mockResolvedValue([
         { estimatedCostUsd: 0.50 },
       ]);
+      mockPrisma.complianceCheck.findMany.mockResolvedValue([]);
+      mockPrisma.patentApplication.findMany.mockResolvedValue([]);
 
       const result = await controller.patchStage('p1', 1, {
         status: 'COMPLETE',

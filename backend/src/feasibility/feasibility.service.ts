@@ -303,6 +303,8 @@ export class FeasibilityService {
   }
 
   async getProjectCumulativeCost(projectId: string): Promise<number> {
+    // Aggregate costs across ALL cost-bearing tables, not just feasibility stages.
+    // FeasibilityStage costs are nested under FeasibilityRun → projectId.
     const stages = await this.prisma.feasibilityStage.findMany({
       where: {
         feasibilityRun: { projectId },
@@ -310,7 +312,20 @@ export class FeasibilityService {
       },
       select: { estimatedCostUsd: true },
     });
-    return stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+    // ComplianceCheck costs are stored directly on the check record.
+    const complianceChecks = await this.prisma.complianceCheck.findMany({
+      where: { projectId, estimatedCostUsd: { not: null } },
+      select: { estimatedCostUsd: true },
+    });
+    // PatentApplication costs are stored directly on the application record.
+    const applications = await this.prisma.patentApplication.findMany({
+      where: { projectId, estimatedCostUsd: { not: null } },
+      select: { estimatedCostUsd: true },
+    });
+    // Note: ClaimDraft does not have an estimatedCostUsd field in the schema.
+    return stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
+      + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
+      + applications.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
   }
 
   async startRun(projectId: string) {
