@@ -16,6 +16,13 @@ PatentForge is a web application that runs on your computer. You describe your i
 
 ---
 
+## How PatentForge Works
+
+![PatentForge Architecture](diagrams/architecture.png)
+*PatentForge uses 6 services working together to analyze your invention.*
+
+---
+
 ## Getting Started
 
 ### What You Need

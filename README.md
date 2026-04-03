@@ -128,6 +128,9 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 
 ## Architecture
 
+![PatentForge System Architecture](diagrams/architecture.png)
+*Figure 1: System Architecture (v0.6.0) — 6 services + 3 external APIs*
+
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  React Frontend │────▶│  NestJS Backend  │────▶│  Feasibility    │
@@ -192,6 +195,9 @@ The feasibility service (port 3001), claim-drafter service (port 3002), and comp
 export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
 docker compose up --build
 ```
+
+![Docker Deployment Topology](diagrams/docker-topology.png)
+*Figure 2: Docker Compose Deployment (7 containers)*
 
 ## Roadmap
 

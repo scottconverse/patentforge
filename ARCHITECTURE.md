@@ -14,6 +14,9 @@ PatentForge is an open-source, full-lifecycle patent platform that takes an inve
 
 ## 2. System Architecture
 
+![System Architecture](diagrams/architecture.png)
+*Figure 1: PatentForge System Architecture (v0.6.0)*
+
 > **Note:** This document was written as the initial architecture plan. The actual v0.6.0 implementation differs in several ways: Prior Art search is handled by the backend (not a separate service), there is no standalone USPTO Data service, and the MPEP RAG compliance checker uses LangGraph agents with Anthropic API calls (not FAISS/BM25). The Application Generator (port 3003) was added in v0.6.0 and is not shown in the original diagram below. See README.md for the current service topology.
 
 ### 2.1 Federated Service Model
@@ -146,6 +149,9 @@ User can view any historical version.
 - Type-safe SDK generated for frontend consumption
 
 ### 2.3 Database Schema (Prisma)
+
+![Database Schema](diagrams/database-schema.png)
+*Figure 2: Database Entity-Relationship Diagram (16 tables)*
 
 ```prisma
 model Project {
@@ -619,6 +625,9 @@ GET /patent/:number/office-actions     → Office Action text (via pyUSPTO)
 
 ## 4. User Journey & UX Design
 
+![User Journey](diagrams/user-journey.png)
+*Figure 5: User Journey from Invention to Attorney Meeting*
+
 ### 4.1 Application Layout
 
 ```
@@ -871,6 +880,9 @@ Dashboard for tracking prosecution status via USPTO APIs.
 
 ### 4.3 Cross-Stage Data Flow
 
+![Data Flow](diagrams/data-flow.png)
+*Figure 4: Full Pipeline Data Flow*
+
 Each stage feeds forward into the next. The central backend manages this routing:
 
 ```
@@ -907,6 +919,10 @@ Intake (11 fields)
 ## 5. Deployment
 
 ### 5.1 Docker Compose (Development)
+
+![Docker Topology](diagrams/docker-topology.png)
+*Figure 3: Docker Compose Deployment Topology*
+
 
 ```yaml
 version: "3.9"
