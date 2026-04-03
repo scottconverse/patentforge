@@ -48,10 +48,11 @@ type Service struct {
 	Env       []string
 	LogFile   string
 
-	cmd    *exec.Cmd
-	cancel context.CancelFunc
-	status ServiceStatus
-	mu     sync.Mutex
+	cmd     *exec.Cmd
+	cancel  context.CancelFunc
+	logFile *os.File
+	status  ServiceStatus
+	mu      sync.Mutex
 }
 
 // Start spawns the service process, redirecting stdout and stderr to
@@ -85,6 +86,8 @@ func (s *Service) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to open log file %s: %w", s.LogFile, err)
 	}
 
+	s.logFile = logFile
+
 	childCtx, cancel := context.WithCancel(ctx)
 	s.cancel = cancel
 
@@ -98,6 +101,7 @@ func (s *Service) Start(ctx context.Context) error {
 
 	if err := s.cmd.Start(); err != nil {
 		logFile.Close()
+		s.logFile = nil
 		cancel()
 		s.status = StatusFailed
 		return fmt.Errorf("failed to start %s: %w", s.Name, err)
@@ -107,12 +111,15 @@ func (s *Service) Start(ctx context.Context) error {
 	// mark it as failed and close the log file.
 	go func() {
 		_ = s.cmd.Wait()
-		logFile.Close()
 		s.mu.Lock()
-		defer s.mu.Unlock()
+		if s.logFile != nil {
+			s.logFile.Close()
+			s.logFile = nil
+		}
 		if s.status == StatusRunning || s.status == StatusStarting {
 			s.status = StatusFailed
 		}
+		s.mu.Unlock()
 	}()
 
 	return nil
@@ -136,7 +143,7 @@ func (s *Service) WaitReady(timeout time.Duration) error {
 		resp, err := client.Get(s.HealthURL)
 		if err == nil {
 			resp.Body.Close()
-			if resp.StatusCode >= 200 && resp.StatusCode < 500 {
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 				s.mu.Lock()
 				s.status = StatusRunning
 				s.mu.Unlock()
@@ -184,6 +191,10 @@ func (s *Service) Stop() {
 	}
 
 	s.mu.Lock()
+	if s.logFile != nil {
+		s.logFile.Close()
+		s.logFile = nil
+	}
 	s.status = StatusStopped
 	s.cancel = nil
 	s.cmd = nil
