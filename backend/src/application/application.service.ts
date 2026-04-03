@@ -332,7 +332,7 @@ export class ApplicationService implements OnModuleInit {
         figureDescriptions: result.figure_descriptions ?? null,
         crossReferences: result.cross_references ?? null,
         idsTable: result.ids_table ?? null,
-        estimatedCostUsd: result.estimated_cost_usd ?? null,
+        estimatedCostUsd: result.total_estimated_cost_usd ?? null,
         completedAt: new Date(),
       },
     });

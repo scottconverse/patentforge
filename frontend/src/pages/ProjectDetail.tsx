@@ -205,6 +205,13 @@ export default function ProjectDetail() {
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
 
+  // Re-fetch claim draft status when switching to tabs that depend on it
+  useEffect(() => {
+    if ((viewMode === 'compliance' || viewMode === 'application') && id) {
+      api.claimDraft.getLatest(id).then(d => setClaimDraftStatus(d)).catch(() => {});
+    }
+  }, [viewMode, id]);
+
   // ----- Load project -----
   const loadProject = useCallback(async () => {
     if (!id) return;

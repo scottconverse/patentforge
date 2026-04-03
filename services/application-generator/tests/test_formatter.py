@@ -36,6 +36,15 @@ class TestParagraphNumbering:
         assert "[0001] Padded paragraph." in result
         assert "[0002] Another." in result
 
+    def test_strips_markdown_headers(self):
+        text = "# Background\n\nFirst paragraph.\n\n## History\n\nSecond paragraph."
+        result, next_num = apply_paragraph_numbering(text, start=1)
+        assert "# Background" not in result
+        assert "## History" not in result
+        assert "[0001] First paragraph." in result
+        assert "[0002] Second paragraph." in result
+        assert next_num == 3
+
 
 class TestIdsTable:
     def test_formats_prior_art_items(self):

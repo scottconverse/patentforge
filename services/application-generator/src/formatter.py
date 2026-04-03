@@ -9,16 +9,15 @@ from .models import PriorArtItem
 def apply_paragraph_numbering(text: str, start: int = 1) -> tuple[str, int]:
     """
     Apply USPTO paragraph numbering [NNNN] to each paragraph.
-
-    Args:
-        text: Section text with paragraphs separated by blank lines.
-        start: Starting paragraph number.
-
-    Returns:
-        (numbered_text, next_paragraph_number)
+    Strips markdown headers and inline formatting before numbering.
     """
     if not text or not text.strip():
         return "", start
+
+    # Strip markdown headers (lines starting with #)
+    lines = text.split("\n")
+    cleaned_lines = [line for line in lines if not line.strip().startswith("#")]
+    text = "\n".join(cleaned_lines)
 
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
     numbered = []
