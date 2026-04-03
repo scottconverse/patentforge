@@ -195,9 +195,9 @@ describe('Architecture Documentation', () => {
     expect(html).toContain('8080');
   });
 
-  it('docs/index.html describes five-service architecture', () => {
+  it('docs/index.html describes six-service architecture', () => {
     const html = readFile('docs/index.html').toLowerCase();
-    expect(html).toContain('five-service');
+    expect(html).toContain('six-service');
   });
 
   it('docs/index.html mentions security hardening', () => {
