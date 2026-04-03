@@ -35,7 +35,7 @@ func Lock(baseDir string) (func(), error) {
 
 	// Write our PID
 	pid := os.Getpid()
-	if err := os.WriteFile(lockPath, []byte(strconv.Itoa(pid)), 0644); err != nil {
+	if err := os.WriteFile(lockPath, []byte(strconv.Itoa(pid)), 0600); err != nil {
 		return nil, fmt.Errorf("failed to create lockfile: %w", err)
 	}
 
