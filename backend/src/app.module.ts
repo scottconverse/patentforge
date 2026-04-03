@@ -10,8 +10,10 @@ import { PatentDetailModule } from './patent-detail/patent-detail.module';
 import { ClaimDraftModule } from './claim-draft/claim-draft.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { ApplicationModule } from './application/application.module';
+import { HealthController } from './health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     // Serve frontend static files in production mode only.
     // Dev mode uses Vite's dev server on port 8080 instead.
