@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PatentForge — AI Patent Landscape Research Tool</title>
+  <title>PatentForge — AI-Powered Full-Lifecycle Patent Platform</title>
   <meta name="description" content="Open-source, self-hosted AI patent landscape research tool. Explore your invention's patent landscape, discover prior art, and prepare for your patent attorney consultation.">
   <style>
     :root {
@@ -181,11 +181,10 @@
   <section class="hero">
     <h1>Prepare for your patent attorney<br>with <span class="highlight">AI-powered research</span></h1>
     <p class="subtitle">
-      PatentForge is an open-source, self-hosted patent landscape research tool
-      that helps inventors explore the patent landscape for their ideas before
-      consulting a patent professional. Six-stage AI analysis structures your
-      invention, discovers related prior art, and identifies the questions
-      worth exploring with qualified counsel.
+      PatentForge is an open-source, self-hosted patent platform
+      that takes inventors from "I have an idea" through feasibility analysis,
+      prior art research, claim drafting, compliance pre-screening, and a complete
+      USPTO-formatted patent application draft — all before your first attorney meeting.
     </p>
     <div class="hero-cta">
       <a href="https://github.com/scottconverse/patentforge" class="btn btn-primary">Get Started</a>
@@ -199,8 +198,11 @@
 cd patentforge
 cd backend && npm install && cd ..
 cd services/feasibility && npm install && cd ../..
+cd services/claim-drafter && pip install -e . && cd ../..
+cd services/compliance-checker && pip install -e . && cd ../..
+cd services/application-generator && pip install -e . && cd ../..
 cd frontend && npm install && cd ..
-cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
+cd backend && npx prisma db push && npx prisma generate && cd ..
 # Start: PatentForge.bat (Windows) or start each service manually
 # Open http://localhost:8080</pre>
   </section>
@@ -237,8 +239,16 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <p>Four automated checks validate claim drafts against 35 USC 112(a) written description, 112(b) definiteness, MPEP 608 formalities, and 101 eligibility. Traffic-light PASS/FAIL/WARN results with MPEP citations and fix suggestions.</p>
       </div>
       <div class="feature-card">
-        <h3>391 Automated Tests</h3>
-        <p>Jest backend tests, Vitest component tests, pytest for claim-drafter and compliance-checker, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
+        <h3>Claim Drafting</h3>
+        <p>Multi-agent AI pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims informed by feasibility analysis and prior art. Edit individual claims, view as dependency tree, export to Word.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Application Generation</h3>
+        <p>5-agent sequential pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52 with paragraph numbering, page numbers, and draft watermark.</p>
+      </div>
+      <div class="feature-card">
+        <h3>452 Automated Tests</h3>
+        <p>Jest backend tests, Vitest component tests, pytest for claim-drafter, compliance-checker, and application-generator, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
       </div>
       <div class="feature-card">
         <h3>Prompt Integrity</h3>
@@ -317,11 +327,11 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
       <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.6.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>v0.6.0:</strong> Full application document assembly — 5-node LangGraph pipeline generates cover sheet, specification, abstract, drawings description, and detailed description; Word (.docx) and Markdown export; prior art IDS table</li>
+        <li><strong>v0.6.0:</strong> Patent application generator — 5-agent LangGraph pipeline produces complete USPTO-formatted applications. Word export with 37 CFR 1.52 compliance (Times New Roman 12pt, 1.5 spacing, [NNNN] paragraph numbering, page breaks, draft watermark). Section navigation with inline editing. IDS auto-populated from prior art. 9 bug fixes including mobile layout, cost tracking, and React Router deprecation warnings.</li>
         <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
         <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
         <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
-        <li>396 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>452 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
@@ -453,6 +463,12 @@ cd backend && npx prisma migrate deploy && npx prisma generate && cd ..
         <div class="port">:3002</div>
         <p>3-agent claim drafting pipeline: Planner (strategy), Writer (claims), Examiner (review). LangGraph state machine with conditional revision loop. Generates up to 20 claims per draft.</p>
         <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK</div>
+      </div>
+      <div class="arch-card">
+        <h4>Application Generator</h4>
+        <div class="port">:3003</div>
+        <p>5-agent sequential LangGraph pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52.</p>
+        <div class="tech">Python &bull; FastAPI &bull; LangGraph &bull; Anthropic SDK &bull; python-docx</div>
       </div>
       <div class="arch-card">
         <h4>Compliance Checker</h4>
