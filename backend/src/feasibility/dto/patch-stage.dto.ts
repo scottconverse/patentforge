@@ -3,6 +3,10 @@ import { IsOptional, IsString, IsBoolean, IsDateString, IsNumber } from 'class-v
 export class PatchStageDto {
   @IsOptional()
   @IsString()
+  runId?: string;
+
+  @IsOptional()
+  @IsString()
   status?: string;
 
   @IsOptional()

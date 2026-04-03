@@ -483,10 +483,15 @@ export class FeasibilityService {
   }
 
   async patchStage(projectId: string, stageNumber: number, dto: PatchStageDto) {
-    const run = await this.prisma.feasibilityRun.findFirst({
-      where: { projectId },
-      orderBy: { version: 'desc' },
-    });
+    let run;
+    if (dto.runId) {
+      run = await this.prisma.feasibilityRun.findUnique({ where: { id: dto.runId } });
+    } else {
+      run = await this.prisma.feasibilityRun.findFirst({
+        where: { projectId },
+        orderBy: { version: 'desc' },
+      });
+    }
 
     if (!run) {
       throw new NotFoundException(`No feasibility runs found for project ${projectId}`);
@@ -560,10 +565,15 @@ export class FeasibilityService {
   }
 
   async patchRun(projectId: string, dto: PatchRunDto) {
-    const run = await this.prisma.feasibilityRun.findFirst({
-      where: { projectId },
-      orderBy: { version: 'desc' },
-    });
+    let run;
+    if (dto.runId) {
+      run = await this.prisma.feasibilityRun.findUnique({ where: { id: dto.runId } });
+    } else {
+      run = await this.prisma.feasibilityRun.findFirst({
+        where: { projectId },
+        orderBy: { version: 'desc' },
+      });
+    }
 
     if (!run) {
       throw new NotFoundException(`No feasibility runs found for project ${projectId}`);
@@ -597,7 +607,7 @@ export class FeasibilityService {
     });
 
     if (!run) {
-      throw new NotFoundException(`No running feasibility run found for project ${projectId}`);
+      return { cancelled: false, reason: 'No running run found' };
     }
 
     return this.prisma.feasibilityRun.update({

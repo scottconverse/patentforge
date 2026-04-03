@@ -247,7 +247,7 @@ export default function ProjectDetail() {
           setViewMode('report');
           // Patch backend so it doesn't stay RUNNING forever
           try {
-            await api.feasibility.patchRun(data.id, { status: 'ERROR' });
+            await api.feasibility.patchRun(data.id, { status: 'ERROR', runId: runIdRef.current || undefined });
           } catch {
             // non-fatal
           }
@@ -433,7 +433,7 @@ export default function ProjectDetail() {
         runId = existingRun.id;
         runIdRef.current = runId;
         try {
-          await api.feasibility.patchRun(id, { status: 'RUNNING' });
+          await api.feasibility.patchRun(id, { status: 'RUNNING', runId });
         } catch { /* non-fatal */ }
       } else {
         const run = await api.feasibility.start(id, { narrative });
@@ -445,7 +445,7 @@ export default function ProjectDetail() {
           return { ...prev, feasibility: [...existing, run] };
         });
         try {
-          await api.feasibility.patchRun(id, { status: 'RUNNING' });
+          await api.feasibility.patchRun(id, { status: 'RUNNING', runId });
         } catch { /* non-fatal */ }
       }
 
@@ -613,6 +613,7 @@ export default function ProjectDetail() {
                   inputTokens,
                   outputTokens,
                   estimatedCostUsd,
+                  runId: runIdRef.current || undefined,
                 });
 
                 // If cost cap exceeded, cancel the pipeline
@@ -641,6 +642,7 @@ export default function ProjectDetail() {
                 await api.feasibility.patchRun(id, {
                   status: 'COMPLETE',
                   finalReport: data.finalReport || stageOutputAccumulator,
+                  runId: runIdRef.current || undefined,
                 });
               } catch {
                 // non-fatal

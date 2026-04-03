@@ -45,9 +45,9 @@ export const api = {
       req<any>('POST', `/projects/${projectId}/feasibility/run`, body ?? {}),
     get: (projectId: string) => req<any>('GET', `/projects/${projectId}/feasibility`),
     cancel: (projectId: string) => req<any>('POST', `/projects/${projectId}/feasibility/cancel`),
-    patchRun: (projectId: string, data: { status?: string; finalReport?: string }) =>
+    patchRun: (projectId: string, data: { status?: string; finalReport?: string; runId?: string }) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/run`, data),
-    patchStage: (projectId: string, stageNumber: number, data: unknown) =>
+    patchStage: (projectId: string, stageNumber: number, data: Record<string, unknown>) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/stages/${stageNumber}`, data),
     exportToDisk: (projectId: string) =>
       req<{ folderPath: string; mdFile: string; htmlFile: string }>('POST', `/projects/${projectId}/feasibility/export`),
