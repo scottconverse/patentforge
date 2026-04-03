@@ -1,8 +1,8 @@
 # PatentForge — Architecture & Design Document
 
-**Version**: 0.1.0-draft
-**Last Updated**: 2026-03-30
-**Status**: Pre-development
+**Version**: 0.6.0
+**Last Updated**: 2026-04-02
+**Status**: Active Development
 
 ---
 
@@ -13,6 +13,8 @@ PatentForge is an open-source, full-lifecycle patent platform that takes an inve
 ---
 
 ## 2. System Architecture
+
+> **Note:** This document was written as the initial architecture plan. The actual v0.6.0 implementation differs in several ways: Prior Art search is handled by the backend (not a separate service), there is no standalone USPTO Data service, and the MPEP RAG compliance checker uses LangGraph agents with Anthropic API calls (not FAISS/BM25). The Application Generator (port 3003) was added in v0.6.0 and is not shown in the original diagram below. See README.md for the current service topology.
 
 ### 2.1 Federated Service Model
 

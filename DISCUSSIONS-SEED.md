@@ -16,22 +16,21 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.3.4):**
-- 6-stage AI analysis pipeline with real-time streaming
-- Prior art discovery via USPTO Open Data Portal with improved relevance scoring
-- Patent claims viewer — lazy-load actual claims text from USPTO Documents API
+**Current status (v0.6.0):**
+- **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
+- **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
+- **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
+- **Compliance checking** — 4-check automated validation (35 USC 112(a), 35 USC 112(b), MPEP 608, 35 USC 101) with traffic-light results and MPEP citations
+- **Application generator** — 5-agent LangGraph pipeline assembles a complete USPTO-formatted application (background, summary, description, abstract, IDS); exports to Word (.docx, USPTO-compliant) or Markdown
 - API keys encrypted at rest (AES-256-GCM)
-- Export to HTML, Word (.docx with full formatting), Markdown, and CSV
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 187 automated tests (Jest + Vitest + Playwright E2E) with GitHub Actions CI
+- 452 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
 **What's next:**
-- v0.4 — AI-assisted claim drafting research
-- v0.5 — Compliance review tooling
-- v0.6 — Full application document assembly
+- v0.7 — Single-click installer for non-technical users
 
 If you're an inventor who's been through the patent process before, I'd love your feedback on whether this output would have been useful at the start of your journey.
 
@@ -97,7 +96,7 @@ Think of PatentForge like doing homework before a meeting. You'll walk in with y
 
 **Body:**
 
-I'm planning the v0.3-v0.6 roadmap and would love input from people who've actually been through the patent process.
+I'm planning the v0.7+ roadmap and would love input from people who've actually been through the patent process.
 
 Some features I'm considering:
 - **USPTO data integration** — pull in more structured patent data (classifications, citation trees, examiner statistics)
