@@ -8,6 +8,16 @@ Every frontend change requires browser-verified QA before commit. No exceptions.
 2. **Before any frontend commit**, you MUST have browser screenshots or console output from the current session proving you checked the rendered output. No browser evidence = no commit.
 3. **Every error, warning, and empty state** MUST be actionable — tell the user what's wrong AND how to fix it with specific steps. A warning without a fix path is a dead end.
 
+## Pre-Push Gate — Hard Rule
+
+Before ANY push to GitHub, you MUST complete both of these. No exceptions, no shortcuts.
+
+1. **Run `bash scripts/verify-release.sh`** and paste the COMPLETE output. If any check shows FAIL, fix it before pushing. The script checks: version consistency across all packages, required files exist, all diagrams referenced in docs, all services mentioned in docs, changelog has current version, no secrets in code, test count matches docs, git status clean. Non-zero exit = push blocked.
+
+2. **Invoke the `patentforge-release-checklist` skill** and complete every task with evidence. This covers: browser UI verification with screenshots, copy/content review, documentation audit (every file, every version, every diagram reference), and diagram verification. Each task requires pasted evidence — not self-certification.
+
+Both gates must pass. Running verify-release.sh alone is not sufficient. Completing the skill alone is not sufficient. Both.
+
 ---
 
 ## What This Is
