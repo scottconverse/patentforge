@@ -63,3 +63,24 @@ PatentForge-Architecture.docx
 ARCHITECTURE_ANALYSIS.md
 # DISCUSSIONS-SEED.md — tracked (doc audit checks it)
 IMPLEMENTATION-UPL-REVISIONS.md
+
+# Go build artifacts
+tray/patentforge-tray.exe
+tray/patentforge-tray
+
+# SEA build artifacts
+patentforge-backend.exe
+patentforge-backend-prisma/
+backend/sea-build/
+backend/sea-config.json
+backend/sea-prep.blob
+backend/ncc-out/
+patentforge-feasibility.exe
+patentforge-feasibility-prompts/
+services/feasibility/sea-build/
+services/feasibility/sea-config.json
+services/feasibility/sea-prep.blob
+services/feasibility/ncc-out/
+
+# Portable Python runtime (built by scripts/bundle-python.sh)
+runtime/

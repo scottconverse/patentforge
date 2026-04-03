@@ -1,4 +1,4 @@
-# PatentForge User Manual — v0.6.1
+# PatentForge User Manual — v0.7.0
 
 A step-by-step guide for using PatentForge to research and prepare for a patent consultation.
 
@@ -23,15 +23,74 @@ PatentForge is a web application that runs on your computer. You describe your i
 
 ---
 
-## Getting Started
+## Installation
 
-### What You Need
+### Option A: Download the Installer (Recommended)
+
+The simplest way to install PatentForge is to download the installer for your platform. No Node.js, Python, or git required — everything is bundled.
+
+| Platform | Download | Size |
+|----------|----------|------|
+| **Windows** | [PatentForge-0.7.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0-Setup.exe) | ~100 MB |
+| **Mac (Beta)** | [PatentForge-0.7.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.dmg) | ~100 MB |
+| **Linux (Beta)** | [PatentForge-0.7.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.AppImage) | ~120 MB |
+
+**Windows:** Double-click the `.exe` installer. Follow the prompts — accept the license, choose an install location (the default is fine), and click Install. When finished, PatentForge launches automatically.
+
+**Mac (Beta):** Open the `.dmg` file. Drag the PatentForge icon into your Applications folder. Double-click PatentForge in Applications to launch. You may need to right-click and choose "Open" the first time, since the app is not notarized.
+
+**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-0.7.0.AppImage`) and run it. On some systems you may need to install FUSE first.
+
+Mac and Linux installers are beta — please report issues on [GitHub Issues](https://github.com/scottconverse/patentforge/issues).
+
+### First Launch
+
+When you start PatentForge for the first time:
+
+1. A **system tray icon** appears in your taskbar (Windows) or menu bar (Mac/Linux). This is the PatentForge service manager — it starts and monitors all the background services that power the application.
+2. Your **browser opens automatically** to the PatentForge interface.
+3. A **Terms of Use** dialog appears. Read it carefully — it explains that PatentForge is a research tool, not a legal service — then click "I Understand and Agree" to continue.
+4. The **API key setup wizard** guides you through entering your Anthropic API key.
+
+### First-Time Setup: API Key Wizard
+
+Before you can run any analysis, you need an Anthropic API key:
+
+1. **Get an API key** at [console.anthropic.com](https://console.anthropic.com/). Create a free account and add a small amount of credit (even $5 is enough for several runs).
+2. When PatentForge opens for the first time, the **setup wizard** prompts you for your API key. Paste it in (it starts with `sk-ant-`).
+3. Select which **AI model** to use (Sonnet is recommended for most users).
+4. Click **Save**.
+
+You must configure both an API key and a model before running any analysis. The key is encrypted (AES-256-GCM with a per-installation random salt) and saved in your local database — it is never stored as plain text.
+
+You can change your API key and model at any time in **Settings** (gear icon in the top navigation bar).
+
+### System Tray
+
+The PatentForge system tray icon gives you quick access to manage the application:
+
+- **Left-click** the tray icon to open PatentForge in your browser
+- **Right-click** to see the menu:
+  - **Open PatentForge** — opens the web interface in your default browser
+  - **Services** — shows the status of each service (running, stopped, error)
+  - **Restart Services** — stops and restarts all services (useful if something gets stuck)
+  - **View Logs** — opens the log folder for troubleshooting
+  - **Quit** — stops all services and exits PatentForge
+
+The tray app automatically monitors service health and restarts any service that crashes. Log files are rotated to prevent disk space issues.
+
+### Option B: Run from Source (for developers)
+
+If you prefer to run PatentForge from source code:
+
+#### What You Need
 
 1. **A computer** running Windows, macOS, or Linux
 2. **Node.js** — a free program that runs JavaScript applications. Download it from [nodejs.org](https://nodejs.org/). Choose the "LTS" (Long Term Support) version. During installation, accept all defaults.
-3. **An Anthropic API key** — this is like a password that lets PatentForge use the Claude AI. Get one at [console.anthropic.com](https://console.anthropic.com/). You'll need to create a free account and add a small amount of credit (even $5 is enough for several runs).
+3. **Python 3.11+** — for the claim-drafter, compliance-checker, and application-generator services
+4. **An Anthropic API key** — get one at [console.anthropic.com](https://console.anthropic.com/)
 
-### Installation
+#### Steps
 
 1. **Download PatentForge** from [GitHub](https://github.com/scottconverse/patentforge) — click the green "Code" button, then "Download ZIP." Unzip the folder.
 
@@ -73,18 +132,7 @@ PatentForge is a web application that runs on your computer. You describe your i
 
 6. **Open your browser** and go to http://localhost:8080
 
-You should see the PatentForge home screen. On first launch, a **Terms of Use** dialog will appear. Read it carefully — it explains that PatentForge is a research tool, not a legal service — then click "I Understand and Agree" to continue.
-
-### First-Time Setup: Enter Your API Key
-
-Before you can run any analysis, you need to enter your Anthropic API key:
-
-1. Click the **gear icon** (Settings) in the top navigation bar
-2. In the **Anthropic API Key** field, paste your API key (it starts with `sk-ant-`)
-3. In the **Default Model** dropdown, select which AI model to use (Sonnet is recommended for most users)
-4. Click **Save Settings**
-
-You must configure both an API key and a model before running any analysis. The key is encrypted (AES-256-GCM with a per-installation random salt) and saved in your local database — it is never stored as plain text. The encryption salt is stored in the same database, so it travels with your data on backup/restore.
+On first launch, a **Terms of Use** dialog will appear. Read it carefully, then click "I Understand and Agree." Then go to **Settings** (gear icon), enter your Anthropic API key, select a model, and click Save.
 
 ---
 

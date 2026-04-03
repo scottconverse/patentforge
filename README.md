@@ -35,7 +35,21 @@ PatentForge is a **research and preparation tool**, not a legal service. It does
 - **API key disclaimer** — the Settings page notes that users are connecting to their own Anthropic account and should review the provider's data policies
 - **Export watermarks** — every generated report (HTML, Word, and on-screen) carries a persistent disclaimer stating the output is AI-generated research, not a legal opinion
 
-## Quick Start
+## Download
+
+The easiest way to get started is to download the installer for your platform:
+
+| Platform | Download | Notes |
+|----------|----------|-------|
+| **Windows** | [PatentForge-0.7.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0-Setup.exe) | Inno Setup installer (~100 MB) |
+| **Mac (Beta)** | [PatentForge-0.7.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.dmg) | Drag to Applications (~100 MB) |
+| **Linux (Beta)** | [PatentForge-0.7.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.AppImage) | chmod +x and run (~120 MB) |
+
+The installer bundles everything — no Node.js, Python, or git required. On first launch, the system tray icon appears and your browser opens to the setup wizard, which walks you through entering your Anthropic API key.
+
+Mac and Linux installers are beta — please report issues on [GitHub Issues](https://github.com/scottconverse/patentforge/issues).
+
+## Quick Start (from source)
 
 ### Prerequisites
 
@@ -129,7 +143,7 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 ## Architecture
 
 ![PatentForge System Architecture](diagrams/architecture.png)
-*Figure 1: System Architecture (v0.6.0) — 6 services + 3 external APIs*
+*Figure 1: System Architecture (v0.7.0) — 6 services + system tray + 3 external APIs*
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -157,9 +171,10 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
                         └─────────────────┘
 ```
 
-- **Frontend** — React 18, TypeScript, Tailwind CSS, Vite
-- **Backend** — NestJS, Prisma ORM, SQLite (dev) / PostgreSQL (Docker)
-- **Feasibility Service** — Express, Anthropic SSE streaming, 6 prompt templates
+- **System Tray (Installer)** — Go binary that launches and monitors all services, with health checks, auto-restart, and log rotation
+- **Frontend** — React 18, TypeScript, Tailwind CSS, Vite (served by backend in production)
+- **Backend** — NestJS, Prisma ORM, SQLite (dev) / PostgreSQL (Docker). Node SEA binary in installer.
+- **Feasibility Service** — Express, Anthropic SSE streaming, 6 prompt templates. Node SEA binary in installer.
 - **Claim Drafter** — Python, FastAPI, LangGraph, 3-agent pipeline (Planner/Writer/Examiner)
 - **Compliance Checker** — Python, FastAPI, LangGraph, 4 specialized checker agents (port 3004)
 - **Application Generator** — Python, FastAPI, LangGraph, 5-agent pipeline (port 3003)
@@ -215,6 +230,7 @@ docker compose up --build
 - [x] **v0.5.2** — Quality patch (13 items from tech/UI/QA review)
 - [x] **v0.6.0** — Full application document assembly (5-node LangGraph pipeline, Word + Markdown export)
 - [x] **v0.6.1** — Hardening patch (Docker data safety, configurable port, startup validation, source maps, accessibility, disclaimer E2E test)
+- [x] **v0.7.0** — Windows installer, Mac/Linux beta, system tray, Node SEA, first-run wizard
 
 ## Contributing
 

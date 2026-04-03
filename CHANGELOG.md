@@ -5,6 +5,25 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-02
+
+### Added
+- **Windows installer (Inno Setup)** — download, double-click, install, launch from system tray. No Node.js, Python, or git required.
+- **Mac installer (.dmg, beta)** — drag to Applications
+- **Linux installer (AppImage, beta)** — download, chmod +x, run
+- **System tray app (Go)** — manages all 5 services with health monitoring, auto-restart on crash, and log rotation
+- **Node SEA binaries** — backend and feasibility compiled to standalone executables via Node.js Single Executable Applications (no Node.js runtime needed)
+- **Portable Python 3.12** bundled for claim-drafter, application-generator, and compliance-checker services
+- **First-run API key setup wizard** — guides new users through Anthropic API key configuration on first launch
+- **Health endpoint on backend** — `GET /api/health` returns service status
+- **CI release workflow** — GitHub Actions builds all 3 platform installers on tag push (`v*`)
+- **Download section on landing page** — per-platform download buttons with size estimates
+
+### Changed
+- Backend routes moved to `/api/*` global prefix (frontend API calls unchanged — proxy config updated)
+- Backend serves frontend static files in production mode via `@nestjs/serve-static`
+- Backend validates `FRONTEND_DIST_PATH` and `NODE_ENV` on startup
+
 ## [0.6.1] - 2026-04-02
 
 ### Fixed
