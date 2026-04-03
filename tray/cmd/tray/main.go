@@ -12,6 +12,7 @@ import (
 	"github.com/scottconverse/patentforge/tray/internal/assets"
 	"github.com/scottconverse/patentforge/tray/internal/config"
 	"github.com/scottconverse/patentforge/tray/internal/instance"
+	"github.com/scottconverse/patentforge/tray/internal/logging"
 	"github.com/scottconverse/patentforge/tray/internal/services"
 )
 
@@ -21,6 +22,7 @@ var (
 	mgr        *services.Manager
 	healthMon  *services.HealthMonitor
 	mStatus    *systray.MenuItem
+	logger     *log.Logger
 )
 
 func main() {
@@ -38,6 +40,16 @@ func main() {
 		os.Exit(1)
 	}
 	defer cleanup()
+
+	// Set up rotating log file
+	var logCleanup func()
+	logger, logCleanup, err = logging.Setup(filepath.Join(baseDir, "logs"), "tray")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to setup logging: %v\n", err)
+		os.Exit(1)
+	}
+	defer logCleanup()
+	logger.Println("PatentForge tray starting...")
 
 	// Load or generate configuration
 	cfg, err = config.Load(baseDir)
@@ -72,20 +84,20 @@ func onReady() {
 	// Start all services in background
 	go func() {
 		if err := mgr.StartAll(); err != nil {
-			fmt.Fprintf(os.Stderr, "Service startup failed: %v\n", err)
+			logger.Printf("Service startup failed: %v", err)
 			updateStatus()
 			return
 		}
 		updateStatus()
 		// Begin background health monitoring
-		healthMon = services.NewHealthMonitor(mgr, log.Default(), func(status string) {
+		healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
 			mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
 			systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
 		})
 		healthMon.Start()
 		// Open browser once all services are ready
 		if err := openBrowser(fmt.Sprintf("http://localhost:%d", cfg.PortUI)); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
+			logger.Printf("Failed to open browser: %v", err)
 		}
 	}()
 
@@ -95,11 +107,11 @@ func onReady() {
 			select {
 			case <-mOpen.ClickedCh:
 				if err := openBrowser(fmt.Sprintf("http://localhost:%d", cfg.PortUI)); err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
+					logger.Printf("Failed to open browser: %v", err)
 				}
 			case <-mLogs.ClickedCh:
 				if err := openFileExplorer(getLogsDir()); err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to open logs directory: %v\n", err)
+					logger.Printf("Failed to open logs directory: %v", err)
 				}
 			case <-mRestart.ClickedCh:
 				go func() {
@@ -112,10 +124,10 @@ func onReady() {
 					// Create a fresh manager so context is not already cancelled
 					mgr = services.NewManager(cfg)
 					if err := mgr.StartAll(); err != nil {
-						fmt.Fprintf(os.Stderr, "Restart failed: %v\n", err)
+						logger.Printf("Restart failed: %v", err)
 					}
 					updateStatus()
-					healthMon = services.NewHealthMonitor(mgr, log.Default(), func(status string) {
+					healthMon = services.NewHealthMonitor(mgr, logger, func(status string) {
 						mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
 						systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
 					})
@@ -123,7 +135,7 @@ func onReady() {
 				}()
 			case <-mAbout.ClickedCh:
 				if err := openBrowser("https://github.com/scottconverse/patentforge/releases"); err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
+					logger.Printf("Failed to open browser: %v", err)
 				}
 			case <-mQuit.ClickedCh:
 				systray.Quit()
@@ -133,7 +145,7 @@ func onReady() {
 }
 
 func onExit() {
-	fmt.Println("PatentForge shutting down...")
+	logger.Println("PatentForge shutting down...")
 	if healthMon != nil {
 		healthMon.Stop()
 	}
