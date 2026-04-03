@@ -187,8 +187,17 @@
       USPTO-formatted patent application draft — all before your first attorney meeting.
     </p>
     <div class="hero-cta">
-      <a href="https://github.com/scottconverse/patentforge" class="btn btn-primary">Get Started</a>
-      <a href="https://github.com/scottconverse/patentforge/blob/master/USER-MANUAL.md" class="btn btn-secondary">User Manual</a>
+      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0-Setup.exe" class="btn btn-primary">Download for Windows</a>
+      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.dmg" class="btn btn-secondary">Mac (Beta)</a>
+      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.AppImage" class="btn btn-secondary">Linux (Beta)</a>
+    </div>
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+      Windows .exe (~100 MB) &bull; Mac .dmg (~100 MB) &bull; Linux .AppImage (~120 MB)<br>
+      No Node.js, Python, or git required. Everything is bundled.
+    </p>
+    <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+      <a href="https://github.com/scottconverse/patentforge" style="color: var(--text-muted); font-size: 0.9rem;">GitHub</a>
+      <a href="https://github.com/scottconverse/patentforge/blob/master/USER-MANUAL.md" style="color: var(--text-muted); font-size: 0.9rem;">User Manual</a>
     </div>
   </section>
 
@@ -247,7 +256,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <p>5-agent sequential pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52 with paragraph numbering, page numbers, and draft watermark.</p>
       </div>
       <div class="feature-card">
-        <h3>452 Automated Tests</h3>
+        <h3>455 Automated Tests</h3>
         <p>Jest backend tests, Vitest component tests, pytest for claim-drafter, compliance-checker, and application-generator, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. GitHub Actions CI on every push.</p>
       </div>
       <div class="feature-card">
@@ -325,14 +334,15 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.6.1</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.7.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
+        <li><strong>v0.7.0:</strong> <strong>One-click installer</strong> — Windows (.exe via Inno Setup), Mac (.dmg, beta), Linux (.AppImage, beta). System tray app (Go) manages all 5 services with health monitoring and auto-restart. Node SEA binaries for backend and feasibility (no Node.js runtime needed). Portable Python 3.12 bundled. First-run API key setup wizard. CI release workflow builds all platforms on tag push.</li>
         <li><strong>v0.6.1:</strong> Hardening patch — removed Docker <code>--accept-data-loss</code>, configurable backend port, startup env validation with actionable errors, runtime source maps, form/modal accessibility fixes, real disclaimer-flow E2E test</li>
         <li><strong>v0.6.0:</strong> Patent application generator — 5-agent LangGraph pipeline produces complete USPTO-formatted applications. Word export with 37 CFR 1.52 compliance (Times New Roman 12pt, 1.5 spacing, [NNNN] paragraph numbering, page breaks, draft watermark). Section navigation with inline editing. IDS auto-populated from prior art. 9 bug fixes including mobile layout, cost tracking, and React Router deprecation warnings.</li>
         <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
         <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
         <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
-        <li>452 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>455 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
@@ -340,11 +350,11 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
 
   <section class="architecture">
     <h2>Architecture</h2>
-    <p class="desc">Five-service federated architecture. Each service is independently deployable. Internal services authenticated via shared secret. SSE streaming proxied through the backend. SQLite for development, PostgreSQL for Docker.</p>
+    <p class="desc">Six-service federated architecture managed by a Go system tray app. The installer bundles Node SEA binaries and portable Python — no runtime dependencies required. Internal services authenticated via shared secret. SSE streaming proxied through the backend. SQLite for development, PostgreSQL for Docker.</p>
 
     <div style="margin: 2rem 0; text-align: center;">
       <img src="../diagrams/architecture.png" alt="PatentForge System Architecture — 6 services" style="max-width: 100%; border-radius: 0.5rem; border: 1px solid #334155;" />
-      <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">Figure 1: System Architecture (v0.6.0) — 6 services + 3 external APIs</p>
+      <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">Figure 1: System Architecture (v0.7.0) — 6 services + system tray + 3 external APIs</p>
     </div>
 
     <div style="margin: 2rem 0; text-align: center;">

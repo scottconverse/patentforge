@@ -151,6 +151,48 @@ cd frontend && npx playwright install chromium
 
 E2E tests capture screenshots to `frontend/e2e-screenshots/` (gitignored), check browser console for errors, and test at both desktop and mobile viewports.
 
+## Building the Installer
+
+PatentForge v0.7.0+ includes platform-specific installers. To build them locally:
+
+### Prerequisites
+
+- **Go 1.21+** — for compiling the system tray app (`tray/`)
+- **Node.js 20+** — for building Node SEA (Single Executable Application) binaries
+- **Inno Setup 6** (Windows only) — for building the Windows `.exe` installer
+- **Python 3.12** — a portable distribution is bundled in the installer
+
+### Build Steps
+
+```bash
+# 1. Build the system tray app (Go)
+cd tray && go build -o ../build/patentforge-tray.exe . && cd ..
+
+# 2. Build Node SEA binaries (backend + feasibility)
+cd backend && node --experimental-sea-config sea-config.json && cd ..
+cd services/feasibility && node --experimental-sea-config sea-config.json && cd ../..
+
+# 3. Build the frontend (static assets served by backend in production)
+cd frontend && npm run build && cd ..
+
+# 4. Build the Windows installer (requires Inno Setup)
+iscc installer/patentforge.iss
+```
+
+The CI release workflow (`.github/workflows/release.yml`) automates this for all 3 platforms on tag push.
+
+### Installer Structure
+
+```
+build/
+├── patentforge-tray.exe    # Go tray app (service manager)
+├── backend.exe             # Node SEA binary (NestJS backend)
+├── feasibility.exe         # Node SEA binary (feasibility service)
+├── python/                 # Portable Python 3.12
+├── frontend/               # Built React static files
+└── services/               # Python service source (claim-drafter, etc.)
+```
+
 ## Making Changes
 
 1. **Create a branch** from `master`:

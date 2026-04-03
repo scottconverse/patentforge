@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.6.1):**
+**Current status (v0.7.0):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -25,12 +25,17 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 452 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
+- 455 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
+**What's new in v0.7.0:**
+- **One-click installer** — Windows (.exe), Mac (.dmg, beta), Linux (.AppImage, beta). Download, install, launch. No Node.js, Python, or git required.
+- **System tray app** — Go binary manages all 5 services with health monitoring, auto-restart, and log rotation
+- **First-run wizard** — guides new users through API key setup on first launch
+
 **What's next:**
-- v0.7 — Single-click installer for non-technical users
+- v0.8 — Auto-update mechanism, expanded platform support
 
 If you're an inventor who's been through the patent process before, I'd love your feedback on whether this output would have been useful at the start of your journey.
 
@@ -335,6 +340,24 @@ v0.6.0 ships the application generator — PatentForge can now draft a full pate
 - Prior art IDS table (PTO/SB/08 format) included automatically
 - Export to Word (.docx) or Markdown
 - Wired into Docker Compose and local launchers (PatentForge.ps1 / PatentForge.bat)
+
+### Title: v0.7.0 — One-Click Installer
+
+**Body:**
+
+PatentForge now has a proper installer. Download, double-click, and you're running — no Node.js, Python, or git required.
+
+**What's included:**
+- **Windows installer** (.exe via Inno Setup) — full installer with Start Menu shortcuts and uninstaller
+- **Mac installer** (.dmg, beta) — drag to Applications
+- **Linux installer** (.AppImage, beta) — chmod +x and run
+- **System tray app** (Go) — manages all 5 services with health monitoring, auto-restart on crash, and log rotation
+- **Node SEA binaries** — backend and feasibility compiled to standalone executables (no Node.js runtime)
+- **Portable Python 3.12** — bundled for the 3 Python services
+- **First-run wizard** — walks new users through API key setup on first launch
+- **CI release workflow** — GitHub Actions builds all 3 platform installers automatically on tag push
+
+Download from the [Releases page](https://github.com/scottconverse/patentforge/releases/latest). Mac and Linux are beta — please report issues.
 
 ### Title: v0.6.1 — Hardening Patch
 
