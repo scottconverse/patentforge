@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,10 +16,11 @@ import (
 )
 
 var (
-	version = "0.7.0-dev"
-	cfg     *config.Config
-	mgr     *services.Manager
-	mStatus *systray.MenuItem
+	version    = "0.7.0-dev"
+	cfg        *config.Config
+	mgr        *services.Manager
+	healthMon  *services.HealthMonitor
+	mStatus    *systray.MenuItem
 )
 
 func main() {
@@ -75,6 +77,12 @@ func onReady() {
 			return
 		}
 		updateStatus()
+		// Begin background health monitoring
+		healthMon = services.NewHealthMonitor(mgr, log.Default(), func(status string) {
+			mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
+			systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
+		})
+		healthMon.Start()
 		// Open browser once all services are ready
 		if err := openBrowser(fmt.Sprintf("http://localhost:%d", cfg.PortUI)); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
@@ -97,6 +105,9 @@ func onReady() {
 				go func() {
 					mStatus.SetTitle("Status: Restarting...")
 					systray.SetTooltip("PatentForge — Restarting...")
+					if healthMon != nil {
+						healthMon.Stop()
+					}
 					mgr.StopAll()
 					// Create a fresh manager so context is not already cancelled
 					mgr = services.NewManager(cfg)
@@ -104,6 +115,11 @@ func onReady() {
 						fmt.Fprintf(os.Stderr, "Restart failed: %v\n", err)
 					}
 					updateStatus()
+					healthMon = services.NewHealthMonitor(mgr, log.Default(), func(status string) {
+						mStatus.SetTitle(fmt.Sprintf("Status: %s", status))
+						systray.SetTooltip(fmt.Sprintf("PatentForge — %s", status))
+					})
+					healthMon.Start()
 				}()
 			case <-mAbout.ClickedCh:
 				if err := openBrowser("https://github.com/scottconverse/patentforge/releases"); err != nil {
@@ -118,6 +134,9 @@ func onReady() {
 
 func onExit() {
 	fmt.Println("PatentForge shutting down...")
+	if healthMon != nil {
+		healthMon.Stop()
+	}
 	if mgr != nil {
 		mgr.StopAll()
 	}

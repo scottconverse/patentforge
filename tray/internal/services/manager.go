@@ -239,6 +239,12 @@ func (m *Manager) OverallStatus() string {
 	return "Stopped"
 }
 
+// Context returns the manager's context, used by the health monitor
+// to restart failed services with the correct parent context.
+func (m *Manager) Context() context.Context {
+	return m.ctx
+}
+
 // Services returns the managed service list (read-only use).
 func (m *Manager) Services() []*Service {
 	return m.services
