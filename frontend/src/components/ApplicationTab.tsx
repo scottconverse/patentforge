@@ -246,12 +246,27 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
 
         {/* Prior art warning if IDS is empty */}
         {application && !application.idsTable && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 text-center">
-            <p className="text-gray-400 text-xs">
-              <span className="text-yellow-400 font-semibold">No prior art data available.</span>
-              {' '}The Information Disclosure Statement is empty because no prior art search was completed for this project.
-              Run a prior art search from the Prior Art tab to populate the IDS.
+          <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
+            <p className="text-yellow-300 text-sm font-semibold">Information Disclosure Statement is empty</p>
+            <p className="text-yellow-400/70 text-sm mt-2">
+              The IDS lists all known prior art references and is a legal requirement when filing a patent application.
+              It is empty because no prior art search has been completed for this project.
             </p>
+            <p className="text-yellow-400/70 text-sm mt-2">
+              <strong className="text-yellow-300">To fix this:</strong>
+            </p>
+            <ol className="text-yellow-400/70 text-sm mt-1 ml-5 list-decimal space-y-1">
+              <li>
+                Go to{' '}
+                <a href="/settings" className="text-blue-400 hover:underline font-medium">Settings</a>
+                {' '}and enter a USPTO Open Data Portal API key. You can get a free key at{' '}
+                <a href="https://beta-data.uspto.gov/apis" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-medium">
+                  beta-data.uspto.gov/apis
+                </a>
+              </li>
+              <li>Go to the <strong className="text-yellow-300">Prior Art</strong> tab and run a prior art search</li>
+              <li>Then regenerate this application — the IDS will be populated automatically</li>
+            </ol>
           </div>
         )}
 
