@@ -75,7 +75,7 @@ export class ClaimDraftService implements OnModuleInit {
       throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
     }
 
-    // Enforce cost cap before starting claim drafting
+    // Enforce cost cap before starting claim drafting — aggregate ALL pipeline costs
     if (settings.costCapUsd > 0) {
       const stages = await this.prisma.feasibilityStage.findMany({
         where: {
@@ -84,7 +84,17 @@ export class ClaimDraftService implements OnModuleInit {
         },
         select: { estimatedCostUsd: true },
       });
-      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+      const complianceChecks = await this.prisma.complianceCheck.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const prevApps = await this.prisma.patentApplication.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
+        + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
+        + prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
@@ -93,56 +103,7 @@ export class ClaimDraftService implements OnModuleInit {
       }
     }
 
-    // Get latest feasibility run
-    const feasRun = await this.prisma.feasibilityRun.findFirst({
-      where: { projectId, status: 'COMPLETE' },
-      orderBy: { version: 'desc' },
-      include: { stages: { orderBy: { stageNumber: 'asc' } } },
-    });
-
-    // Truncate feasibility stages to keep the claim-drafter request under 30K chars.
-    // The planner agent uses these for context — the first 15K chars of each stage
-    // contain the key findings, novelty analysis, and recommendations.
-    const MAX_STAGE_CHARS = 15_000;
-    const rawStage5 = feasRun?.stages?.find(s => s.stageNumber === 5)?.outputText ?? '';
-    const rawStage6 = feasRun?.stages?.find(s => s.stageNumber === 6)?.outputText ?? '';
-    const stage5 = rawStage5.length > MAX_STAGE_CHARS
-      ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
-      : rawStage5;
-    const stage6 = rawStage6.length > MAX_STAGE_CHARS
-      ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
-      : rawStage6;
-
-    // Get prior art results
-    const priorArt = await this.prisma.priorArtSearch.findFirst({
-      where: { projectId, status: 'COMPLETE' },
-      orderBy: { version: 'desc' },
-      include: { results: { orderBy: { relevanceScore: 'desc' }, take: 10 } },
-    });
-
-    // Get cached claims for top prior art results
-    const priorArtResults: Array<{
-      patent_number: string;
-      title: string;
-      abstract: string | null;
-      relevance_score: number;
-      claims_text: string | null;
-    }> = [];
-    if (priorArt?.results) {
-      for (const r of priorArt.results) {
-        const cached = await this.prisma.patentDetail.findUnique({
-          where: { patentNumber: r.patentNumber },
-          select: { claimsText: true },
-        });
-        priorArtResults.push({
-          patent_number: r.patentNumber,
-          title: r.title,
-          abstract: r.abstract,
-          relevance_score: r.relevanceScore,
-          claims_text: cached?.claimsText ?? null,
-        });
-      }
-    }
+    const { stage5, stage6, priorArtResults } = await this.getFeasibilityContext(projectId);
 
     // Build invention narrative
     const inv = project.invention;
@@ -206,6 +167,76 @@ export class ClaimDraftService implements OnModuleInit {
     })();
 
     return draft;
+  }
+
+  /**
+   * Fetch feasibility context (stage 5 IP Strategy, stage 6 Comprehensive Report,
+   * and prior art results) for a project. Used by both startDraft and regenerateClaim
+   * so regenerated claims have the same novelty analysis context as the original.
+   */
+  private async getFeasibilityContext(projectId: string): Promise<{
+    stage5: string;
+    stage6: string;
+    priorArtResults: Array<{
+      patent_number: string;
+      title: string;
+      abstract: string | null;
+      relevance_score: number;
+      claims_text: string | null;
+    }>;
+  }> {
+    // Get latest feasibility run
+    const feasRun = await this.prisma.feasibilityRun.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { stages: { orderBy: { stageNumber: 'asc' } } },
+    });
+
+    // Truncate feasibility stages to keep the claim-drafter request under 30K chars.
+    // The planner agent uses these for context — the first 15K chars of each stage
+    // contain the key findings, novelty analysis, and recommendations.
+    const MAX_STAGE_CHARS = 15_000;
+    const rawStage5 = feasRun?.stages?.find(s => s.stageNumber === 5)?.outputText ?? '';
+    const rawStage6 = feasRun?.stages?.find(s => s.stageNumber === 6)?.outputText ?? '';
+    const stage5 = rawStage5.length > MAX_STAGE_CHARS
+      ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
+      : rawStage5;
+    const stage6 = rawStage6.length > MAX_STAGE_CHARS
+      ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
+      : rawStage6;
+
+    // Get prior art results
+    const priorArt = await this.prisma.priorArtSearch.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { results: { orderBy: { relevanceScore: 'desc' }, take: 10 } },
+    });
+
+    // Get cached claims for top prior art results
+    const priorArtResults: Array<{
+      patent_number: string;
+      title: string;
+      abstract: string | null;
+      relevance_score: number;
+      claims_text: string | null;
+    }> = [];
+    if (priorArt?.results) {
+      for (const r of priorArt.results) {
+        const cached = await this.prisma.patentDetail.findUnique({
+          where: { patentNumber: r.patentNumber },
+          select: { claimsText: true },
+        });
+        priorArtResults.push({
+          patent_number: r.patentNumber,
+          title: r.title,
+          abstract: r.abstract,
+          relevance_score: r.relevanceScore,
+          claims_text: cached?.claimsText ?? null,
+        });
+      }
+    }
+
+    return { stage5, stage6, priorArtResults };
   }
 
   /**
@@ -346,6 +377,9 @@ export class ClaimDraftService implements OnModuleInit {
       `Description: ${inv.description}`,
     ].filter(Boolean).join('\n\n') : '';
 
+    // Fetch feasibility context so regenerated claims have the same novelty analysis
+    const { stage5, stage6, priorArtResults } = await this.getFeasibilityContext(projectId);
+
     // Call claim drafter with regeneration instruction
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (INTERNAL_SECRET) {
@@ -357,9 +391,9 @@ export class ClaimDraftService implements OnModuleInit {
       headers,
       body: JSON.stringify({
         invention_narrative: `REGENERATE CLAIM ${claimNumber} ONLY.\n\nContext — all current claims:\n${allClaimsText}\n\nInvention:\n${narrative}`,
-        feasibility_stage_5: '',
-        feasibility_stage_6: '',
-        prior_art_results: [],
+        feasibility_stage_5: stage5,
+        feasibility_stage_6: stage6,
+        prior_art_results: priorArtResults,
         settings: {
           api_key: settings.anthropicApiKey,
           default_model: settings.defaultModel,

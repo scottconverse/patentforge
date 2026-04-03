@@ -41,9 +41,9 @@ The easiest way to get started is to download the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| **Windows** | [PatentForge-0.7.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0-Setup.exe) | Inno Setup installer (~100 MB) |
-| **Mac (Beta)** | [PatentForge-0.7.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.dmg) | Drag to Applications (~100 MB) |
-| **Linux (Beta)** | [PatentForge-0.7.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.AppImage) | chmod +x and run (~120 MB) |
+| **Windows** | [PatentForge-0.7.1-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.1-Setup.exe) | Inno Setup installer (~100 MB) |
+| **Mac (Beta)** | [PatentForge-0.7.1.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.1.dmg) | Drag to Applications (~100 MB) |
+| **Linux (Beta)** | [PatentForge-0.7.1.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.1.AppImage) | chmod +x and run (~120 MB) |
 
 The installer bundles everything — no Node.js, Python, or git required. On first launch, the system tray icon appears and your browser opens to the setup wizard, which walks you through entering your Anthropic API key.
 
@@ -143,7 +143,7 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 ## Architecture
 
 ![PatentForge System Architecture](diagrams/architecture.png)
-*Figure 1: System Architecture (v0.7.0) — 6 services + system tray + 3 external APIs*
+*Figure 1: System Architecture (v0.7.1) — 6 services + system tray + 3 external APIs*
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -231,6 +231,7 @@ docker compose up --build
 - [x] **v0.6.0** — Full application document assembly (5-node LangGraph pipeline, Word + Markdown export)
 - [x] **v0.6.1** — Hardening patch (Docker data safety, configurable port, startup validation, source maps, accessibility, disclaimer E2E test)
 - [x] **v0.7.0** — Windows installer, Mac/Linux beta, system tray, Node SEA, first-run wizard
+- [x] **v0.7.1** — Polish patch (18 fixes from external code review)
 
 ## Contributing
 

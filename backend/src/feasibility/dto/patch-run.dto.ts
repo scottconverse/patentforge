@@ -3,6 +3,10 @@ import { IsOptional, IsString, IsDateString } from 'class-validator';
 export class PatchRunDto {
   @IsOptional()
   @IsString()
+  runId?: string;
+
+  @IsOptional()
+  @IsString()
   status?: string;
 
   @IsOptional()

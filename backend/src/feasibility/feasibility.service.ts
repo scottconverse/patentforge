@@ -190,6 +190,12 @@ export function parseMarkdownToDocxParagraphs(markdown: string): (Paragraph | Ta
         children: parseInlineRuns(text),
         numbering: { reference: 'ordered-list', level: 0 },
       }));
+    } else if (line.startsWith('> ')) {
+      const text = line.slice(2);
+      elements.push(new Paragraph({
+        children: parseInlineRuns(text),
+        indent: { left: 720 },
+      }));
     } else if (line.trim() === '' || line.startsWith('---')) {
       elements.push(new Paragraph({ text: '' }));
     } else {
@@ -275,8 +281,8 @@ export class FeasibilityService {
     const { report } = await this.getReportText(projectId);
     if (!report) return '<html><body><p>No report available.</p></body></html>';
     const title = await this.getProjectTitle(projectId);
-    const body = marked(report);
-    return REPORT_HTML_TEMPLATE.replace('{{TITLE}}', title.replace(/</g, '&lt;')).replace('{{BODY}}', body as string);
+    const body = marked(report) as string;
+    return REPORT_HTML_TEMPLATE.replace('{{TITLE}}', title.replace(/</g, '&lt;')).replace('{{BODY}}', body);
   }
 
   async getReportText(projectId: string) {
@@ -298,11 +304,13 @@ export class FeasibilityService {
     if (!reportText) return { report: null, html: null };
 
     // Pre-render HTML server-side so the browser doesn't have to parse markdown
-    const html = marked(reportText);
+    const html = marked(reportText) as string;
     return { report: reportText, html };
   }
 
   async getProjectCumulativeCost(projectId: string): Promise<number> {
+    // Aggregate costs across ALL cost-bearing tables, not just feasibility stages.
+    // FeasibilityStage costs are nested under FeasibilityRun → projectId.
     const stages = await this.prisma.feasibilityStage.findMany({
       where: {
         feasibilityRun: { projectId },
@@ -310,7 +318,20 @@ export class FeasibilityService {
       },
       select: { estimatedCostUsd: true },
     });
-    return stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+    // ComplianceCheck costs are stored directly on the check record.
+    const complianceChecks = await this.prisma.complianceCheck.findMany({
+      where: { projectId, estimatedCostUsd: { not: null } },
+      select: { estimatedCostUsd: true },
+    });
+    // PatentApplication costs are stored directly on the application record.
+    const applications = await this.prisma.patentApplication.findMany({
+      where: { projectId, estimatedCostUsd: { not: null } },
+      select: { estimatedCostUsd: true },
+    });
+    // Note: ClaimDraft does not have an estimatedCostUsd field in the schema.
+    return stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
+      + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
+      + applications.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
   }
 
   async startRun(projectId: string) {
@@ -483,10 +504,15 @@ export class FeasibilityService {
   }
 
   async patchStage(projectId: string, stageNumber: number, dto: PatchStageDto) {
-    const run = await this.prisma.feasibilityRun.findFirst({
-      where: { projectId },
-      orderBy: { version: 'desc' },
-    });
+    let run;
+    if (dto.runId) {
+      run = await this.prisma.feasibilityRun.findUnique({ where: { id: dto.runId } });
+    } else {
+      run = await this.prisma.feasibilityRun.findFirst({
+        where: { projectId },
+        orderBy: { version: 'desc' },
+      });
+    }
 
     if (!run) {
       throw new NotFoundException(`No feasibility runs found for project ${projectId}`);
@@ -560,10 +586,15 @@ export class FeasibilityService {
   }
 
   async patchRun(projectId: string, dto: PatchRunDto) {
-    const run = await this.prisma.feasibilityRun.findFirst({
-      where: { projectId },
-      orderBy: { version: 'desc' },
-    });
+    let run;
+    if (dto.runId) {
+      run = await this.prisma.feasibilityRun.findUnique({ where: { id: dto.runId } });
+    } else {
+      run = await this.prisma.feasibilityRun.findFirst({
+        where: { projectId },
+        orderBy: { version: 'desc' },
+      });
+    }
 
     if (!run) {
       throw new NotFoundException(`No feasibility runs found for project ${projectId}`);
@@ -597,7 +628,7 @@ export class FeasibilityService {
     });
 
     if (!run) {
-      throw new NotFoundException(`No running feasibility run found for project ${projectId}`);
+      return { cancelled: false, reason: 'No running run found' };
     }
 
     return this.prisma.feasibilityRun.update({
@@ -636,7 +667,7 @@ export class FeasibilityService {
     fs.writeFileSync(mdFile, run.finalReport, 'utf-8');
 
     // Build self-contained HTML
-    const bodyHtml = await marked(run.finalReport);
+    const bodyHtml = marked(run.finalReport) as string;
     const html = this.buildHtmlDoc(bodyHtml, `${project.title} — Feasibility Report`);
     const htmlFile = path.join(folderPath, `${slug}-feasibility.html`);
     fs.writeFileSync(htmlFile, html, 'utf-8');

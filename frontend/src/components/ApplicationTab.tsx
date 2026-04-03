@@ -52,9 +52,11 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   // Poll while generating
   useEffect(() => {
     if (!generating) return;
+    let isMounted = true;
     const interval = setInterval(async () => {
       try {
         const a = await api.application.getLatest(projectId);
+        if (!isMounted) return;
         if (a.status === 'COMPLETE' || a.status === 'ERROR') {
           setApplication(a);
           setGenerating(false);
@@ -62,7 +64,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         }
       } catch {}
     }, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [generating, projectId]);
 
   async function loadApplication() {
@@ -266,8 +271,8 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
                 Go to{' '}
                 <a href="/settings" className="text-blue-400 hover:underline font-medium">Settings</a>
                 {' '}and enter a USPTO Open Data Portal API key. You can get a free key at{' '}
-                <a href="https://beta-data.uspto.gov/apis" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-medium">
-                  beta-data.uspto.gov/apis
+                <a href="https://data.uspto.gov/myodp" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-medium">
+                  data.uspto.gov/myodp
                 </a>
               </li>
               <li>Go to the <strong className="text-yellow-300">Prior Art</strong> tab and run a prior art search</li>

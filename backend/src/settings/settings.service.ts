@@ -97,6 +97,41 @@ export class SettingsService implements OnModuleInit {
   }
 
   /**
+   * Validate an Anthropic API key by making a minimal request server-side.
+   * This keeps the key out of the browser — it only travels from browser to
+   * our backend, never directly to Anthropic from the client.
+   */
+  async validateApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'Hi' }],
+        }),
+      });
+
+      if (response.ok) {
+        return { valid: true };
+      } else if (response.status === 401) {
+        return { valid: false, error: 'Invalid API key. Please check the key and try again.' };
+      } else if (response.status === 403) {
+        return { valid: false, error: 'API key does not have permission. Check your Anthropic account.' };
+      } else {
+        return { valid: false, error: `Unexpected error (${response.status}). Try again later.` };
+      }
+    } catch {
+      return { valid: false, error: 'Could not reach the Anthropic API. Check your internet connection.' };
+    }
+  }
+
+  /**
    * Get ODP API usage summary for the last 7 days.
    */
   async getOdpUsageSummary() {

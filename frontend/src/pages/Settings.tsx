@@ -21,8 +21,8 @@ export default function Settings() {
     anthropicApiKey: '',
     defaultModel: '',
     researchModel: '',
-    maxTokens: 16000,
-    interStageDelaySeconds: 2,
+    maxTokens: 32000,
+    interStageDelaySeconds: 5,
     exportPath: '',
     costCapUsd: 5.00,
     usptoApiKey: '',
@@ -239,7 +239,7 @@ export default function Settings() {
               min={1000}
               max={100000}
               step={1000}
-              value={settings.maxTokens ?? 16000}
+              value={settings.maxTokens ?? 32000}
               onChange={e => update('maxTokens', parseInt(e.target.value, 10))}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             />
@@ -255,7 +255,7 @@ export default function Settings() {
               min={0}
               max={60}
               step={1}
-              value={settings.interStageDelaySeconds ?? 2}
+              value={settings.interStageDelaySeconds ?? 5}
               onChange={e => update('interStageDelaySeconds', parseInt(e.target.value, 10))}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             />

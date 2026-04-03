@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 
@@ -20,5 +20,10 @@ export class SettingsController {
   @HttpCode(HttpStatus.OK)
   updateSettings(@Body() dto: UpdateSettingsDto) {
     return this.settingsService.updateSettings(dto);
+  }
+
+  @Post('validate-api-key')
+  async validateApiKey(@Body() body: { apiKey: string }) {
+    return this.settingsService.validateApiKey(body.apiKey);
   }
 }

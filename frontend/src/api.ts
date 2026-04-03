@@ -3,22 +3,30 @@ import { PriorArtSearch, PatentDetail } from './types';
 const BASE = '/api';
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    let message = text;
-    try {
-      const json = JSON.parse(text);
-      message = json.message || json.error || text;
-    } catch {}
-    throw new Error(message);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let message = text;
+      try {
+        const json = JSON.parse(text);
+        message = json.message || json.error || text;
+      } catch {}
+      throw new Error(message);
+    }
+    if (res.status === 204) return undefined as T;
+    return res.json();
+  } catch (e: any) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      throw new Error('Request timed out. The server may be busy — try again in a moment.');
+    }
+    throw e;
   }
-  if (res.status === 204) return undefined as T;
-  return res.json();
 }
 
 export const api = {
@@ -45,9 +53,9 @@ export const api = {
       req<any>('POST', `/projects/${projectId}/feasibility/run`, body ?? {}),
     get: (projectId: string) => req<any>('GET', `/projects/${projectId}/feasibility`),
     cancel: (projectId: string) => req<any>('POST', `/projects/${projectId}/feasibility/cancel`),
-    patchRun: (projectId: string, data: { status?: string; finalReport?: string }) =>
+    patchRun: (projectId: string, data: { status?: string; finalReport?: string; runId?: string }) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/run`, data),
-    patchStage: (projectId: string, stageNumber: number, data: unknown) =>
+    patchStage: (projectId: string, stageNumber: number, data: Record<string, unknown>) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/stages/${stageNumber}`, data),
     exportToDisk: (projectId: string) =>
       req<{ folderPath: string; mdFile: string; htmlFile: string }>('POST', `/projects/${projectId}/feasibility/export`),
@@ -151,6 +159,7 @@ export const api = {
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),
+    validateKey: (apiKey: string) => req<{ valid: boolean; error?: string }>('POST', '/settings/validate-api-key', { apiKey }),
     odpUsage: () => req<{
       thisWeek: { totalQueries: number; totalResults: number; rateLimitHits: number; errorCount: number; callCount: number };
       lastUsed: string | null;

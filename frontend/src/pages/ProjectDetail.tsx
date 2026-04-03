@@ -14,6 +14,7 @@ import ApplicationTab from '../components/ApplicationTab';
 import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import { formatCost } from '../utils/format';
+import { statusColors } from '../utils/statusColors';
 
 // ----- Narrative builder -----
 function toNarrative(inv: InventionInput): string {
@@ -34,18 +35,6 @@ function toNarrative(inv: InventionInput): string {
   add('Additional Notes', inv.additionalNotes);
   return parts.join('\n\n');
 }
-
-// ----- Status badge -----
-const statusColors: Record<string, string> = {
-  INTAKE: 'bg-gray-700 text-gray-300',
-  FEASIBILITY: 'bg-blue-900 text-blue-300',
-  PRIOR_ART: 'bg-purple-900 text-purple-300',
-  DRAFTING: 'bg-yellow-900 text-yellow-300',
-  COMPLIANCE: 'bg-orange-900 text-orange-300',
-  APPLICATION: 'bg-green-900 text-green-300',
-  FILED: 'bg-emerald-900 text-emerald-300',
-  ABANDONED: 'bg-red-900 text-red-300',
-};
 
 // ----- Default stage placeholders (shown before a run starts) -----
 const DEFAULT_STAGE_NAMES = [
@@ -247,7 +236,7 @@ export default function ProjectDetail() {
           setViewMode('report');
           // Patch backend so it doesn't stay RUNNING forever
           try {
-            await api.feasibility.patchRun(data.id, { status: 'ERROR' });
+            await api.feasibility.patchRun(data.id, { status: 'ERROR', runId: runIdRef.current || undefined });
           } catch {
             // non-fatal
           }
@@ -351,7 +340,8 @@ export default function ProjectDetail() {
     // Find first stage that didn't complete
     const completedOutputs: Record<number, string> = {};
     let resumeFrom = 1;
-    for (const s of displayStages) {
+    const sortedStages = [...displayStages].sort((a, b) => a.stageNumber - b.stageNumber);
+    for (const s of sortedStages) {
       if (s.status === 'COMPLETE' && s.outputText) {
         completedOutputs[s.stageNumber] = s.outputText;
         resumeFrom = s.stageNumber + 1;
@@ -433,7 +423,7 @@ export default function ProjectDetail() {
         runId = existingRun.id;
         runIdRef.current = runId;
         try {
-          await api.feasibility.patchRun(id, { status: 'RUNNING' });
+          await api.feasibility.patchRun(id, { status: 'RUNNING', runId });
         } catch { /* non-fatal */ }
       } else {
         const run = await api.feasibility.start(id, { narrative });
@@ -445,7 +435,7 @@ export default function ProjectDetail() {
           return { ...prev, feasibility: [...existing, run] };
         });
         try {
-          await api.feasibility.patchRun(id, { status: 'RUNNING' });
+          await api.feasibility.patchRun(id, { status: 'RUNNING', runId });
         } catch { /* non-fatal */ }
       }
 
@@ -613,6 +603,7 @@ export default function ProjectDetail() {
                   inputTokens,
                   outputTokens,
                   estimatedCostUsd,
+                  runId: runIdRef.current || undefined,
                 });
 
                 // If cost cap exceeded, cancel the pipeline
@@ -641,6 +632,7 @@ export default function ProjectDetail() {
                 await api.feasibility.patchRun(id, {
                   status: 'COMPLETE',
                   finalReport: data.finalReport || stageOutputAccumulator,
+                  runId: runIdRef.current || undefined,
                 });
               } catch {
                 // non-fatal
