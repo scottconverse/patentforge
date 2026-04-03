@@ -1,5 +1,15 @@
 # PatentForge — Project Bootstrap
 
+## UI/QA Gate — Hard Rule
+
+Every frontend change requires browser-verified QA before commit. No exceptions.
+
+1. **Every implementation plan** that touches frontend code MUST include explicit numbered QA tasks: browser check of every rendered state, viewport check at desktop and mobile, accessibility audit, copy review, browser console check. These are plan tasks with the same enforcement as code tasks — not a post-build afterthought.
+2. **Before any frontend commit**, you MUST have browser screenshots or console output from the current session proving you checked the rendered output. No browser evidence = no commit.
+3. **Every error, warning, and empty state** MUST be actionable — tell the user what's wrong AND how to fix it with specific steps. A warning without a fix path is a dead end.
+
+---
+
 ## What This Is
 
 PatentForge is a full-lifecycle patent analysis web platform being built from scratch. Read these files first:
