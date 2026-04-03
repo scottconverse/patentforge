@@ -104,15 +104,20 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
     }
   }
 
+  function slugify(text: string): string {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'application';
+  }
+
   async function handleDownloadDocx() {
     setDocxLoading(true);
     setDocxError(null);
     try {
       const blob = await api.application.exportDocx(projectId);
       const url = URL.createObjectURL(blob);
+      const slug = slugify(application?.title || 'patent-application');
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'application.docx';
+      a.download = `${slug}-patent-application.docx`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -128,11 +133,12 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
     setMdLoading(true);
     try {
       const md = await api.application.exportMarkdown(projectId);
+      const slug = slugify(application?.title || 'patent-application');
       const blob = new Blob([md as any], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'application.md';
+      a.download = `${slug}-patent-application.md`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();

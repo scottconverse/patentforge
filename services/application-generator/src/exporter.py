@@ -118,53 +118,40 @@ def _add_page_numbers(doc: Document) -> None:
 
 
 def _add_watermark(doc: Document) -> None:
-    """Add a diagonal text watermark on every page via the header.
+    """Add a draft warning banner in the header on every page.
 
-    Uses raw lxml elements with VML namespace since python-docx's
-    OxmlElement does not register the VML ('v:') namespace prefix.
+    Uses a visible light-gray text banner rather than VML WordArt,
+    which has inconsistent rendering across Word versions.
     """
     watermark_text = (
         "DRAFT \u2014 NOT LEGAL ADVICE \u2014 MUST BE REVIEWED BY PATENT ATTORNEY"
     )
-    _VML_NS = "urn:schemas-microsoft-com:vml"
-    _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
     for section in doc.sections:
         header = section.header
         header.is_linked_to_previous = False
+
+        # Add bordered warning banner
         p = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        # Build w:pict containing VML shape via raw lxml
-        pict = etree.SubElement(
-            p.add_run()._element, qn("w:pict")
-        )
+        # Add top/bottom border to the paragraph for visual separation
+        pPr = p._element.get_or_add_pPr()
+        pBdr = OxmlElement("w:pBdr")
+        for border_name in ["top", "bottom"]:
+            border = OxmlElement(f"w:{border_name}")
+            border.set(qn("w:val"), "single")
+            border.set(qn("w:sz"), "4")
+            border.set(qn("w:space"), "1")
+            border.set(qn("w:color"), "C0C0C0")
+            pBdr.append(border)
+        pPr.append(pBdr)
 
-        shapetype = etree.SubElement(pict, f"{{{_VML_NS}}}shapetype")
-        shapetype.set("id", "_x0000_t136")
-        shapetype.set("coordsize", "21600,21600")
-        shapetype.set("path", "m@7,l@8,m@5,21600l@6,21600e")
-
-        shape = etree.SubElement(pict, f"{{{_VML_NS}}}shape")
-        shape.set("id", "PowerPlusWaterMarkObject")
-        shape.set(
-            "style",
-            "position:absolute;margin-left:0;margin-top:0;"
-            "width:500pt;height:100pt;rotation:-45;z-index:-251658752;"
-            "mso-position-horizontal:center;"
-            "mso-position-horizontal-relative:margin;"
-            "mso-position-vertical:center;"
-            "mso-position-vertical-relative:margin",
-        )
-        shape.set("type", "#_x0000_t136")
-        shape.set("fillcolor", "#d0d0d0")
-        shape.set("stroked", "f")
-
-        textpath = etree.SubElement(shape, f"{{{_VML_NS}}}textpath")
-        textpath.set("style", 'font-family:"Times New Roman";font-size:1pt')
-        textpath.set("string", watermark_text)
-
-        fill = etree.SubElement(shape, f"{{{_VML_NS}}}fill")
-        fill.set("opacity", ".25")
+        run = p.add_run(watermark_text)
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(8)
+        run.font.color.rgb = RGBColor(0xA0, 0xA0, 0xA0)
+        run.bold = True
 
 
 def _setup_page(doc: Document) -> None:

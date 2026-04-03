@@ -139,12 +139,13 @@ class TestDocxExport:
         assert "PatentForge" in footer_text
 
     def test_watermark_in_header(self):
-        """Header should contain VML watermark elements."""
+        """Header should contain draft warning banner text."""
         result = export_docx(_sample_request())
         doc = _load_docx(result)
         section = doc.sections[0]
-        header_xml = section.header._element.xml
-        assert "WaterMark" in header_xml or "watermark" in header_xml.lower()
+        header_text = "\n".join(p.text for p in section.header.paragraphs)
+        assert "NOT LEGAL ADVICE" in header_text
+        assert "PATENT ATTORNEY" in header_text
 
     def test_markdown_bold_rendered(self):
         """**bold** markers should be converted to actual bold runs."""
