@@ -271,9 +271,9 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         )}
 
         {/* Two-column layout: nav + content */}
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           {/* Section navigation */}
-          <nav className="w-48 flex-shrink-0 space-y-1">
+          <nav className="md:w-48 flex-shrink-0 space-y-1">
             {SECTION_KEYS.map(key => (
               <button
                 key={key}
@@ -297,6 +297,7 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
                 <button
                   onClick={() => { setEditingSection(activeSection); setEditText(sectionText); }}
                   className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  aria-label={`Edit ${SECTION_LABELS[activeSection]} section`}
                 >
                   Edit
                 </button>
@@ -335,7 +336,22 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm italic">No content for this section.</p>
+              activeSection === 'crossReferences' ? (
+                <div className="space-y-2">
+                  <p className="text-gray-400 text-sm">No cross-references to related applications.</p>
+                  <p className="text-gray-500 text-xs">If you have filed related patent applications (provisionals, continuations, divisionals), click Edit to add references to them here.</p>
+                  <button
+                    onClick={() => { setEditingSection('crossReferences'); setEditText(''); }}
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Add Cross-References
+                  </button>
+                </div>
+              ) : activeSection === 'idsTable' ? (
+                <p className="text-gray-500 text-sm italic">No prior art data. See the instructions above to populate the IDS.</p>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No content for this section.</p>
+              )
             )}
           </div>
         </div>
