@@ -69,7 +69,8 @@ export class ProjectsService {
     // Strip finalReport from the project response — loaded separately via /feasibility
     if (project.feasibility?.length) {
       (project.feasibility as any[]).forEach(run => {
-        (run as any).finalReport = run.finalReport ? true : null;
+        (run as any).hasReport = !!run.finalReport;
+        delete (run as any).finalReport;
       });
     }
 

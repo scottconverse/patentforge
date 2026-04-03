@@ -6,8 +6,9 @@
 #   docker compose down                # stop all services
 #   docker compose down -v             # stop and wipe database
 #
-# Required: generate a service secret before first run:
+# Required: generate secrets before first run:
 #   export INTERNAL_SERVICE_SECRET=$(openssl rand -hex 32)
+#   export POSTGRES_PASSWORD=$(openssl rand -hex 32)
 #
 # Optional: set your Anthropic API key in the environment before starting:
 #   export ANTHROPIC_API_KEY=sk-ant-...
@@ -26,7 +27,7 @@ services:
     environment:
       POSTGRES_DB: patentforge
       POSTGRES_USER: patentforge
-      POSTGRES_PASSWORD: patentforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD — run: export POSTGRES_PASSWORD=$$(openssl rand -hex 32)}
     volumes:
       - pgdata:/var/lib/postgresql/data
     # No external port — only reachable by backend within the Docker network
@@ -44,7 +45,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://patentforge:patentforge@postgres:5432/patentforge
+      DATABASE_URL: postgresql://patentforge:${POSTGRES_PASSWORD}@postgres:5432/patentforge
       FEASIBILITY_URL: http://feasibility:3001
       CLAIM_DRAFTER_URL: http://claim-drafter:3002
       COMPLIANCE_CHECKER_URL: http://compliance-checker:3004
