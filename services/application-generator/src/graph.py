@@ -134,7 +134,7 @@ async def run_application_pipeline(
                 )
 
     return ApplicationGenerateResult(
-        title=state_dict.get("invention_narrative", "").split("\n")[0][:200],
+        title=state_dict.get("invention_narrative", "").split("\n")[0][:200].replace("Title: ", "").replace("title: ", ""),
         cross_references=state_dict.get("cross_references", ""),
         background=state_dict.get("background", ""),
         summary=state_dict.get("summary", ""),
