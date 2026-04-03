@@ -18,12 +18,8 @@ func main() {
 }
 
 func onReady() {
-	// Set icon based on platform
-	if runtime.GOOS == "windows" {
-		systray.SetIcon(assets.IconICO)
-	} else {
-		systray.SetIcon(assets.IconPNG)
-	}
+	// Set icon (PNG works on all platforms)
+	systray.SetIcon(assets.IconPNG)
 	systray.SetTitle("PatentForge")
 	systray.SetTooltip("PatentForge — Starting...")
 
@@ -47,15 +43,21 @@ func onReady() {
 		for {
 			select {
 			case <-mOpen.ClickedCh:
-				openBrowser("http://localhost:3000")
+				if err := openBrowser("http://localhost:3000"); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
+				}
 			case <-mLogs.ClickedCh:
-				openFileExplorer(getLogsDir())
+				if err := openFileExplorer(getLogsDir()); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to open logs directory: %v\n", err)
+				}
 			case <-mRestart.ClickedCh:
 				// Service management implemented in Task 7
 				mStatus.SetTitle("Status: Restarting...")
 				mStatus.SetTitle("Status: Running")
 			case <-mAbout.ClickedCh:
-				openBrowser("https://github.com/scottconverse/patentforge/releases")
+				if err := openBrowser("https://github.com/scottconverse/patentforge/releases"); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to open browser: %v\n", err)
+				}
 			case <-mQuit.ClickedCh:
 				systray.Quit()
 			}
@@ -68,7 +70,7 @@ func onExit() {
 	fmt.Println("PatentForge shutting down...")
 }
 
-func openBrowser(url string) {
+func openBrowser(url string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
@@ -78,11 +80,13 @@ func openBrowser(url string) {
 	default:
 		cmd = exec.Command("xdg-open", url)
 	}
-	_ = cmd.Start()
+	return cmd.Start()
 }
 
-func openFileExplorer(path string) {
-	_ = os.MkdirAll(path, 0755)
+func openFileExplorer(path string) error {
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return err
+	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
@@ -92,12 +96,15 @@ func openFileExplorer(path string) {
 	default:
 		cmd = exec.Command("xdg-open", path)
 	}
-	_ = cmd.Start()
+	return cmd.Start()
 }
 
 func getLogsDir() string {
 	exe, err := os.Executable()
 	if err != nil {
+		if home, homeErr := os.UserHomeDir(); homeErr == nil {
+			return filepath.Join(home, "PatentForge", "logs")
+		}
 		return "."
 	}
 	return filepath.Join(filepath.Dir(exe), "logs")
