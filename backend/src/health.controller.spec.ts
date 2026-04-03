@@ -14,7 +14,7 @@ describe('HealthController', () => {
   it('returns ok status', () => {
     const result = controller.check();
     expect(result.status).toBe('ok');
-    expect(result.service).toBe('backend');
+    expect(result.service).toBe('patentforge-backend');
     expect(result.timestamp).toBeDefined();
   });
 });
