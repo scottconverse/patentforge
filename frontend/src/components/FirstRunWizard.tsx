@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '../api';
 import Alert from './Alert';
 
@@ -11,6 +11,13 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   const [error, setError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
   const [success, setSuccess] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   async function handleValidate() {
     const trimmed = apiKey.trim();
@@ -41,7 +48,11 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
       if (res.ok) {
         await api.settings.update({ anthropicApiKey: trimmed });
         setSuccess(true);
-        setTimeout(() => onComplete(true), 1200);
+        setTimeout(() => {
+          if (mountedRef.current) {
+            onComplete(true);
+          }
+        }, 1200);
       } else if (res.status === 401) {
         setError('Invalid API key. Please check the key and try again. Keys start with "sk-ant-".');
       } else if (res.status === 403) {
@@ -60,9 +71,9 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
       <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6">
-        <h2 className="text-xl font-bold text-gray-100 mb-2">Welcome to PatentForge!</h2>
+        <h2 id="wizard-title" className="text-xl font-bold text-gray-100 mb-2">Welcome to PatentForge!</h2>
         <p className="text-sm text-gray-400 mb-5">
           To get started, you need an Anthropic API key. PatentForge uses Claude to analyze patents and generate reports.
         </p>
