@@ -15,6 +15,7 @@ import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
 import { formatCost } from '../utils/format';
 import { statusColors } from '../utils/statusColors';
+import { getModelPricing } from '../utils/modelPricing';
 
 // ----- Narrative builder -----
 function toNarrative(inv: InventionInput): string {
@@ -58,46 +59,6 @@ function makePlaceholderStages(): FeasibilityStage[] {
 }
 
 // ----- Cost estimation -----
-// Fallback prices (used if LiteLLM fetch fails)
-// Seed values from Anthropic pricing page — updated whenever a live LiteLLM fetch succeeds,
-// so the fallback is at most as stale as the last successful fetch (days, not months).
-let _fallbackPricing: Record<string, { inputPer1M: number; outputPer1M: number }> = {
-  'claude-haiku-4-5-20251001': { inputPer1M: 0.80,  outputPer1M: 4.00 },
-  'claude-sonnet-4-20250514':  { inputPer1M: 3.00,  outputPer1M: 15.00 },
-  'claude-opus-4-20250514':    { inputPer1M: 15.00, outputPer1M: 75.00 },
-};
-
-// LiteLLM pricing cache (community-maintained, updated within days of Anthropic price changes)
-// Source: https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
-const LITELLM_URL = 'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json';
-let _pricingCache: Record<string, { inputPer1M: number; outputPer1M: number }> | null = null;
-let _pricingCachedAt = 0;
-const PRICING_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-async function fetchLivePricing(): Promise<Record<string, { inputPer1M: number; outputPer1M: number }>> {
-  if (_pricingCache && Date.now() - _pricingCachedAt < PRICING_TTL_MS) return _pricingCache;
-  try {
-    const res = await fetch(LITELLM_URL, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.json() as Record<string, any>;
-    const result: Record<string, { inputPer1M: number; outputPer1M: number }> = {};
-    for (const [key, val] of Object.entries(raw)) {
-      if (val?.input_cost_per_token != null && val?.output_cost_per_token != null) {
-        result[key] = {
-          inputPer1M:  val.input_cost_per_token  * 1_000_000,
-          outputPer1M: val.output_cost_per_token * 1_000_000,
-        };
-      }
-    }
-    _pricingCache = result;
-    _pricingCachedAt = Date.now();
-    // Update fallback with latest live data so future failed fetches use recent prices
-    _fallbackPricing = { ..._fallbackPricing, ...result };
-    return result;
-  } catch {
-    return _fallbackPricing;
-  }
-}
 
 // Web search: Anthropic charges $0.01 per search. Stage 2 always searches;
 // other stages occasionally do. Estimate ~15 searches per run.
@@ -108,20 +69,15 @@ const ESTIMATED_WEB_SEARCH_COST = ESTIMATED_SEARCHES_PER_RUN * WEB_SEARCH_COST_P
 const COST_BUFFER = 1.25; // 25% buffer over estimate
 
 async function estimateRunCosts(projectId: string, model: string): Promise<{ tokenCost: number; webSearchCost: number; source: 'history' | 'static'; runsUsed: number }> {
-  const [pricing, estimate] = await Promise.all([
-    fetchLivePricing(),
-    api.feasibility.costEstimate(projectId),
-  ]);
-  const p = pricing[model] ?? _fallbackPricing[model] ?? { inputPer1M: 3.00, outputPer1M: 15.00 };
+  const estimate = await api.feasibility.costEstimate(projectId);
+  const p = getModelPricing(model);
   const stages = 6;
 
   if (estimate.hasHistory && estimate.avgCostPerStage > 0) {
-    // Use actual historical cost data, add 25% buffer
     const tokenCost = stages * estimate.avgCostPerStage * COST_BUFFER;
     return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'history', runsUsed: estimate.runsUsed };
   }
 
-  // Static fallback using realistic token averages
   const tokenCost = stages * (
     (estimate.avgInputTokens / 1_000_000) * p.inputPer1M +
     (estimate.avgOutputTokens / 1_000_000) * p.outputPer1M
