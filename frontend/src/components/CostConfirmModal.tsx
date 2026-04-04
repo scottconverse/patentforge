@@ -75,6 +75,9 @@ export default function CostConfirmModal({
             Estimated cost exceeds your cap of ${cap.toFixed(2)}. You can still proceed.
           </div>
         )}
+        <div className="p-3 bg-amber-900/20 border border-amber-800/50 rounded text-xs text-amber-200/80 leading-relaxed">
+          <strong className="text-amber-200">Research tool — not legal advice.</strong> The AI-generated analysis may contain errors, miss relevant prior art, or mischaracterize legal requirements. Always consult a registered patent attorney before making filing decisions.
+        </div>
         <div className="flex gap-3 justify-end pt-1">
           <button
             onClick={onCancel}

@@ -79,6 +79,13 @@ export default function ReportViewer({
         </div>
       </div>
 
+      {/* UPL disclaimer banner */}
+      <div className="p-3 bg-amber-900/20 border border-amber-800 rounded-lg text-center">
+        <p className="text-xs text-amber-200/80">
+          <strong className="text-amber-200">Research tool — not legal advice.</strong> This AI-generated report is for informational and educational purposes only. It does not constitute legal advice or create an attorney-client relationship. Always consult a registered patent attorney before making filing, licensing, or enforcement decisions.
+        </p>
+      </div>
+
       {docxError && (
         <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
           Word export failed: {docxError}
