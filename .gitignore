@@ -8,6 +8,9 @@ dist/
 build/
 *.js.map
 
+# Test coverage
+coverage/
+
 # Database
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
