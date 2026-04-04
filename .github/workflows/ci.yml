@@ -30,6 +30,9 @@ jobs:
       - name: Run tests
         run: cd backend && npm test
 
+      - name: Run integration tests
+        run: cd backend && npm run test:integration
+
   frontend-tests:
     name: Frontend Tests (Vitest)
     runs-on: ubuntu-latest
