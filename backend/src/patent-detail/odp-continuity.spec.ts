@@ -97,7 +97,7 @@ describe('fetchPatentFamilyODP', () => {
     const result = await fetchPatentFamilyODP('US12000000B2', FAKE_API_KEY);
 
     expect(result).not.toBeNull();
-    const parent = result!.find(m => m.patentNumber === '11500000');
+    const parent = result!.find((m) => m.patentNumber === '11500000');
     expect(parent).toBeTruthy();
     expect(parent!.relationship).toBe('continuation');
     expect(parent!.filingDate).toBe('2020-03-15');
@@ -112,7 +112,7 @@ describe('fetchPatentFamilyODP', () => {
     const result = await fetchPatentFamilyODP('US12000000B2', FAKE_API_KEY);
 
     expect(result).not.toBeNull();
-    const child = result!.find(m => m.applicationNumber === '18678901');
+    const child = result!.find((m) => m.applicationNumber === '18678901');
     expect(child).toBeTruthy();
     expect(child!.relationship).toBe('divisional');
     expect(child!.patentNumber).toBeNull();
@@ -214,7 +214,12 @@ describe('fetchPatentFamilyODP', () => {
       applicationMetaData: { patentNumber: '12000000' },
       continuityBag: [],
       parentApplicationBag: [
-        { applicationNumberText: '16123456', patentNumber: '11500000', filingDate: '2020-03-15', continuityType: 'Continuation' },
+        {
+          applicationNumberText: '16123456',
+          patentNumber: '11500000',
+          filingDate: '2020-03-15',
+          continuityType: 'Continuation',
+        },
       ],
     };
     mockFetch.mockResolvedValueOnce(makeODPResponse([bag]));

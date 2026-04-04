@@ -47,7 +47,7 @@ async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsVie
     if (data.error === true && typeof data.message === 'string' && data.message.includes('migrating')) {
       throw new PatentsViewMigrationError(
         'The PatentsView API has been shut down and migrated to the USPTO Open Data Portal (data.uspto.gov). ' +
-        'Prior art search is temporarily unavailable. This will be restored in a future update.'
+          'Prior art search is temporarily unavailable. This will be restored in a future update.',
       );
     }
     return (data as PatentsViewResponse).patents ?? [];
@@ -57,7 +57,7 @@ async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsVie
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function searchPatentsViewMulti(queries: string[]): Promise<PatentsViewPatent[]> {

@@ -60,9 +60,7 @@ describe('ComplianceService', () => {
         where: { status: 'RUNNING' },
         data: { status: 'ERROR', completedAt: expect.any(Date) },
       });
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Cleaned up 2 stuck RUNNING check(s)'),
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Cleaned up 2 stuck RUNNING check(s)'));
       warnSpy.mockRestore();
     });
 
@@ -86,19 +84,15 @@ describe('ComplianceService', () => {
       });
       mockPrisma.claimDraft.findFirst.mockResolvedValue(null);
 
-      await expect(service.startCheck('project-1'))
-        .rejects.toThrow(NotFoundException);
-      await expect(service.startCheck('project-1'))
-        .rejects.toThrow(/No completed claim draft found/);
+      await expect(service.startCheck('project-1')).rejects.toThrow(NotFoundException);
+      await expect(service.startCheck('project-1')).rejects.toThrow(/No completed claim draft found/);
     });
 
     it('returns 404 when project does not exist', async () => {
       mockPrisma.project.findUnique.mockResolvedValue(null);
 
-      await expect(service.startCheck('nonexistent'))
-        .rejects.toThrow(NotFoundException);
-      await expect(service.startCheck('nonexistent'))
-        .rejects.toThrow(/not found/);
+      await expect(service.startCheck('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.startCheck('nonexistent')).rejects.toThrow(/not found/);
     });
 
     it('returns 409 when a check is already RUNNING', async () => {
@@ -117,10 +111,8 @@ describe('ComplianceService', () => {
         status: 'RUNNING',
       });
 
-      await expect(service.startCheck('project-1'))
-        .rejects.toThrow(ConflictException);
-      await expect(service.startCheck('project-1'))
-        .rejects.toThrow(/already running/);
+      await expect(service.startCheck('project-1')).rejects.toThrow(ConflictException);
+      await expect(service.startCheck('project-1')).rejects.toThrow(/already running/);
     });
 
     it('creates a ComplianceCheck record and returns it', async () => {
@@ -137,7 +129,7 @@ describe('ComplianceService', () => {
       // First findFirst: no running check (concurrency guard)
       // Second findFirst: last check for version numbering
       mockPrisma.complianceCheck.findFirst
-        .mockResolvedValueOnce(null)  // concurrency check
+        .mockResolvedValueOnce(null) // concurrency check
         .mockResolvedValueOnce(null); // version check
 
       mockPrisma.feasibilityStage.findMany.mockResolvedValue([]);
@@ -158,7 +150,7 @@ describe('ComplianceService', () => {
       expect(result.status).toBe('RUNNING');
 
       // Let the fire-and-forget pipeline IIFE settle
-      for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
+      for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r));
 
       errorSpy.mockRestore();
     });
@@ -171,9 +163,7 @@ describe('ComplianceService', () => {
         version: 2,
         status: 'COMPLETE',
         overallPass: true,
-        results: [
-          { rule: '35 USC 101', status: 'PASS', detail: 'Eligible subject matter' },
-        ],
+        results: [{ rule: '35 USC 101', status: 'PASS', detail: 'Eligible subject matter' }],
       });
 
       const result = await service.getLatest('project-1');
@@ -216,10 +206,8 @@ describe('ComplianceService', () => {
     it('returns 404 for nonexistent version', async () => {
       mockPrisma.complianceCheck.findFirst.mockResolvedValue(null);
 
-      await expect(service.getByVersion('project-1', 99))
-        .rejects.toThrow(NotFoundException);
-      await expect(service.getByVersion('project-1', 99))
-        .rejects.toThrow(/version 99 not found/);
+      await expect(service.getByVersion('project-1', 99)).rejects.toThrow(NotFoundException);
+      await expect(service.getByVersion('project-1', 99)).rejects.toThrow(/version 99 not found/);
     });
   });
 });

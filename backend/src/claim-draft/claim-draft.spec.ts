@@ -67,15 +67,13 @@ describe('ClaimDraftService', () => {
     it('throws NotFoundException when claim does not belong to project', async () => {
       mockPrisma.claim.findFirst.mockResolvedValue(null);
 
-      await expect(service.updateClaim('project-1', 'claim-999', 'text'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.updateClaim('project-1', 'claim-999', 'text')).rejects.toThrow(NotFoundException);
     });
 
     it('throws NotFoundException when claim does not exist', async () => {
       mockPrisma.claim.findFirst.mockResolvedValue(null);
 
-      await expect(service.updateClaim('project-1', 'nonexistent', 'text'))
-        .rejects.toThrow(/not found/);
+      await expect(service.updateClaim('project-1', 'nonexistent', 'text')).rejects.toThrow(/not found/);
     });
   });
 
@@ -91,10 +89,8 @@ describe('ClaimDraftService', () => {
         status: 'RUNNING',
       });
 
-      await expect(service.startDraft('project-1'))
-        .rejects.toThrow(ConflictException);
-      await expect(service.startDraft('project-1'))
-        .rejects.toThrow(/already running/);
+      await expect(service.startDraft('project-1')).rejects.toThrow(ConflictException);
+      await expect(service.startDraft('project-1')).rejects.toThrow(/already running/);
     });
 
     it('allows starting when no draft is RUNNING', async () => {
@@ -130,7 +126,7 @@ describe('ClaimDraftService', () => {
       expect(result.id).toBe('new-draft');
       // Let the fire-and-forget pipeline IIFE settle (multiple async hops:
       // fetch attempt → catch → console.error → finally → findUnique → update)
-      for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
+      for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r));
 
       errorSpy.mockRestore();
     });
@@ -140,10 +136,8 @@ describe('ClaimDraftService', () => {
     it('throws NotFoundException when no completed draft exists', async () => {
       mockPrisma.claimDraft.findFirst.mockResolvedValue(null);
 
-      await expect(service.regenerateClaim('project-1', 1))
-        .rejects.toThrow(NotFoundException);
-      await expect(service.regenerateClaim('project-1', 1))
-        .rejects.toThrow(/No completed claim draft found/);
+      await expect(service.regenerateClaim('project-1', 1)).rejects.toThrow(NotFoundException);
+      await expect(service.regenerateClaim('project-1', 1)).rejects.toThrow(/No completed claim draft found/);
     });
 
     it('throws NotFoundException when claim number does not exist in draft', async () => {
@@ -156,10 +150,8 @@ describe('ClaimDraftService', () => {
         ],
       });
 
-      await expect(service.regenerateClaim('project-1', 99))
-        .rejects.toThrow(NotFoundException);
-      await expect(service.regenerateClaim('project-1', 99))
-        .rejects.toThrow(/Claim 99 not found/);
+      await expect(service.regenerateClaim('project-1', 99)).rejects.toThrow(NotFoundException);
+      await expect(service.regenerateClaim('project-1', 99)).rejects.toThrow(/Claim 99 not found/);
     });
 
     it('regenerates a claim and updates its text in the database', async () => {
@@ -186,9 +178,7 @@ describe('ClaimDraftService', () => {
         ok: true,
         json: async () => ({
           status: 'COMPLETE',
-          claims: [
-            { claim_number: 1, text: 'Regenerated claim 1 text' },
-          ],
+          claims: [{ claim_number: 1, text: 'Regenerated claim 1 text' }],
         }),
       });
 

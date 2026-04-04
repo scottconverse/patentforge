@@ -45,7 +45,7 @@ export class SettingsService implements OnModuleInit {
     if (decrypted !== probe) {
       this.logger.error(
         'ENCRYPTION SELF-TEST FAILED — encrypt/decrypt round-trip returned wrong value. ' +
-        'If you moved the database from another machine, re-enter your API keys in Settings.',
+          'If you moved the database from another machine, re-enter your API keys in Settings.',
       );
     } else {
       this.logger.log('Encryption self-test passed');
@@ -145,8 +145,8 @@ export class SettingsService implements OnModuleInit {
 
     const totalQueries = usage.reduce((s, u) => s + u.queriesAttempted, 0);
     const totalResults = usage.reduce((s, u) => s + u.resultsFound, 0);
-    const rateLimitHits = usage.filter(u => u.hadRateLimit).length;
-    const errorCount = usage.filter(u => u.hadError).length;
+    const rateLimitHits = usage.filter((u) => u.hadRateLimit).length;
+    const errorCount = usage.filter((u) => u.hadError).length;
     const lastUsed = usage.length > 0 ? usage[0].calledAt : null;
 
     return {

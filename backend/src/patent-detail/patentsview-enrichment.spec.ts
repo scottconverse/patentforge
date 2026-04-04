@@ -20,7 +20,11 @@ describe('fetchEnrichedPatent', () => {
         patent_num_claims: 12,
         application: [{ filing_date: '2021-03-20' }],
         assignees: [
-          { assignee_organization: 'Acme Corp', assignee_individual_name_first: null, assignee_individual_name_last: null },
+          {
+            assignee_organization: 'Acme Corp',
+            assignee_individual_name_first: null,
+            assignee_individual_name_last: null,
+          },
           { assignee_organization: null, assignee_individual_name_first: 'Jane', assignee_individual_name_last: 'Doe' },
         ],
         inventors: [
@@ -168,11 +172,13 @@ describe('fetchEnrichedPatent', () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
-        patents: [{
-          patent_id: '10234567',
-          patent_title: 'Test',
-          // No abstract, assignees, inventors, claims, cpc, application
-        }],
+        patents: [
+          {
+            patent_id: '10234567',
+            patent_title: 'Test',
+            // No abstract, assignees, inventors, claims, cpc, application
+          },
+        ],
       }),
     });
 

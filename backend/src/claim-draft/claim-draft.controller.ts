@@ -31,31 +31,21 @@ export class ClaimDraftController {
 
   /** GET /api/projects/:id/claims/:version — Get specific version */
   @Get(':version')
-  getByVersion(
-    @Param('id') projectId: string,
-    @Param('version', ParseIntPipe) version: number,
-  ) {
+  getByVersion(@Param('id') projectId: string, @Param('version', ParseIntPipe) version: number) {
     return this.service.getByVersion(projectId, version);
   }
 
   /** PUT /api/projects/:id/claims/edit/:claimId — Update claim text */
   @Put('edit/:claimId')
   @HttpCode(HttpStatus.OK)
-  updateClaim(
-    @Param('id') projectId: string,
-    @Param('claimId') claimId: string,
-    @Body() dto: UpdateClaimDto,
-  ) {
+  updateClaim(@Param('id') projectId: string, @Param('claimId') claimId: string, @Body() dto: UpdateClaimDto) {
     return this.service.updateClaim(projectId, claimId, dto.text);
   }
 
   /** POST /api/projects/:id/claims/:claimNumber/regenerate — Regenerate a single claim */
   @Post(':claimNumber/regenerate')
   @HttpCode(HttpStatus.OK)
-  regenerateClaim(
-    @Param('id') projectId: string,
-    @Param('claimNumber', ParseIntPipe) claimNumber: number,
-  ) {
+  regenerateClaim(@Param('id') projectId: string, @Param('claimNumber', ParseIntPipe) claimNumber: number) {
     return this.service.regenerateClaim(projectId, claimNumber);
   }
 }

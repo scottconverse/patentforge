@@ -33,10 +33,7 @@ export class FeasibilityController {
 
   @Post('run')
   @HttpCode(HttpStatus.CREATED)
-  async startRun(
-    @Param('id') projectId: string,
-    @Body() body: StartRunDto,
-  ) {
+  async startRun(@Param('id') projectId: string, @Body() body: StartRunDto) {
     // Enforce cost cap before starting a new run
     const settings = await this.settingsService.getSettings();
     if (settings.costCapUsd > 0) {
@@ -44,7 +41,7 @@ export class FeasibilityController {
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-          `Increase the cost cap in Settings to continue.`,
+            `Increase the cost cap in Settings to continue.`,
         );
       }
     }
@@ -97,7 +94,10 @@ export class FeasibilityController {
   async exportToHtml(@Param('id') projectId: string, @Res() res: Response) {
     const html = await this.feasibilityService.getReportHtmlPage(projectId);
     const project = await this.feasibilityService.getProjectTitle(projectId);
-    const slug = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${slug}-feasibility.html"`);
     res.send(html);
@@ -109,19 +109,13 @@ export class FeasibilityController {
   }
 
   @Get(':version')
-  getByVersion(
-    @Param('id') projectId: string,
-    @Param('version', ParseIntPipe) version: number,
-  ) {
+  getByVersion(@Param('id') projectId: string, @Param('version', ParseIntPipe) version: number) {
     return this.feasibilityService.getByVersion(projectId, version);
   }
 
   @Patch('run')
   @HttpCode(HttpStatus.OK)
-  patchRun(
-    @Param('id') projectId: string,
-    @Body() dto: PatchRunDto,
-  ) {
+  patchRun(@Param('id') projectId: string, @Body() dto: PatchRunDto) {
     return this.feasibilityService.patchRun(projectId, dto);
   }
 
@@ -156,11 +150,7 @@ export class FeasibilityController {
    * service internal (not directly reachable from the browser).
    */
   @Post('stream')
-  async streamAnalysis(
-    @Param('id') projectId: string,
-    @Body() body: any,
-    @Res() res: Response,
-  ) {
+  async streamAnalysis(@Param('id') projectId: string, @Body() body: any, @Res() res: Response) {
     // Inject the API key server-side — never trust the frontend to send it
     const settings = await this.settingsService.getSettings();
     if (!settings.anthropicApiKey) {
@@ -213,7 +203,9 @@ export class FeasibilityController {
         console.error('[SSE] Stream error:', err?.message || err);
         if (!res.writableEnded) {
           try {
-            res.write(`event: pipeline_error\ndata: ${JSON.stringify({ error: 'Stream interrupted. Check service logs.' })}\n\n`);
+            res.write(
+              `event: pipeline_error\ndata: ${JSON.stringify({ error: 'Stream interrupted. Check service logs.' })}\n\n`,
+            );
           } catch {
             // Response already closed
           }
@@ -228,10 +220,7 @@ export class FeasibilityController {
 
   @Post('rerun')
   @HttpCode(HttpStatus.CREATED)
-  async rerunFromStage(
-    @Param('id') projectId: string,
-    @Body() dto: RerunFromStageDto,
-  ) {
+  async rerunFromStage(@Param('id') projectId: string, @Body() dto: RerunFromStageDto) {
     return this.feasibilityService.rerunFromStage(projectId, dto.fromStage);
   }
 

@@ -60,7 +60,11 @@ describe('ApplicationService', () => {
     });
 
     it('should reject when no completed claims exist', async () => {
-      prisma.project.findUnique.mockResolvedValue({ id: 'p1', title: 'Test', invention: { title: 'T', description: 'D' } });
+      prisma.project.findUnique.mockResolvedValue({
+        id: 'p1',
+        title: 'Test',
+        invention: { title: 'T', description: 'D' },
+      });
       prisma.claimDraft.findFirst.mockResolvedValue(null);
       await expect(service.startGeneration('p1')).rejects.toThrow(BadRequestException);
     });

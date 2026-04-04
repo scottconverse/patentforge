@@ -17,7 +17,7 @@ const RETRY_DELAY_ON_429_MS = 10_000;
 const MAX_RETRIES_ON_429 = 1;
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -35,9 +35,7 @@ export async function fetchEnrichedPatentODP(
 
   const body = {
     q: `applicationMetaData.patentNumber:${cleanNumber}`,
-    filters: [
-      { name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] },
-    ],
+    filters: [{ name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] }],
     pagination: { offset: 0, limit: 1 },
     fields: ['applicationNumberText', 'applicationMetaData', 'assignmentBag'],
   };
@@ -98,8 +96,7 @@ function parseODPResult(patentNumber: string, bag: any): EnrichedPatent {
   const inventors: string[] = [];
   if (Array.isArray(meta.inventorBag)) {
     for (const inv of meta.inventorBag) {
-      const name = inv.inventorNameText
-        ?? `${inv.firstName ?? ''} ${inv.lastName ?? ''}`.trim();
+      const name = inv.inventorNameText ?? `${inv.firstName ?? ''} ${inv.lastName ?? ''}`.trim();
       if (name) inventors.push(name);
     }
   }

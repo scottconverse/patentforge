@@ -49,7 +49,11 @@ describe('CSV row formatting', () => {
       detail?.grantDate ?? '',
       detail?.assignee ? (Array.isArray(detail.assignee) ? detail.assignee.join('; ') : detail.assignee) : '',
       detail?.inventors ? (Array.isArray(detail.inventors) ? detail.inventors.join('; ') : detail.inventors) : '',
-      detail?.cpcClassifications ? (Array.isArray(detail.cpcClassifications) ? detail.cpcClassifications.map((c: any) => c.code || c).join('; ') : '') : '',
+      detail?.cpcClassifications
+        ? Array.isArray(detail.cpcClassifications)
+          ? detail.cpcClassifications.map((c: any) => c.code || c).join('; ')
+          : ''
+        : '',
       (result.relevanceScore * 100).toFixed(0) + '%',
       csvEscape((result.abstract ?? '').slice(0, 500)),
       result.source ?? 'PatentsView',

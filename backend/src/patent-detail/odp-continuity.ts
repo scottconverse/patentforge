@@ -13,7 +13,7 @@ const RETRY_DELAY_ON_429_MS = 10_000;
 const MAX_RETRIES_ON_429 = 1;
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export interface PatentFamilyMember {
@@ -40,9 +40,7 @@ export async function fetchPatentFamilyODP(
 
   const body = {
     q: `applicationMetaData.patentNumber:${cleanNumber}`,
-    filters: [
-      { name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] },
-    ],
+    filters: [{ name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] }],
     pagination: { offset: 0, limit: 1 },
     fields: ['applicationNumberText', 'applicationMetaData', 'continuityBag'],
   };
@@ -143,11 +141,7 @@ function parseContinuityData(bag: any): PatentFamilyMember[] {
   return members;
 }
 
-function parseContinuityEntry(
-  entry: any,
-  members: PatentFamilyMember[],
-  seen: Set<string>,
-): void {
+function parseContinuityEntry(entry: any, members: PatentFamilyMember[], seen: Set<string>): void {
   // Each continuity entry may have parentApplicationBag or childApplicationBag
   if (Array.isArray(entry.parentApplicationBag)) {
     for (const parent of entry.parentApplicationBag) {
@@ -190,11 +184,7 @@ function parseContinuityEntry(
   }
 }
 
-function addMember(
-  members: PatentFamilyMember[],
-  seen: Set<string>,
-  member: PatentFamilyMember,
-): void {
+function addMember(members: PatentFamilyMember[], seen: Set<string>, member: PatentFamilyMember): void {
   const key = member.patentNumber ?? member.applicationNumber ?? '';
   if (!key || seen.has(key)) return;
   seen.add(key);

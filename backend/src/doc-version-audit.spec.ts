@@ -36,9 +36,7 @@ function extractCurrentVersionFeatures(): string[] {
 
   // Find the next version header to bound the section
   const nextVersionIdx = changelog.indexOf('\n## [', startIdx + 1);
-  const section = nextVersionIdx > 0
-    ? changelog.slice(startIdx, nextVersionIdx)
-    : changelog.slice(startIdx);
+  const section = nextVersionIdx > 0 ? changelog.slice(startIdx, nextVersionIdx) : changelog.slice(startIdx);
 
   // Extract bold feature names from "- **Feature Name**" lines
   const features: string[] = [];
@@ -131,7 +129,13 @@ describe('Current Version Features Are Documented', () => {
     contributing?: string;
   }> = [
     // v0.4.0 claim drafting features
-    { feature: 'claim drafting', readme: 'claim draft', manual: 'claim', landing: 'claim draft', contributing: 'claim-drafter' },
+    {
+      feature: 'claim drafting',
+      readme: 'claim draft',
+      manual: 'claim',
+      landing: 'claim draft',
+      contributing: 'claim-drafter',
+    },
     { feature: 'claim drafter service', readme: '3002', contributing: 'pytest' },
     { feature: 'claim drafter python', readme: 'python', contributing: 'python' },
     // v0.3.x features that must remain documented
@@ -240,7 +244,7 @@ describe('Discussion Announcements', () => {
       versions.push(match[1]);
     }
 
-    const missing = versions.filter(v => !seed.includes(`v${v}`));
+    const missing = versions.filter((v) => !seed.includes(`v${v}`));
     expect(missing).toEqual([]);
   });
 });

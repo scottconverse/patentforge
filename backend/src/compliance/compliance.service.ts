@@ -104,25 +104,30 @@ export class ComplianceService implements OnModuleInit {
         where: { projectId, estimatedCostUsd: { not: null } },
         select: { estimatedCostUsd: true },
       });
-      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
-        + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
-        + prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+      const spent =
+        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-          `Increase the cost cap in Settings to continue.`,
+            `Increase the cost cap in Settings to continue.`,
         );
       }
     }
 
     // Build invention narrative
     const inv = project.invention;
-    const narrative = inv ? [
-      `Title: ${inv.title}`,
-      `Description: ${inv.description}`,
-      inv.problemSolved ? `Problem Solved: ${inv.problemSolved}` : '',
-      inv.howItWorks ? `How It Works: ${inv.howItWorks}` : '',
-    ].filter(Boolean).join('\n\n') : '';
+    const narrative = inv
+      ? [
+          `Title: ${inv.title}`,
+          `Description: ${inv.description}`,
+          inv.problemSolved ? `Problem Solved: ${inv.problemSolved}` : '',
+          inv.howItWorks ? `How It Works: ${inv.howItWorks}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+      : '';
 
     // Get specification text from feasibility Stage 1
     const feasRun = await this.prisma.feasibilityRun.findFirst({
@@ -154,17 +159,19 @@ export class ComplianceService implements OnModuleInit {
     (async () => {
       try {
         await this.callComplianceChecker(check.id, {
-          claims: draft.claims.map(c => {
-              if (c.text.length > 10_000) {
-                console.warn(`[Compliance] Claim ${c.claimNumber} text is ${c.text.length} chars — may cause validation issues`);
-              }
-              return {
-                claim_number: c.claimNumber,
-                claim_type: c.claimType,
-                parent_claim_number: c.parentClaimNumber,
-                text: c.text.slice(0, 10_000), // Safety cap
-              };
-            }),
+          claims: draft.claims.map((c) => {
+            if (c.text.length > 10_000) {
+              console.warn(
+                `[Compliance] Claim ${c.claimNumber} text is ${c.text.length} chars — may cause validation issues`,
+              );
+            }
+            return {
+              claim_number: c.claimNumber,
+              claim_type: c.claimType,
+              parent_claim_number: c.parentClaimNumber,
+              text: c.text.slice(0, 10_000), // Safety cap
+            };
+          }),
           specification_text: specText,
           invention_narrative: narrative,
           prior_art_context: '',
@@ -181,10 +188,12 @@ export class ComplianceService implements OnModuleInit {
         // Ensure check is never left in RUNNING status
         const current = await this.prisma.complianceCheck.findUnique({ where: { id: check.id } });
         if (current && current.status === 'RUNNING') {
-          await this.prisma.complianceCheck.update({
-            where: { id: check.id },
-            data: { status: 'ERROR', completedAt: new Date() },
-          }).catch(e => console.error(`[Compliance] Failed to update check status: ${e.message}`));
+          await this.prisma.complianceCheck
+            .update({
+              where: { id: check.id },
+              data: { status: 'ERROR', completedAt: new Date() },
+            })
+            .catch((e) => console.error(`[Compliance] Failed to update check status: ${e.message}`));
         }
       }
     })();
@@ -206,26 +215,36 @@ export class ComplianceService implements OnModuleInit {
       const url = new URL(`${COMPLIANCE_CHECKER_URL}/check`);
       const http = require('http');
       const data = JSON.stringify(requestBody);
-      const req = http.request({
-        hostname: url.hostname,
-        port: url.port,
-        path: url.pathname,
-        method: 'POST',
-        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
-        timeout: 600_000,
-      }, (res: any) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const body = Buffer.concat(chunks).toString();
-          if (res.statusCode !== 200) {
-            reject(new Error(`Compliance checker returned ${res.statusCode}: ${body}`));
-            return;
-          }
-          try { resolve(JSON.parse(body)); } catch { reject(new Error(`Invalid JSON from compliance checker`)); }
-        });
+      const req = http.request(
+        {
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: 'POST',
+          headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+          timeout: 600_000,
+        },
+        (res: any) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => {
+            const body = Buffer.concat(chunks).toString();
+            if (res.statusCode !== 200) {
+              reject(new Error(`Compliance checker returned ${res.statusCode}: ${body}`));
+              return;
+            }
+            try {
+              resolve(JSON.parse(body));
+            } catch {
+              reject(new Error(`Invalid JSON from compliance checker`));
+            }
+          });
+        },
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Compliance check timed out (10 min)'));
       });
-      req.on('timeout', () => { req.destroy(); reject(new Error('Compliance check timed out (10 min)')); });
       req.on('error', (e: Error) => reject(new Error(`Compliance checker request failed: ${e.message}`)));
       req.write(data);
       req.end();
@@ -310,43 +329,49 @@ export class ComplianceService implements OnModuleInit {
     const RULE_LABELS: Record<string, string> = {
       '112a_written_description': '112(a) Written Description',
       '112b_definiteness': '112(b) Definiteness',
-      'mpep_608_formalities': 'MPEP 608 Formalities',
+      mpep_608_formalities: 'MPEP 608 Formalities',
       '101_eligibility': '101 Eligibility',
     };
 
     const paragraphs: Paragraph[] = [];
 
     // Title
-    paragraphs.push(new Paragraph({
-      text: `Compliance Check Results — ${project.title}`,
-      heading: HeadingLevel.HEADING_1,
-    }));
+    paragraphs.push(
+      new Paragraph({
+        text: `Compliance Check Results — ${project.title}`,
+        heading: HeadingLevel.HEADING_1,
+      }),
+    );
 
     // UPL disclaimer
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: 'RESEARCH OUTPUT — NOT LEGAL ADVICE. This is an AI-generated compliance pre-screen. It must be reviewed by a registered patent attorney.',
-          bold: true,
-          color: 'B45309',
-          size: 20,
-        }),
-      ],
-    }));
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'RESEARCH OUTPUT — NOT LEGAL ADVICE. This is an AI-generated compliance pre-screen. It must be reviewed by a registered patent attorney.',
+            bold: true,
+            color: 'B45309',
+            size: 20,
+          }),
+        ],
+      }),
+    );
     paragraphs.push(new Paragraph({ text: '' }));
 
     // Overall status
-    const hasFailure = check.results.some(r => r.status === 'FAIL');
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: hasFailure ? 'Overall: ISSUES FOUND' : 'Overall: ALL CHECKS PASSED',
-          bold: true,
-          color: hasFailure ? 'DC2626' : '16A34A',
-          size: 24,
-        }),
-      ],
-    }));
+    const hasFailure = check.results.some((r) => r.status === 'FAIL');
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: hasFailure ? 'Overall: ISSUES FOUND' : 'Overall: ALL CHECKS PASSED',
+            bold: true,
+            color: hasFailure ? 'DC2626' : '16A34A',
+            size: 24,
+          }),
+        ],
+      }),
+    );
     paragraphs.push(new Paragraph({ text: '' }));
 
     // Group results by rule
@@ -358,19 +383,19 @@ export class ComplianceService implements OnModuleInit {
 
     for (const [rule, results] of Object.entries(grouped)) {
       const label = RULE_LABELS[rule] || rule;
-      paragraphs.push(new Paragraph({
-        text: label,
-        heading: HeadingLevel.HEADING_2,
-      }));
+      paragraphs.push(
+        new Paragraph({
+          text: label,
+          heading: HeadingLevel.HEADING_2,
+        }),
+      );
 
       for (const r of results) {
         const statusLabel = r.status === 'PASS' ? 'PASS' : r.status === 'FAIL' ? 'FAIL' : 'WARN';
         const statusColor = r.status === 'PASS' ? '16A34A' : r.status === 'FAIL' ? 'DC2626' : 'CA8A04';
 
         // Status + claim number + detail
-        const runs: TextRun[] = [
-          new TextRun({ text: `[${statusLabel}]`, bold: true, color: statusColor }),
-        ];
+        const runs: TextRun[] = [new TextRun({ text: `[${statusLabel}]`, bold: true, color: statusColor })];
         if (r.claimNumber != null) {
           runs.push(new TextRun({ text: ` Claim ${r.claimNumber}:` }));
         }
@@ -379,16 +404,20 @@ export class ComplianceService implements OnModuleInit {
 
         // Citation
         if (r.citation) {
-          paragraphs.push(new Paragraph({
-            children: [new TextRun({ text: `Citation: ${r.citation}`, italics: true, color: '6B7280', size: 18 })],
-          }));
+          paragraphs.push(
+            new Paragraph({
+              children: [new TextRun({ text: `Citation: ${r.citation}`, italics: true, color: '6B7280', size: 18 })],
+            }),
+          );
         }
 
         // Suggestion
         if (r.suggestion) {
-          paragraphs.push(new Paragraph({
-            children: [new TextRun({ text: `Suggestion: ${r.suggestion}`, color: '3B82F6', size: 18 })],
-          }));
+          paragraphs.push(
+            new Paragraph({
+              children: [new TextRun({ text: `Suggestion: ${r.suggestion}`, color: '3B82F6', size: 18 })],
+            }),
+          );
         }
 
         paragraphs.push(new Paragraph({ text: '' }));
@@ -396,20 +425,24 @@ export class ComplianceService implements OnModuleInit {
     }
 
     // Legal disclaimer footer
-    paragraphs.push(new Paragraph({
-      children: [new TextRun({ text: '---', color: '6B7280', size: 16 })],
-    }));
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({ text: 'Disclaimer: ', bold: true, color: '6B7280', size: 16, font: 'Calibri' }),
-        new TextRun({
-          text: 'This compliance check was generated by PatentForge, an open-source AI-powered patent research tool. It is an AI-generated pre-screen intended for discussion with a registered patent attorney. It does not constitute legal advice. Results may contain false positives or negatives, and MPEP citations may be outdated or inaccurate. Every result must be reviewed by a registered patent attorney.',
-          color: '6B7280',
-          size: 16,
-          font: 'Calibri',
-        }),
-      ],
-    }));
+    paragraphs.push(
+      new Paragraph({
+        children: [new TextRun({ text: '---', color: '6B7280', size: 16 })],
+      }),
+    );
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'Disclaimer: ', bold: true, color: '6B7280', size: 16, font: 'Calibri' }),
+          new TextRun({
+            text: 'This compliance check was generated by PatentForge, an open-source AI-powered patent research tool. It is an AI-generated pre-screen intended for discussion with a registered patent attorney. It does not constitute legal advice. Results may contain false positives or negatives, and MPEP citations may be outdated or inaccurate. Every result must be reviewed by a registered patent attorney.',
+            color: '6B7280',
+            size: 16,
+            font: 'Calibri',
+          }),
+        ],
+      }),
+    );
 
     const doc = new Document({
       creator: 'PatentForge',
@@ -418,7 +451,10 @@ export class ComplianceService implements OnModuleInit {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     return { buffer, filename: `${slug}-compliance.docx` };
   }
 }

@@ -9,7 +9,10 @@ function makePatent(overrides: Record<string, any> = {}) {
   return {
     patent_id: 'US12345678',
     patent_title: overrides.title ?? overrides.patent_title ?? 'Machine Learning Image Classification System',
-    patent_abstract: overrides.abstract ?? overrides.patent_abstract ?? 'A system for classifying images using convolutional neural networks with transfer learning capabilities.',
+    patent_abstract:
+      overrides.abstract ??
+      overrides.patent_abstract ??
+      'A system for classifying images using convolutional neural networks with transfer learning capabilities.',
     patent_date: overrides.date ?? overrides.patent_date ?? '2024-06-15',
     patent_type: overrides.patent_type ?? 'utility',
     ...overrides,
@@ -44,9 +47,7 @@ describe('scoreRelevance', () => {
     });
     // "method", "system", "comprising", "means" are all stop-words
     // Only "processing" and "data" should count
-    const score = scoreRelevance(patent, [
-      'method', 'system', 'comprising', 'means', 'processing', 'data',
-    ]);
+    const score = scoreRelevance(patent, ['method', 'system', 'comprising', 'means', 'processing', 'data']);
     // Without stop-word filtering, all 6 terms would match.
     // With filtering, only "processing" and "data" should be scored.
     expect(score).toBeGreaterThan(0);

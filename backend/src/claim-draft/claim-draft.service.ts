@@ -67,7 +67,9 @@ export class ClaimDraftService implements OnModuleInit {
       where: { projectId, status: 'RUNNING' },
     });
     if (running) {
-      throw new ConflictException('A claim draft is already running for this project. Wait for it to complete or try again later.');
+      throw new ConflictException(
+        'A claim draft is already running for this project. Wait for it to complete or try again later.',
+      );
     }
 
     const settings = await this.settingsService.getSettings();
@@ -92,13 +94,14 @@ export class ClaimDraftService implements OnModuleInit {
         where: { projectId, estimatedCostUsd: { not: null } },
         select: { estimatedCostUsd: true },
       });
-      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
-        + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
-        + prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+      const spent =
+        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-          `Increase the cost cap in Settings to continue.`,
+            `Increase the cost cap in Settings to continue.`,
         );
       }
     }
@@ -118,7 +121,9 @@ export class ClaimDraftService implements OnModuleInit {
       inv.currentAlternatives ? `Current Alternatives: ${inv.currentAlternatives}` : '',
       inv.whatIsBuilt ? `What Is Built: ${inv.whatIsBuilt}` : '',
       inv.whatToProtect ? `What To Protect: ${inv.whatToProtect}` : '',
-    ].filter(Boolean).join('\n\n');
+    ]
+      .filter(Boolean)
+      .join('\n\n');
 
     // Create claim draft record
     const lastDraft = await this.prisma.claimDraft.findFirst({
@@ -158,10 +163,12 @@ export class ClaimDraftService implements OnModuleInit {
         // Ensure draft is never left in RUNNING status
         const current = await this.prisma.claimDraft.findUnique({ where: { id: draft.id } });
         if (current && current.status === 'RUNNING') {
-          await this.prisma.claimDraft.update({
-            where: { id: draft.id },
-            data: { status: 'ERROR', completedAt: new Date() },
-          }).catch(e => console.error(`[ClaimDraft] Failed to update draft status: ${e.message}`));
+          await this.prisma.claimDraft
+            .update({
+              where: { id: draft.id },
+              data: { status: 'ERROR', completedAt: new Date() },
+            })
+            .catch((e) => console.error(`[ClaimDraft] Failed to update draft status: ${e.message}`));
         }
       }
     })();
@@ -196,14 +203,16 @@ export class ClaimDraftService implements OnModuleInit {
     // The planner agent uses these for context — the first 15K chars of each stage
     // contain the key findings, novelty analysis, and recommendations.
     const MAX_STAGE_CHARS = 15_000;
-    const rawStage5 = feasRun?.stages?.find(s => s.stageNumber === 5)?.outputText ?? '';
-    const rawStage6 = feasRun?.stages?.find(s => s.stageNumber === 6)?.outputText ?? '';
-    const stage5 = rawStage5.length > MAX_STAGE_CHARS
-      ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
-      : rawStage5;
-    const stage6 = rawStage6.length > MAX_STAGE_CHARS
-      ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
-      : rawStage6;
+    const rawStage5 = feasRun?.stages?.find((s) => s.stageNumber === 5)?.outputText ?? '';
+    const rawStage6 = feasRun?.stages?.find((s) => s.stageNumber === 6)?.outputText ?? '';
+    const stage5 =
+      rawStage5.length > MAX_STAGE_CHARS
+        ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
+        : rawStage5;
+    const stage6 =
+      rawStage6.length > MAX_STAGE_CHARS
+        ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for claim drafting context]'
+        : rawStage6;
 
     // Get prior art results
     const priorArt = await this.prisma.priorArtSearch.findFirst({
@@ -254,33 +263,45 @@ export class ClaimDraftService implements OnModuleInit {
       const url = new URL(`${CLAIM_DRAFTER_URL}/draft/sync`);
       const http = require('http');
       const data = JSON.stringify(requestBody);
-      const req = http.request({
-        hostname: url.hostname,
-        port: url.port,
-        path: url.pathname,
-        method: 'POST',
-        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
-        timeout: 900_000, // 15 minutes — 3 AI agents with large context can take 10+ min
-      }, (res: any) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const body = Buffer.concat(chunks).toString();
-          if (res.statusCode !== 200) {
-            reject(new Error(`Claim drafter returned ${res.statusCode}: ${body}`));
-            return;
-          }
-          try { resolve(JSON.parse(body)); } catch { reject(new Error(`Invalid JSON from claim drafter: ${body.slice(0, 200)}`)); }
-        });
+      const req = http.request(
+        {
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: 'POST',
+          headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+          timeout: 900_000, // 15 minutes — 3 AI agents with large context can take 10+ min
+        },
+        (res: any) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => {
+            const body = Buffer.concat(chunks).toString();
+            if (res.statusCode !== 200) {
+              reject(new Error(`Claim drafter returned ${res.statusCode}: ${body}`));
+              return;
+            }
+            try {
+              resolve(JSON.parse(body));
+            } catch {
+              reject(new Error(`Invalid JSON from claim drafter: ${body.slice(0, 200)}`));
+            }
+          });
+        },
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Claim drafter request timed out (10 min)'));
       });
-      req.on('timeout', () => { req.destroy(); reject(new Error('Claim drafter request timed out (10 min)')); });
       req.on('error', (e: Error) => reject(new Error(`Claim drafter request failed: ${e.message}`)));
       req.write(data);
       req.end();
     });
 
     if (result.status === 'ERROR') {
-      console.error(`[ClaimDraft] Claim drafter returned ERROR for ${draftId}: ${result.error_message ?? 'no message'}`);
+      console.error(
+        `[ClaimDraft] Claim drafter returned ERROR for ${draftId}: ${result.error_message ?? 'no message'}`,
+      );
       await this.prisma.claimDraft.update({
         where: { id: draftId },
         data: { status: 'ERROR', completedAt: new Date() },
@@ -353,7 +374,7 @@ export class ClaimDraftService implements OnModuleInit {
     });
     if (!draft) throw new NotFoundException('No completed claim draft found');
 
-    const claim = draft.claims.find(c => c.claimNumber === claimNumber);
+    const claim = draft.claims.find((c) => c.claimNumber === claimNumber);
     if (!claim) throw new NotFoundException(`Claim ${claimNumber} not found in latest draft`);
 
     const settings = await this.settingsService.getSettings();
@@ -362,9 +383,7 @@ export class ClaimDraftService implements OnModuleInit {
     }
 
     // Build context: all claims text for reference
-    const allClaimsText = draft.claims.map(c =>
-      `${c.claimNumber}. ${c.text}`
-    ).join('\n\n');
+    const allClaimsText = draft.claims.map((c) => `${c.claimNumber}. ${c.text}`).join('\n\n');
 
     // Get invention narrative
     const project = await this.prisma.project.findUnique({
@@ -372,10 +391,9 @@ export class ClaimDraftService implements OnModuleInit {
       include: { invention: true },
     });
     const inv = project?.invention;
-    const narrative = inv ? [
-      `Title: ${inv.title}`,
-      `Description: ${inv.description}`,
-    ].filter(Boolean).join('\n\n') : '';
+    const narrative = inv
+      ? [`Title: ${inv.title}`, `Description: ${inv.description}`].filter(Boolean).join('\n\n')
+      : '';
 
     // Fetch feasibility context so regenerated claims have the same novelty analysis
     const { stage5, stage6, priorArtResults } = await this.getFeasibilityContext(projectId);
@@ -462,88 +480,106 @@ export class ClaimDraftService implements OnModuleInit {
       throw new NotFoundException('No completed claim draft found');
     }
 
-    const independentClaims = draft.claims.filter(c => c.claimType === 'INDEPENDENT');
-    const dependentClaims = draft.claims.filter(c => c.claimType === 'DEPENDENT');
+    const independentClaims = draft.claims.filter((c) => c.claimType === 'INDEPENDENT');
+    const dependentClaims = draft.claims.filter((c) => c.claimType === 'DEPENDENT');
 
     const paragraphs: Paragraph[] = [];
 
     // Title
-    paragraphs.push(new Paragraph({
-      text: `Patent Claim Drafts — ${project.title}`,
-      heading: HeadingLevel.HEADING_1,
-    }));
+    paragraphs.push(
+      new Paragraph({
+        text: `Patent Claim Drafts — ${project.title}`,
+        heading: HeadingLevel.HEADING_1,
+      }),
+    );
 
     // UPL disclaimer
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: 'DRAFT — NOT FOR FILING. These are AI-generated research concepts. They must be reviewed by a registered patent attorney before any filing.',
-          bold: true,
-          color: 'B45309',
-          size: 20,
-        }),
-      ],
-    }));
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'DRAFT — NOT FOR FILING. These are AI-generated research concepts. They must be reviewed by a registered patent attorney before any filing.',
+            bold: true,
+            color: 'B45309',
+            size: 20,
+          }),
+        ],
+      }),
+    );
     paragraphs.push(new Paragraph({ text: '' }));
 
     // Independent claims first
     if (independentClaims.length > 0) {
-      paragraphs.push(new Paragraph({
-        text: 'Independent Claims',
-        heading: HeadingLevel.HEADING_2,
-      }));
+      paragraphs.push(
+        new Paragraph({
+          text: 'Independent Claims',
+          heading: HeadingLevel.HEADING_2,
+        }),
+      );
 
       for (const claim of independentClaims) {
-        paragraphs.push(new Paragraph({
-          children: [
-            new TextRun({ text: `Claim ${claim.claimNumber} (Independent):`, bold: true }),
-          ],
-        }));
-        paragraphs.push(new Paragraph({
-          children: [new TextRun({ text: claim.text })],
-        }));
+        paragraphs.push(
+          new Paragraph({
+            children: [new TextRun({ text: `Claim ${claim.claimNumber} (Independent):`, bold: true })],
+          }),
+        );
+        paragraphs.push(
+          new Paragraph({
+            children: [new TextRun({ text: claim.text })],
+          }),
+        );
         paragraphs.push(new Paragraph({ text: '' }));
       }
     }
 
     // Dependent claims
     if (dependentClaims.length > 0) {
-      paragraphs.push(new Paragraph({
-        text: 'Dependent Claims',
-        heading: HeadingLevel.HEADING_2,
-      }));
+      paragraphs.push(
+        new Paragraph({
+          text: 'Dependent Claims',
+          heading: HeadingLevel.HEADING_2,
+        }),
+      );
 
       for (const claim of dependentClaims) {
-        paragraphs.push(new Paragraph({
-          children: [
-            new TextRun({
-              text: `Claim ${claim.claimNumber} (Dependent on ${claim.parentClaimNumber}):`,
-              bold: true,
-            }),
-          ],
-        }));
-        paragraphs.push(new Paragraph({
-          children: [new TextRun({ text: claim.text })],
-        }));
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Claim ${claim.claimNumber} (Dependent on ${claim.parentClaimNumber}):`,
+                bold: true,
+              }),
+            ],
+          }),
+        );
+        paragraphs.push(
+          new Paragraph({
+            children: [new TextRun({ text: claim.text })],
+          }),
+        );
         paragraphs.push(new Paragraph({ text: '' }));
       }
     }
 
     // Legal disclaimer footer
-    paragraphs.push(new Paragraph({
-      children: [new TextRun({ text: '---', color: '6B7280', size: 16 })],
-    }));
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({ text: 'Disclaimer: ', bold: true, color: '6B7280', size: 16, font: 'Calibri' }),
-        new TextRun({
-          text: 'These claims were generated by PatentForge, an open-source AI-powered patent research tool. They are draft research concepts intended for discussion with a registered patent attorney. They do not constitute legal advice. Claims may be too broad, too narrow, or contain fabricated technical details. Every claim must be reviewed, revised, and finalized by a registered patent attorney before any filing.',
-          color: '6B7280',
-          size: 16,
-          font: 'Calibri',
-        }),
-      ],
-    }));
+    paragraphs.push(
+      new Paragraph({
+        children: [new TextRun({ text: '---', color: '6B7280', size: 16 })],
+      }),
+    );
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'Disclaimer: ', bold: true, color: '6B7280', size: 16, font: 'Calibri' }),
+          new TextRun({
+            text: 'These claims were generated by PatentForge, an open-source AI-powered patent research tool. They are draft research concepts intended for discussion with a registered patent attorney. They do not constitute legal advice. Claims may be too broad, too narrow, or contain fabricated technical details. Every claim must be reviewed, revised, and finalized by a registered patent attorney before any filing.',
+            color: '6B7280',
+            size: 16,
+            font: 'Calibri',
+          }),
+        ],
+      }),
+    );
 
     const doc = new Document({
       creator: 'PatentForge',
@@ -552,7 +588,10 @@ export class ClaimDraftService implements OnModuleInit {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     return { buffer, filename: `${slug}-claims.docx` };
   }
 }

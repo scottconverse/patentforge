@@ -21,7 +21,16 @@ export class PriorArtService {
       },
     });
     if (!search) {
-      return { id: null, projectId, version: 0, status: 'NONE', query: null, startedAt: null, completedAt: null, results: [] };
+      return {
+        id: null,
+        projectId,
+        version: 0,
+        status: 'NONE',
+        query: null,
+        startedAt: null,
+        completedAt: null,
+        results: [],
+      };
     }
     return search;
   }
@@ -37,13 +46,25 @@ export class PriorArtService {
   }
 
   /** Called from the feasibility controller when a run starts. Non-blocking — starts background work. */
-  startSearch(projectId: string, feasibilityRunId: string, narrative: string, apiKey: string, usptoApiKey?: string): void {
-    this.runSearch(projectId, feasibilityRunId, narrative, apiKey, usptoApiKey).catch(err =>
+  startSearch(
+    projectId: string,
+    feasibilityRunId: string,
+    narrative: string,
+    apiKey: string,
+    usptoApiKey?: string,
+  ): void {
+    this.runSearch(projectId, feasibilityRunId, narrative, apiKey, usptoApiKey).catch((err) =>
       console.error(`[PriorArt] search failed for project ${projectId}:`, err),
     );
   }
 
-  private async runSearch(projectId: string, feasibilityRunId: string, narrative: string, apiKey: string, usptoApiKey?: string): Promise<void> {
+  private async runSearch(
+    projectId: string,
+    feasibilityRunId: string,
+    narrative: string,
+    apiKey: string,
+    usptoApiKey?: string,
+  ): Promise<void> {
     // Determine version
     const last = await this.prisma.priorArtSearch.findFirst({ where: { projectId }, orderBy: { version: 'desc' } });
     const version = (last?.version ?? 0) + 1;
@@ -73,7 +94,7 @@ export class PriorArtService {
 
       // Step 2: Query patent database via USPTO Open Data Portal
       // PatentsView API has been shut down (HTTP 410) — ODP is the only working source.
-      const allTerms = queries.flatMap(q => q.toLowerCase().split(/\s+/));
+      const allTerms = queries.flatMap((q) => q.toLowerCase().split(/\s+/));
       let rawResults: PatentsViewPatent[];
       let source: string;
       if (usptoApiKey) {
@@ -82,38 +103,43 @@ export class PriorArtService {
         source = 'USPTO ODP';
 
         // Log ODP usage for tracking
-        await this.prisma.odpApiUsage.create({
-          data: {
-            projectId,
-            queriesAttempted: odpResult.metadata.queriesAttempted,
-            resultsFound: odpResult.metadata.resultsFound,
-            hadRateLimit: odpResult.metadata.hadRateLimit,
-            hadError: odpResult.metadata.hadError,
-            errorMessage: odpResult.metadata.errorMessage ?? null,
-          },
-        }).catch(err => console.warn('[ODP] Failed to log usage:', err.message));
+        await this.prisma.odpApiUsage
+          .create({
+            data: {
+              projectId,
+              queriesAttempted: odpResult.metadata.queriesAttempted,
+              resultsFound: odpResult.metadata.resultsFound,
+              hadRateLimit: odpResult.metadata.hadRateLimit,
+              hadError: odpResult.metadata.hadError,
+              errorMessage: odpResult.metadata.errorMessage ?? null,
+            },
+          })
+          .catch((err) => console.warn('[ODP] Failed to log usage:', err.message));
       } else {
         throw new Error(
           'No USPTO API key configured. The PatentsView API has been shut down. ' +
-          'Add a USPTO Open Data Portal API key in Settings to enable prior art search.'
+            'Add a USPTO Open Data Portal API key in Settings to enable prior art search.',
         );
       }
 
       // Emit progress (one event per query equivalent)
-      this.sse.emit(projectId, { type: 'prior_art_progress', queryIndex: 0, query: queries[0] ?? '', resultCount: rawResults.length });
+      this.sse.emit(projectId, {
+        type: 'prior_art_progress',
+        queryIndex: 0,
+        query: queries[0] ?? '',
+        resultCount: rawResults.length,
+      });
 
       // Step 3: Score and filter
       const scored = rawResults
-        .map(p => ({ patent: p, score: scoreRelevance(p, allTerms) }))
-        .filter(x => x.score >= 0.1)
+        .map((p) => ({ patent: p, score: scoreRelevance(p, allTerms) }))
+        .filter((x) => x.score >= 0.1)
         .sort((a, b) => b.score - a.score)
         .slice(0, 20);
 
       // Step 4: Save to DB
       for (const { patent, score } of scored) {
-        const abstract = patent.patent_abstract
-          ? patent.patent_abstract.slice(0, 800)
-          : null;
+        const abstract = patent.patent_abstract ? patent.patent_abstract.slice(0, 800) : null;
         const snippet = extractSnippet(patent.patent_abstract ?? '', allTerms);
 
         await this.prisma.priorArtResult.create({
@@ -197,17 +223,38 @@ Output format: ["query one", "query two", "query three"]`;
     const words = narrative.toLowerCase().match(/\b[a-z]{4,}\b/g) ?? [];
     const freq = new Map<string, number>();
     for (const w of words) freq.set(w, (freq.get(w) ?? 0) + 1);
-    const stopWords = new Set(['that', 'this', 'with', 'from', 'have', 'will', 'they', 'been', 'which', 'what', 'when', 'where', 'their', 'about', 'also', 'would', 'could', 'into', 'more', 'some', 'than', 'then']);
+    const stopWords = new Set([
+      'that',
+      'this',
+      'with',
+      'from',
+      'have',
+      'will',
+      'they',
+      'been',
+      'which',
+      'what',
+      'when',
+      'where',
+      'their',
+      'about',
+      'also',
+      'would',
+      'could',
+      'into',
+      'more',
+      'some',
+      'than',
+      'then',
+    ]);
     const top = [...freq.entries()]
       .filter(([w]) => !stopWords.has(w))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 9)
       .map(([w]) => w);
-    return [
-      top.slice(0, 3).join(' '),
-      top.slice(3, 6).join(' '),
-      top.slice(6, 9).join(' '),
-    ].filter(q => q.trim().length > 0);
+    return [top.slice(0, 3).join(' '), top.slice(3, 6).join(' '), top.slice(6, 9).join(' ')].filter(
+      (q) => q.trim().length > 0,
+    );
   }
 
   /** Formats top results as a markdown string for Stage 2 injection */
@@ -219,19 +266,16 @@ Output format: ["query one", "query two", "query three"]`;
     });
     if (!search || search.results.length === 0) return null;
 
-    const rows = search.results.map(r =>
-      `| ${r.patentNumber} | ${r.title.slice(0, 60)} | ${r.relevanceScore >= 0.7 ? 'High' : r.relevanceScore >= 0.4 ? 'Medium' : 'Low'} |`
+    const rows = search.results.map(
+      (r) =>
+        `| ${r.patentNumber} | ${r.title.slice(0, 60)} | ${r.relevanceScore >= 0.7 ? 'High' : r.relevanceScore >= 0.4 ? 'Medium' : 'Low'} |`,
     );
 
-    const table = [
-      '| Patent Number | Title | Relevance |',
-      '|---|---|---|',
-      ...rows,
-    ].join('\n');
+    const table = ['| Patent Number | Title | Relevance |', '|---|---|---|', ...rows].join('\n');
 
     const abstracts = search.results
       .slice(0, 5)
-      .map(r => `**${r.patentNumber}** — ${r.title}\n${r.snippet ?? r.abstract?.slice(0, 300) ?? '(no abstract)'}`)
+      .map((r) => `**${r.patentNumber}** — ${r.title}\n${r.snippet ?? r.abstract?.slice(0, 300) ?? '(no abstract)'}`)
       .join('\n\n');
 
     return `${table}\n\n**Key abstracts:**\n\n${abstracts}`;
@@ -243,15 +287,77 @@ Output format: ["query one", "query two", "query three"]`;
  * Only includes 4+ character words since shorter ones are already filtered by length.
  */
 const STOP_WORDS = new Set([
-  'that', 'this', 'with', 'from', 'have', 'been', 'were', 'they', 'them',
-  'their', 'will', 'would', 'could', 'should', 'shall', 'being', 'about',
-  'each', 'which', 'when', 'what', 'where', 'also', 'more', 'some', 'such',
-  'than', 'then', 'into', 'only', 'very', 'just', 'over', 'most', 'said',
-  'does', 'made', 'make', 'like', 'well', 'back', 'even', 'here', 'much',
-  'many', 'both', 'same', 'other', 'after', 'before', 'between', 'under',
-  'above', 'below', 'through', 'during', 'having', 'including', 'according',
-  'wherein', 'thereof', 'herein', 'therein', 'comprising', 'comprises',
-  'provided', 'method', 'system', 'apparatus', 'device', 'means',
+  'that',
+  'this',
+  'with',
+  'from',
+  'have',
+  'been',
+  'were',
+  'they',
+  'them',
+  'their',
+  'will',
+  'would',
+  'could',
+  'should',
+  'shall',
+  'being',
+  'about',
+  'each',
+  'which',
+  'when',
+  'what',
+  'where',
+  'also',
+  'more',
+  'some',
+  'such',
+  'than',
+  'then',
+  'into',
+  'only',
+  'very',
+  'just',
+  'over',
+  'most',
+  'said',
+  'does',
+  'made',
+  'make',
+  'like',
+  'well',
+  'back',
+  'even',
+  'here',
+  'much',
+  'many',
+  'both',
+  'same',
+  'other',
+  'after',
+  'before',
+  'between',
+  'under',
+  'above',
+  'below',
+  'through',
+  'during',
+  'having',
+  'including',
+  'according',
+  'wherein',
+  'thereof',
+  'herein',
+  'therein',
+  'comprising',
+  'comprises',
+  'provided',
+  'method',
+  'system',
+  'apparatus',
+  'device',
+  'means',
 ]);
 
 /**
@@ -265,9 +371,7 @@ const STOP_WORDS = new Set([
 export function scoreRelevance(patent: PatentsViewPatent, queryTerms: string[]): number {
   const title = (patent.patent_title ?? '').toLowerCase();
   const abstract = (patent.patent_abstract ?? '').toLowerCase();
-  const unique = [...new Set(
-    queryTerms.filter(t => t.length >= 4 && !STOP_WORDS.has(t)),
-  )];
+  const unique = [...new Set(queryTerms.filter((t) => t.length >= 4 && !STOP_WORDS.has(t)))];
   if (unique.length === 0) return 0;
 
   // Score each term with title weighting and frequency
@@ -301,7 +405,11 @@ export function scoreRelevance(patent: PatentsViewPatent, queryTerms: string[]):
 function extractSnippet(abstract: string, terms: string[]): string {
   if (!abstract) return '';
   const lower = abstract.toLowerCase();
-  const firstHit = terms.map(t => lower.indexOf(t)).filter(i => i >= 0).sort((a, b) => a - b)[0] ?? 0;
+  const firstHit =
+    terms
+      .map((t) => lower.indexOf(t))
+      .filter((i) => i >= 0)
+      .sort((a, b) => a - b)[0] ?? 0;
   const start = Math.max(0, firstHit - 40);
   return abstract.slice(start, start + 200).trim();
 }

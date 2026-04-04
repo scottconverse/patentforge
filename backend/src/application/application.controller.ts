@@ -35,20 +35,13 @@ export class ApplicationController {
   }
 
   @Get(':version')
-  getByVersion(
-    @Param('id') projectId: string,
-    @Param('version', ParseIntPipe) version: number,
-  ) {
+  getByVersion(@Param('id') projectId: string, @Param('version', ParseIntPipe) version: number) {
     return this.service.getByVersion(projectId, version);
   }
 
   @Put('sections/:name')
   @HttpCode(HttpStatus.OK)
-  updateSection(
-    @Param('id') projectId: string,
-    @Param('name') sectionName: string,
-    @Body() dto: UpdateSectionDto,
-  ) {
+  updateSection(@Param('id') projectId: string, @Param('name') sectionName: string, @Body() dto: UpdateSectionDto) {
     return this.service.updateSection(projectId, sectionName, dto.text);
   }
 }

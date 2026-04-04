@@ -34,9 +34,7 @@ function makeODPPatent(patentNumber: string, title: string, grantDate = '2024-01
       filingDate: '2022-03-10',
       applicationTypeLabelName: 'Utility',
       cpcClassificationBag: ['G06N3/08', 'G06T7/00'],
-      inventorBag: [
-        { firstName: 'John', lastName: 'Smith', inventorNameText: 'John Smith' },
-      ],
+      inventorBag: [{ firstName: 'John', lastName: 'Smith', inventorNameText: 'John Smith' }],
       firstApplicantName: 'Acme Corp',
       publicationCategoryBag: ['Granted/Issued'],
     },
@@ -63,17 +61,17 @@ describe('searchODPMulti', () => {
     const body = JSON.parse(options.body);
     expect(body.q).toContain('applicationMetaData.inventionTitle');
     expect(body.q).toContain('defect detection');
-    expect(body.filters).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'applicationMetaData.applicationTypeLabelName', value: ['Utility'] }),
-      expect.objectContaining({ name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] }),
-    ]));
+    expect(body.filters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'applicationMetaData.applicationTypeLabelName', value: ['Utility'] }),
+        expect.objectContaining({ name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] }),
+      ]),
+    );
     expect(body.pagination).toEqual({ offset: 0, limit: 25 });
   });
 
   it('maps ODP results to PatentsViewPatent format', async () => {
-    mockFetch.mockResolvedValueOnce(makeODPResponse([
-      makeODPPatent('10234567', 'Widget Defect Detector'),
-    ]));
+    mockFetch.mockResolvedValueOnce(makeODPResponse([makeODPPatent('10234567', 'Widget Defect Detector')]));
 
     const { results } = await searchODPMulti(['widget defect'], FAKE_API_KEY);
 
@@ -88,14 +86,15 @@ describe('searchODPMulti', () => {
     jest.useFakeTimers();
     const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
     mockFetch
-      .mockResolvedValueOnce(makeODPResponse([
-        makeODPPatent('10234567', 'Widget A'),
-        makeODPPatent('10234568', 'Widget B'),
-      ]))
-      .mockResolvedValueOnce(makeODPResponse([
-        makeODPPatent('10234567', 'Widget A'), // duplicate
-        makeODPPatent('10234569', 'Widget C'),
-      ]));
+      .mockResolvedValueOnce(
+        makeODPResponse([makeODPPatent('10234567', 'Widget A'), makeODPPatent('10234568', 'Widget B')]),
+      )
+      .mockResolvedValueOnce(
+        makeODPResponse([
+          makeODPPatent('10234567', 'Widget A'), // duplicate
+          makeODPPatent('10234569', 'Widget C'),
+        ]),
+      );
 
     const resultPromise = searchODPMulti(['query one', 'query two'], FAKE_API_KEY);
     // First query fires immediately; second waits 1.5s
@@ -103,26 +102,28 @@ describe('searchODPMulti', () => {
     const { results } = await resultPromise;
 
     expect(results).toHaveLength(3);
-    expect(results.map(r => r.patent_id)).toEqual(['US10234567', 'US10234568', 'US10234569']);
+    expect(results.map((r) => r.patent_id)).toEqual(['US10234567', 'US10234568', 'US10234569']);
     // Verify the inter-query delay was respected (setTimeout called with 1500ms)
-    const delayCalls = setTimeoutSpy.mock.calls.filter(c => c[1] === 1500);
+    const delayCalls = setTimeoutSpy.mock.calls.filter((c) => c[1] === 1500);
     expect(delayCalls.length).toBeGreaterThanOrEqual(1);
     setTimeoutSpy.mockRestore();
     jest.useRealTimers();
   });
 
   it('skips results without patent numbers (ungranted applications)', async () => {
-    mockFetch.mockResolvedValueOnce(makeODPResponse([
-      {
-        applicationNumberText: '18123456',
-        applicationMetaData: {
-          inventionTitle: 'Pending Application',
-          // no patentNumber — not yet granted
-          filingDate: '2024-01-01',
+    mockFetch.mockResolvedValueOnce(
+      makeODPResponse([
+        {
+          applicationNumberText: '18123456',
+          applicationMetaData: {
+            inventionTitle: 'Pending Application',
+            // no patentNumber — not yet granted
+            filingDate: '2024-01-01',
+          },
         },
-      },
-      makeODPPatent('10234567', 'Granted Patent'),
-    ]));
+        makeODPPatent('10234567', 'Granted Patent'),
+      ]),
+    );
 
     const { results } = await searchODPMulti(['test'], FAKE_API_KEY);
 
@@ -145,7 +146,7 @@ describe('searchODPMulti', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(3);
     // Verify two inter-query delays of 1500ms (queries 2 and 3 each wait)
-    const delayCalls = setTimeoutSpy.mock.calls.filter(c => c[1] === 1500);
+    const delayCalls = setTimeoutSpy.mock.calls.filter((c) => c[1] === 1500);
     expect(delayCalls).toHaveLength(2);
     setTimeoutSpy.mockRestore();
     jest.useRealTimers();
@@ -156,9 +157,7 @@ describe('searchODPMulti', () => {
     const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
     mockFetch
       .mockResolvedValueOnce({ ok: false, status: 429 })
-      .mockResolvedValueOnce(makeODPResponse([
-        makeODPPatent('10234567', 'After Retry'),
-      ]));
+      .mockResolvedValueOnce(makeODPResponse([makeODPPatent('10234567', 'After Retry')]));
 
     const resultPromise = searchODPMulti(['test'], FAKE_API_KEY);
     // Advance past the 10-second retry delay and the 1.5-second inter-query delay
@@ -170,7 +169,7 @@ describe('searchODPMulti', () => {
     expect(results[0].patent_title).toBe('After Retry');
     expect(metadata.hadRateLimit).toBe(true);
     // Verify the 429 retry used a 10-second delay
-    const retryCalls = setTimeoutSpy.mock.calls.filter(c => c[1] === 10_000);
+    const retryCalls = setTimeoutSpy.mock.calls.filter((c) => c[1] === 10_000);
     expect(retryCalls.length).toBeGreaterThanOrEqual(1);
     setTimeoutSpy.mockRestore();
     jest.useRealTimers();
@@ -178,9 +177,7 @@ describe('searchODPMulti', () => {
 
   it('gives up after max retries on 429', async () => {
     jest.useFakeTimers();
-    mockFetch
-      .mockResolvedValueOnce({ ok: false, status: 429 })
-      .mockResolvedValueOnce({ ok: false, status: 429 });
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 }).mockResolvedValueOnce({ ok: false, status: 429 });
 
     const resultPromise = searchODPMulti(['test'], FAKE_API_KEY);
     await jest.advanceTimersByTimeAsync(12_000);

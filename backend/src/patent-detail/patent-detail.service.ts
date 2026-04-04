@@ -55,7 +55,7 @@ export class PatentDetailService {
       assignee: JSON.stringify(enriched.assignees),
       inventors: JSON.stringify(enriched.inventors),
       cpcClassifications: JSON.stringify(enriched.cpcClassifications),
-      claimsText: enriched.claims.map(c => `${c.number}. ${c.text}`).join('\n\n'),
+      claimsText: enriched.claims.map((c) => `${c.number}. ${c.text}`).join('\n\n'),
       claimCount: enriched.claimCount,
       patentType: enriched.patentType,
       fetchedAt: new Date(),
@@ -123,7 +123,7 @@ export class PatentDetailService {
     }
 
     // Fetch any missing (but don't block CSV on failed fetches)
-    const missing = patentNumbers.filter(pn => !result.has(pn));
+    const missing = patentNumbers.filter((pn) => !result.has(pn));
     for (const pn of missing) {
       try {
         const detail = await this.getDetail(pn);

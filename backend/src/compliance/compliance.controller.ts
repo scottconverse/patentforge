@@ -10,10 +10,7 @@ export class ComplianceController {
   /** POST /api/projects/:id/compliance/check -- Start compliance check */
   @Post('check')
   @HttpCode(HttpStatus.CREATED)
-  startCheck(
-    @Param('id') projectId: string,
-    @Body() dto: StartComplianceDto,
-  ) {
+  startCheck(@Param('id') projectId: string, @Body() dto: StartComplianceDto) {
     return this.service.startCheck(projectId, dto.draftVersion);
   }
 
@@ -34,10 +31,7 @@ export class ComplianceController {
 
   /** GET /api/projects/:id/compliance/:version -- Get specific version */
   @Get(':version')
-  getByVersion(
-    @Param('id') projectId: string,
-    @Param('version', ParseIntPipe) version: number,
-  ) {
+  getByVersion(@Param('id') projectId: string, @Param('version', ParseIntPipe) version: number) {
     return this.service.getByVersion(projectId, version);
   }
 }

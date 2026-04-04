@@ -35,7 +35,18 @@ export class PriorArtController {
     const enriched = await this.patentDetailService.enrichBatch(patentNumbers);
 
     // Build CSV
-    const headers = ['Patent Number', 'Title', 'Filing Date', 'Grant Date', 'Assignee', 'Inventors', 'CPC Codes', 'Relevance Score', 'Abstract', 'Source'];
+    const headers = [
+      'Patent Number',
+      'Title',
+      'Filing Date',
+      'Grant Date',
+      'Assignee',
+      'Inventors',
+      'CPC Codes',
+      'Relevance Score',
+      'Abstract',
+      'Source',
+    ];
     const rows = search.results.map((r: any) => {
       const detail = enriched.get(r.patentNumber);
       return [
@@ -45,7 +56,11 @@ export class PriorArtController {
         detail?.grantDate ?? '',
         detail?.assignee ? (Array.isArray(detail.assignee) ? detail.assignee.join('; ') : detail.assignee) : '',
         detail?.inventors ? (Array.isArray(detail.inventors) ? detail.inventors.join('; ') : detail.inventors) : '',
-        detail?.cpcClassifications ? (Array.isArray(detail.cpcClassifications) ? detail.cpcClassifications.map((c: any) => c.code || c).join('; ') : '') : '',
+        detail?.cpcClassifications
+          ? Array.isArray(detail.cpcClassifications)
+            ? detail.cpcClassifications.map((c: any) => c.code || c).join('; ')
+            : ''
+          : '',
         (r.relevanceScore * 100).toFixed(0) + '%',
         csvEscape((r.abstract ?? '').slice(0, 500)),
         r.source ?? 'PatentsView',

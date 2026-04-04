@@ -18,7 +18,7 @@ const RETRY_DELAY_ON_429_MS = 5_000;
 const MAX_RETRIES_ON_429 = 1;
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export interface ParsedClaim {
@@ -36,10 +36,7 @@ export interface ClaimsFetchResult {
  * Fetch claims for a patent from the ODP Documents API.
  * Returns null if claims cannot be retrieved (no docs, no XML, parse error).
  */
-export async function fetchClaimsFromODP(
-  patentNumber: string,
-  apiKey: string,
-): Promise<ClaimsFetchResult | null> {
+export async function fetchClaimsFromODP(patentNumber: string, apiKey: string): Promise<ClaimsFetchResult | null> {
   // Step 1: Look up application number from patent number
   const appNumber = await lookupApplicationNumber(patentNumber, apiKey);
   if (!appNumber) {
@@ -75,33 +72,32 @@ export async function fetchClaimsFromODP(
     return null;
   }
 
-  const claimsText = claims.map(c => `${c.number}. ${c.text}`).join('\n\n');
+  const claimsText = claims.map((c) => `${c.number}. ${c.text}`).join('\n\n');
   return { claims, claimCount: claims.length, claimsText };
 }
 
 /**
  * Look up the application number for a patent number via ODP search.
  */
-async function lookupApplicationNumber(
-  patentNumber: string,
-  apiKey: string,
-): Promise<string | null> {
+async function lookupApplicationNumber(patentNumber: string, apiKey: string): Promise<string | null> {
   const cleanNumber = patentNumber.replace(/^US/i, '').replace(/[A-Z]\d*$/i, '');
 
   const body = {
     q: `applicationMetaData.patentNumber:${cleanNumber}`,
-    filters: [
-      { name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] },
-    ],
+    filters: [{ name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] }],
     pagination: { offset: 0, limit: 1 },
     fields: ['applicationNumberText'],
   };
 
-  const result = await odpFetch(SEARCH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-    body: JSON.stringify(body),
-  }, apiKey);
+  const result = await odpFetch(
+    SEARCH_URL,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+      body: JSON.stringify(body),
+    },
+    apiKey,
+  );
 
   if (!result) return null;
 
@@ -121,16 +117,17 @@ interface DocumentInfo {
 /**
  * Fetch the documents list for an application number.
  */
-async function fetchDocumentsList(
-  applicationNumber: string,
-  apiKey: string,
-): Promise<DocumentInfo[] | null> {
+async function fetchDocumentsList(applicationNumber: string, apiKey: string): Promise<DocumentInfo[] | null> {
   const url = `${DOCUMENTS_URL_BASE}/${applicationNumber}/documents`;
 
-  const result = await odpFetch(url, {
-    method: 'GET',
-    headers: { 'X-API-Key': apiKey },
-  }, apiKey);
+  const result = await odpFetch(
+    url,
+    {
+      method: 'GET',
+      headers: { 'X-API-Key': apiKey },
+    },
+    apiKey,
+  );
 
   if (!result) return null;
 
@@ -141,9 +138,7 @@ async function fetchDocumentsList(
   const mapped: DocumentInfo[] = [];
   for (const doc of docs) {
     const downloads = doc.downloadOptionBag ?? [];
-    const xmlDownload = downloads.find(
-      (d: any) => d.mimeTypeIdentifier === 'XML',
-    );
+    const xmlDownload = downloads.find((d: any) => d.mimeTypeIdentifier === 'XML');
     if (xmlDownload?.downloadUrl) {
       mapped.push({
         documentCode: doc.documentCode ?? '',
@@ -161,7 +156,7 @@ async function fetchDocumentsList(
  * Documents are returned newest-first by the API.
  */
 function findMostRecentClmDocument(documents: DocumentInfo[]): DocumentInfo | null {
-  return documents.find(d => d.documentCode === 'CLM') ?? null;
+  return documents.find((d) => d.documentCode === 'CLM') ?? null;
 }
 
 /**
@@ -169,15 +164,17 @@ function findMostRecentClmDocument(documents: DocumentInfo[]): DocumentInfo | nu
  * The ODP download endpoint returns a redirect URL in the response body,
  * which must be followed to get the actual tar archive.
  */
-async function downloadAndExtractXml(
-  downloadUrl: string,
-  apiKey: string,
-): Promise<string | null> {
+async function downloadAndExtractXml(downloadUrl: string, apiKey: string): Promise<string | null> {
   // First request: get redirect URL
-  const redirectRes = await odpFetch(downloadUrl, {
-    method: 'GET',
-    headers: { 'X-API-Key': apiKey },
-  }, apiKey, false); // Don't parse as JSON — check for redirect
+  const redirectRes = await odpFetch(
+    downloadUrl,
+    {
+      method: 'GET',
+      headers: { 'X-API-Key': apiKey },
+    },
+    apiKey,
+    false,
+  ); // Don't parse as JSON — check for redirect
 
   if (!redirectRes) return null;
 
@@ -239,7 +236,10 @@ function extractXmlFromTar(buffer: Buffer): string | null {
     if (!filename) break;
 
     // Read file size from header (octal string at bytes 124-135)
-    const sizeStr = buffer.subarray(offset + 124, offset + 136).toString('utf-8').trim();
+    const sizeStr = buffer
+      .subarray(offset + 124, offset + 136)
+      .toString('utf-8')
+      .trim();
     const fileSize = parseInt(sizeStr, 8) || 0;
 
     // Data starts after header block
@@ -306,7 +306,7 @@ export function parseClaimsFromXml(xml: string): ParsedClaim[] {
       .replace(/&amp;/g, '&')
       .replace(/&quot;/g, '"')
       .replace(/&apos;/g, "'")
-      .replace(/\s+/g, ' ')  // Normalize whitespace
+      .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
 
     // Remove leading claim number + status prefix like "51. (Currently amended)"
@@ -325,12 +325,7 @@ export function parseClaimsFromXml(xml: string): ParsedClaim[] {
 /**
  * Wrapper for ODP API calls with timeout, rate limit handling, and error logging.
  */
-async function odpFetch(
-  url: string,
-  options: RequestInit,
-  apiKey: string,
-  retried = false,
-): Promise<Response | null> {
+async function odpFetch(url: string, options: RequestInit, apiKey: string, retried = false): Promise<Response | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 

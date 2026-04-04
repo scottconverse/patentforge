@@ -32,9 +32,7 @@ function makeODPBag(overrides: any = {}) {
     },
     assignmentBag: overrides.assignmentBag ?? [
       {
-        assigneeBag: [
-          { assigneeNameText: 'ACME VISION CORP' },
-        ],
+        assigneeBag: [{ assigneeNameText: 'ACME VISION CORP' }],
       },
     ],
     ...overrides,
@@ -159,9 +157,7 @@ describe('fetchEnrichedPatentODP', () => {
   });
 
   it('handles 429 with retry', async () => {
-    mockFetch
-      .mockResolvedValueOnce({ ok: false, status: 429 })
-      .mockResolvedValueOnce(makeODPResponse([makeODPBag()]));
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 429 }).mockResolvedValueOnce(makeODPResponse([makeODPBag()]));
 
     const result = await fetchEnrichedPatentODP('US12000000B2', FAKE_API_KEY);
 
@@ -179,11 +175,15 @@ describe('fetchEnrichedPatentODP', () => {
   });
 
   it('deduplicates CPC codes', async () => {
-    mockFetch.mockResolvedValueOnce(makeODPResponse([makeODPBag({
-      applicationMetaData: {
-        cpcClassificationBag: ['G06N3/08', 'G06N3/08', 'G06T7/00'],
-      },
-    })]));
+    mockFetch.mockResolvedValueOnce(
+      makeODPResponse([
+        makeODPBag({
+          applicationMetaData: {
+            cpcClassificationBag: ['G06N3/08', 'G06N3/08', 'G06T7/00'],
+          },
+        }),
+      ]),
+    );
 
     const result = await fetchEnrichedPatentODP('US12000000B2', FAKE_API_KEY);
 

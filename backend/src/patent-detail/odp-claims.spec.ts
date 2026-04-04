@@ -70,8 +70,7 @@ function mockRedirectResponse(redirectUrl: string) {
     ok: true,
     status: 200,
     headers: new Map([['content-type', 'text/plain']]),
-    text: async () =>
-      `Please use redirect URL to downoload: ${redirectUrl}. This URL is valid only for 3600 seconds.`,
+    text: async () => `Please use redirect URL to downoload: ${redirectUrl}. This URL is valid only for 3600 seconds.`,
   };
 }
 
@@ -82,10 +81,7 @@ function mockTarResponse(xmlContent: string) {
     ok: true,
     status: 200,
     headers: new Map([['content-type', 'application/x-tar']]),
-    arrayBuffer: async () => tarBuffer.buffer.slice(
-      tarBuffer.byteOffset,
-      tarBuffer.byteOffset + tarBuffer.byteLength,
-    ),
+    arrayBuffer: async () => tarBuffer.buffer.slice(tarBuffer.byteOffset, tarBuffer.byteOffset + tarBuffer.byteLength),
   };
 }
 
@@ -143,9 +139,7 @@ describe('parseClaimsFromXml', () => {
     expect(claims[0].text).toBe(
       'A method for processing data comprising: receiving input; transforming the input; and outputting results.',
     );
-    expect(claims[2].text).toBe(
-      'An apparatus comprising: a processor; and a memory storing instructions.',
-    );
+    expect(claims[2].text).toBe('An apparatus comprising: a processor; and a memory storing instructions.');
   });
 
   it('strips dependent claim prefix', () => {
@@ -224,16 +218,18 @@ describe('fetchClaimsFromODP', () => {
     // Mock 1: Search for application number
     mockFetch.mockResolvedValueOnce(mockSearchResponse('18045436'));
     // Mock 2: Fetch documents list
-    mockFetch.mockResolvedValueOnce(mockDocumentsResponse([
-      {
-        documentCode: 'CLM',
-        officialDate: '2024-01-16',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'PDF', downloadUrl: 'https://api.uspto.gov/download/test.pdf' },
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
-        ],
-      },
-    ]));
+    mockFetch.mockResolvedValueOnce(
+      mockDocumentsResponse([
+        {
+          documentCode: 'CLM',
+          officialDate: '2024-01-16',
+          downloadOptionBag: [
+            { mimeTypeIdentifier: 'PDF', downloadUrl: 'https://api.uspto.gov/download/test.pdf' },
+            { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
+          ],
+        },
+      ]),
+    );
     // Mock 3: Download redirect
     mockFetch.mockResolvedValueOnce(
       mockRedirectResponse('https://data-documents.uspto.gov/redirect/download/test/xmlarchive?id=abc'),
@@ -268,15 +264,15 @@ describe('fetchClaimsFromODP', () => {
 
   it('returns null when no CLM document has XML', async () => {
     mockFetch.mockResolvedValueOnce(mockSearchResponse('18045436'));
-    mockFetch.mockResolvedValueOnce(mockDocumentsResponse([
-      {
-        documentCode: 'SPEC',
-        officialDate: '2024-01-16',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/spec.xml' },
-        ],
-      },
-    ]));
+    mockFetch.mockResolvedValueOnce(
+      mockDocumentsResponse([
+        {
+          documentCode: 'SPEC',
+          officialDate: '2024-01-16',
+          downloadOptionBag: [{ mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/spec.xml' }],
+        },
+      ]),
+    );
 
     const result = await fetchClaimsFromODP('US12000000B2', FAKE_API_KEY);
     expect(result).toBeNull();
@@ -284,56 +280,54 @@ describe('fetchClaimsFromODP', () => {
 
   it('uses most recent CLM document (first in list)', async () => {
     mockFetch.mockResolvedValueOnce(mockSearchResponse('18045436'));
-    mockFetch.mockResolvedValueOnce(mockDocumentsResponse([
-      {
-        documentCode: 'CLM',
-        officialDate: '2024-01-16',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/clm-latest/xmlarchive' },
-        ],
-      },
-      {
-        documentCode: 'CLM',
-        officialDate: '2023-07-14',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/clm-old/xmlarchive' },
-        ],
-      },
-    ]));
     mockFetch.mockResolvedValueOnce(
-      mockRedirectResponse('https://data-documents.uspto.gov/redirect/test'),
+      mockDocumentsResponse([
+        {
+          documentCode: 'CLM',
+          officialDate: '2024-01-16',
+          downloadOptionBag: [
+            { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/clm-latest/xmlarchive' },
+          ],
+        },
+        {
+          documentCode: 'CLM',
+          officialDate: '2023-07-14',
+          downloadOptionBag: [
+            { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/clm-old/xmlarchive' },
+          ],
+        },
+      ]),
     );
+    mockFetch.mockResolvedValueOnce(mockRedirectResponse('https://data-documents.uspto.gov/redirect/test'));
     mockFetch.mockResolvedValueOnce(mockTarResponse(SAMPLE_CLM_XML));
 
     await fetchClaimsFromODP('US12000000B2', FAKE_API_KEY);
 
     // Third call should be for the first (newest) CLM document
-    expect(mockFetch.mock.calls[2][0]).toBe(
-      'https://api.uspto.gov/download/clm-latest/xmlarchive',
-    );
+    expect(mockFetch.mock.calls[2][0]).toBe('https://api.uspto.gov/download/clm-latest/xmlarchive');
   });
 
   it('handles direct tar response (no redirect)', async () => {
     mockFetch.mockResolvedValueOnce(mockSearchResponse('18045436'));
-    mockFetch.mockResolvedValueOnce(mockDocumentsResponse([
-      {
-        documentCode: 'CLM',
-        officialDate: '2024-01-16',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
-        ],
-      },
-    ]));
+    mockFetch.mockResolvedValueOnce(
+      mockDocumentsResponse([
+        {
+          documentCode: 'CLM',
+          officialDate: '2024-01-16',
+          downloadOptionBag: [
+            { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
+          ],
+        },
+      ]),
+    );
     // Direct tar response (content-type indicates tar)
     const tarBuffer = buildTarWithXml(SAMPLE_CLM_XML);
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
       headers: new Map([['content-type', 'application/x-tar']]),
-      arrayBuffer: async () => tarBuffer.buffer.slice(
-        tarBuffer.byteOffset,
-        tarBuffer.byteOffset + tarBuffer.byteLength,
-      ),
+      arrayBuffer: async () =>
+        tarBuffer.buffer.slice(tarBuffer.byteOffset, tarBuffer.byteOffset + tarBuffer.byteLength),
     });
 
     const result = await fetchClaimsFromODP('US12000000B2', FAKE_API_KEY);
@@ -358,15 +352,17 @@ describe('fetchClaimsFromODP', () => {
 
   it('returns null on download error', async () => {
     mockFetch.mockResolvedValueOnce(mockSearchResponse('18045436'));
-    mockFetch.mockResolvedValueOnce(mockDocumentsResponse([
-      {
-        documentCode: 'CLM',
-        officialDate: '2024-01-16',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
-        ],
-      },
-    ]));
+    mockFetch.mockResolvedValueOnce(
+      mockDocumentsResponse([
+        {
+          documentCode: 'CLM',
+          officialDate: '2024-01-16',
+          downloadOptionBag: [
+            { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
+          ],
+        },
+      ]),
+    );
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
 
     const result = await fetchClaimsFromODP('US12000000B2', FAKE_API_KEY);
@@ -377,18 +373,18 @@ describe('fetchClaimsFromODP', () => {
     // Search: rate limited first, then succeeds
     mockFetch.mockResolvedValueOnce({ ok: false, status: 429 });
     mockFetch.mockResolvedValueOnce(mockSearchResponse('18045436'));
-    mockFetch.mockResolvedValueOnce(mockDocumentsResponse([
-      {
-        documentCode: 'CLM',
-        officialDate: '2024-01-16',
-        downloadOptionBag: [
-          { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
-        ],
-      },
-    ]));
     mockFetch.mockResolvedValueOnce(
-      mockRedirectResponse('https://data-documents.uspto.gov/redirect/test'),
+      mockDocumentsResponse([
+        {
+          documentCode: 'CLM',
+          officialDate: '2024-01-16',
+          downloadOptionBag: [
+            { mimeTypeIdentifier: 'XML', downloadUrl: 'https://api.uspto.gov/download/test/xmlarchive' },
+          ],
+        },
+      ]),
     );
+    mockFetch.mockResolvedValueOnce(mockRedirectResponse('https://data-documents.uspto.gov/redirect/test'));
     mockFetch.mockResolvedValueOnce(mockTarResponse(SAMPLE_CLM_XML));
 
     const result = await fetchClaimsFromODP('US12000000B2', FAKE_API_KEY);
@@ -414,8 +410,6 @@ describe('fetchClaimsFromODP', () => {
 
     await fetchClaimsFromODP('US12000000B2', FAKE_API_KEY);
 
-    expect(mockFetch.mock.calls[1][0]).toBe(
-      'https://api.uspto.gov/api/v1/patent/applications/18045436/documents',
-    );
+    expect(mockFetch.mock.calls[1][0]).toBe('https://api.uspto.gov/api/v1/patent/applications/18045436/documents');
   });
 });

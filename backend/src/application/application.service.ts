@@ -96,7 +96,9 @@ export class ApplicationService implements OnModuleInit {
       where: { projectId, status: 'RUNNING' },
     });
     if (running) {
-      throw new ConflictException('An application generation is already running for this project. Wait for it to complete or try again later.');
+      throw new ConflictException(
+        'An application generation is already running for this project. Wait for it to complete or try again later.',
+      );
     }
 
     const settings = await this.settingsService.getSettings();
@@ -127,13 +129,14 @@ export class ApplicationService implements OnModuleInit {
         where: { projectId, estimatedCostUsd: { not: null } },
         select: { estimatedCostUsd: true },
       });
-      const spent = stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
-        + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
-        + prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+      const spent =
+        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
-          `Increase the cost cap in Settings to continue.`,
+            `Increase the cost cap in Settings to continue.`,
         );
       }
     }
@@ -147,18 +150,21 @@ export class ApplicationService implements OnModuleInit {
 
     // Truncate feasibility stages to keep the request under 30K chars per stage
     const MAX_STAGE_CHARS = 15_000;
-    const rawStage1 = feasRun?.stages?.find(s => s.stageNumber === 1)?.outputText ?? '';
-    const rawStage5 = feasRun?.stages?.find(s => s.stageNumber === 5)?.outputText ?? '';
-    const rawStage6 = feasRun?.stages?.find(s => s.stageNumber === 6)?.outputText ?? '';
-    const stage1 = rawStage1.length > MAX_STAGE_CHARS
-      ? rawStage1.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
-      : rawStage1;
-    const stage5 = rawStage5.length > MAX_STAGE_CHARS
-      ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
-      : rawStage5;
-    const stage6 = rawStage6.length > MAX_STAGE_CHARS
-      ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
-      : rawStage6;
+    const rawStage1 = feasRun?.stages?.find((s) => s.stageNumber === 1)?.outputText ?? '';
+    const rawStage5 = feasRun?.stages?.find((s) => s.stageNumber === 5)?.outputText ?? '';
+    const rawStage6 = feasRun?.stages?.find((s) => s.stageNumber === 6)?.outputText ?? '';
+    const stage1 =
+      rawStage1.length > MAX_STAGE_CHARS
+        ? rawStage1.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
+        : rawStage1;
+    const stage5 =
+      rawStage5.length > MAX_STAGE_CHARS
+        ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
+        : rawStage5;
+    const stage6 =
+      rawStage6.length > MAX_STAGE_CHARS
+        ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
+        : rawStage6;
 
     // Get prior art results (top 20) with cached claims text
     const priorArt = await this.prisma.priorArtSearch.findFirst({
@@ -194,9 +200,7 @@ export class ApplicationService implements OnModuleInit {
     }
 
     // Format claims text from latest completed draft
-    const claimsText = completedClaims.claims.map(c =>
-      `${c.claimNumber}. ${c.text}`
-    ).join('\n\n');
+    const claimsText = completedClaims.claims.map((c) => `${c.claimNumber}. ${c.text}`).join('\n\n');
 
     // Get spec language from the claim draft (if the claim-drafter produced one)
     const specLanguage = completedClaims.specLanguage ?? '';
@@ -214,7 +218,9 @@ export class ApplicationService implements OnModuleInit {
       inv.currentAlternatives ? `Current Alternatives: ${inv.currentAlternatives}` : '',
       inv.whatIsBuilt ? `What Is Built: ${inv.whatIsBuilt}` : '',
       inv.whatToProtect ? `What To Protect: ${inv.whatToProtect}` : '',
-    ].filter(Boolean).join('\n\n');
+    ]
+      .filter(Boolean)
+      .join('\n\n');
 
     // Determine version number
     const lastApp = await this.prisma.patentApplication.findFirst({
@@ -257,10 +263,12 @@ export class ApplicationService implements OnModuleInit {
         // Ensure application is never left in RUNNING status
         const current = await this.prisma.patentApplication.findUnique({ where: { id: app.id } });
         if (current && current.status === 'RUNNING') {
-          await this.prisma.patentApplication.update({
-            where: { id: app.id },
-            data: { status: 'ERROR', errorMessage: 'Pipeline did not complete', completedAt: new Date() },
-          }).catch(e => console.error(`[Application] Failed to update application status: ${e.message}`));
+          await this.prisma.patentApplication
+            .update({
+              where: { id: app.id },
+              data: { status: 'ERROR', errorMessage: 'Pipeline did not complete', completedAt: new Date() },
+            })
+            .catch((e) => console.error(`[Application] Failed to update application status: ${e.message}`));
         }
       }
     })();
@@ -283,26 +291,36 @@ export class ApplicationService implements OnModuleInit {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/generate/sync`);
       const http = require('http');
       const data = JSON.stringify(requestBody);
-      const req = http.request({
-        hostname: url.hostname,
-        port: url.port,
-        path: url.pathname,
-        method: 'POST',
-        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
-        timeout: 900_000, // 15 minutes — application generation with large context can take 10+ min
-      }, (res: any) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const body = Buffer.concat(chunks).toString();
-          if (res.statusCode !== 200) {
-            reject(new Error(`Application generator returned ${res.statusCode}: ${body}`));
-            return;
-          }
-          try { resolve(JSON.parse(body)); } catch { reject(new Error(`Invalid JSON from application generator: ${body.slice(0, 200)}`)); }
-        });
+      const req = http.request(
+        {
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: 'POST',
+          headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+          timeout: 900_000, // 15 minutes — application generation with large context can take 10+ min
+        },
+        (res: any) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => {
+            const body = Buffer.concat(chunks).toString();
+            if (res.statusCode !== 200) {
+              reject(new Error(`Application generator returned ${res.statusCode}: ${body}`));
+              return;
+            }
+            try {
+              resolve(JSON.parse(body));
+            } catch {
+              reject(new Error(`Invalid JSON from application generator: ${body.slice(0, 200)}`));
+            }
+          });
+        },
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Application generator request timed out (15 min)'));
       });
-      req.on('timeout', () => { req.destroy(); reject(new Error('Application generator request timed out (15 min)')); });
       req.on('error', (e: Error) => reject(new Error(`Application generator request failed: ${e.message}`)));
       req.write(data);
       req.end();
@@ -420,31 +438,42 @@ export class ApplicationService implements OnModuleInit {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/export/docx`);
       const http = require('http');
       const data = JSON.stringify(sectionData);
-      const req = http.request({
-        hostname: url.hostname,
-        port: url.port,
-        path: url.pathname,
-        method: 'POST',
-        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
-        timeout: 60_000,
-      }, (res: any) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          if (res.statusCode !== 200) {
-            reject(new Error(`DOCX export returned ${res.statusCode}: ${Buffer.concat(chunks).toString().slice(0, 200)}`));
-            return;
-          }
-          resolve(Buffer.concat(chunks));
-        });
+      const req = http.request(
+        {
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: 'POST',
+          headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+          timeout: 60_000,
+        },
+        (res: any) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => {
+            if (res.statusCode !== 200) {
+              reject(
+                new Error(`DOCX export returned ${res.statusCode}: ${Buffer.concat(chunks).toString().slice(0, 200)}`),
+              );
+              return;
+            }
+            resolve(Buffer.concat(chunks));
+          });
+        },
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('DOCX export request timed out'));
       });
-      req.on('timeout', () => { req.destroy(); reject(new Error('DOCX export request timed out')); });
       req.on('error', (e: Error) => reject(new Error(`DOCX export request failed: ${e.message}`)));
       req.write(data);
       req.end();
     });
 
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     return { buffer, filename: `${slug}-application.docx` };
   }
 
@@ -482,32 +511,41 @@ export class ApplicationService implements OnModuleInit {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/export/markdown`);
       const http = require('http');
       const data = JSON.stringify(sectionData);
-      const req = http.request({
-        hostname: url.hostname,
-        port: url.port,
-        path: url.pathname,
-        method: 'POST',
-        headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
-        timeout: 60_000,
-      }, (res: any) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const body = Buffer.concat(chunks).toString();
-          if (res.statusCode !== 200) {
-            reject(new Error(`Markdown export returned ${res.statusCode}: ${body.slice(0, 200)}`));
-            return;
-          }
-          resolve(body);
-        });
+      const req = http.request(
+        {
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: 'POST',
+          headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
+          timeout: 60_000,
+        },
+        (res: any) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => {
+            const body = Buffer.concat(chunks).toString();
+            if (res.statusCode !== 200) {
+              reject(new Error(`Markdown export returned ${res.statusCode}: ${body.slice(0, 200)}`));
+              return;
+            }
+            resolve(body);
+          });
+        },
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Markdown export request timed out'));
       });
-      req.on('timeout', () => { req.destroy(); reject(new Error('Markdown export request timed out')); });
       req.on('error', (e: Error) => reject(new Error(`Markdown export request failed: ${e.message}`)));
       req.write(data);
       req.end();
     });
 
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     return { text, filename: `${slug}-application.md` };
   }
 }

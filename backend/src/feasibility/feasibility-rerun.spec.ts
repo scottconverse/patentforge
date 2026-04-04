@@ -39,10 +39,7 @@ describe('FeasibilityService.rerunFromStage', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        FeasibilityService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [FeasibilityService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<FeasibilityService>(FeasibilityService);
@@ -131,14 +128,12 @@ describe('FeasibilityService.rerunFromStage', () => {
   it('throws when a prior stage is not complete', async () => {
     const incompleteRun = {
       ...mockLatestRun,
-      stages: mockStages.map(s =>
-        s.stageNumber === 2 ? { ...s, status: 'ERROR', outputText: null } : s
-      ),
+      stages: mockStages.map((s) => (s.stageNumber === 2 ? { ...s, status: 'ERROR', outputText: null } : s)),
     };
     prisma.feasibilityRun.findFirst.mockResolvedValue(incompleteRun);
 
     await expect(service.rerunFromStage('proj-1', 3)).rejects.toThrow(
-      'Stage 2 must be complete before re-running from Stage 3'
+      'Stage 2 must be complete before re-running from Stage 3',
     );
   });
 

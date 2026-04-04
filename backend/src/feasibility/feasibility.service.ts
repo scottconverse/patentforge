@@ -7,7 +7,21 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { marked } from 'marked';
-import { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, LevelFormat, AlignmentType } from 'docx';
+import {
+  Document,
+  Packer,
+  Paragraph,
+  HeadingLevel,
+  TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  ShadingType,
+  LevelFormat,
+  AlignmentType,
+} from 'docx';
 
 export function resolveExportDir(customExportPath?: string): string {
   const home = os.homedir();
@@ -67,7 +81,14 @@ a{color:#60a5fa;text-decoration:underline}a:hover{color:#93c5fd}
 </html>`;
 
 const THIN_BORDER = { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' };
-const TABLE_BORDERS = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER, insideH: THIN_BORDER, insideV: THIN_BORDER };
+const TABLE_BORDERS = {
+  top: THIN_BORDER,
+  bottom: THIN_BORDER,
+  left: THIN_BORDER,
+  right: THIN_BORDER,
+  insideH: THIN_BORDER,
+  insideV: THIN_BORDER,
+};
 
 /**
  * Parse inline markdown formatting into docx TextRuns.
@@ -116,33 +137,45 @@ function parseTableLines(tableLines: string[]): Table {
   for (const line of tableLines) {
     // Skip separator rows like |---|---|
     if (/^\|[\s\-:|]+\|$/.test(line.trim())) continue;
-    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+    const cells = line
+      .split('|')
+      .slice(1, -1)
+      .map((c) => c.trim());
     const isHeader = isFirstDataRow;
     isFirstDataRow = false;
-    rows.push(new TableRow({
-      tableHeader: isHeader,
-      children: cells.map(cellText => new TableCell({
-        borders: TABLE_BORDERS,
-        shading: isHeader ? { type: ShadingType.SOLID, color: '2D3748' } : undefined,
-        children: [new Paragraph({ children: parseInlineRuns(cellText.replace(/`(.*?)`/g, '$1')) })],
-        width: { size: Math.floor(9000 / cells.length), type: WidthType.DXA },
-      })),
-    }));
+    rows.push(
+      new TableRow({
+        tableHeader: isHeader,
+        children: cells.map(
+          (cellText) =>
+            new TableCell({
+              borders: TABLE_BORDERS,
+              shading: isHeader ? { type: ShadingType.SOLID, color: '2D3748' } : undefined,
+              children: [new Paragraph({ children: parseInlineRuns(cellText.replace(/`(.*?)`/g, '$1')) })],
+              width: { size: Math.floor(9000 / cells.length), type: WidthType.DXA },
+            }),
+        ),
+      }),
+    );
   }
   return new Table({ rows, width: { size: 9000, type: WidthType.DXA }, borders: TABLE_BORDERS });
 }
 
 /** Numbering config for ordered lists (used in Document constructor). */
 export const ORDERED_LIST_NUMBERING = {
-  config: [{
-    reference: 'ordered-list',
-    levels: [{
-      level: 0,
-      format: LevelFormat.DECIMAL,
-      text: '%1.',
-      alignment: AlignmentType.START,
-    }],
-  }],
+  config: [
+    {
+      reference: 'ordered-list',
+      levels: [
+        {
+          level: 0,
+          format: LevelFormat.DECIMAL,
+          text: '%1.',
+          alignment: AlignmentType.START,
+        },
+      ],
+    },
+  ],
 };
 
 /**
@@ -186,16 +219,20 @@ export function parseMarkdownToDocxParagraphs(markdown: string): (Paragraph | Ta
     } else if (/^\d+\.\s/.test(line)) {
       // Numbered list item
       const text = line.replace(/^\d+\.\s/, '');
-      elements.push(new Paragraph({
-        children: parseInlineRuns(text),
-        numbering: { reference: 'ordered-list', level: 0 },
-      }));
+      elements.push(
+        new Paragraph({
+          children: parseInlineRuns(text),
+          numbering: { reference: 'ordered-list', level: 0 },
+        }),
+      );
     } else if (line.startsWith('> ')) {
       const text = line.slice(2);
-      elements.push(new Paragraph({
-        children: parseInlineRuns(text),
-        indent: { left: 720 },
-      }));
+      elements.push(
+        new Paragraph({
+          children: parseInlineRuns(text),
+          indent: { left: 720 },
+        }),
+      );
     } else if (line.trim() === '' || line.startsWith('---')) {
       elements.push(new Paragraph({ text: '' }));
     } else {
@@ -238,7 +275,7 @@ export class FeasibilityService {
       },
     });
 
-    const allStages = completedRuns.flatMap(r => r.stages);
+    const allStages = completedRuns.flatMap((r) => r.stages);
     if (allStages.length > 0) {
       const avgInput = Math.round(allStages.reduce((s, st) => s + (st.inputTokens ?? 0), 0) / allStages.length);
       const avgOutput = Math.round(allStages.reduce((s, st) => s + (st.outputTokens ?? 0), 0) / allStages.length);
@@ -329,9 +366,11 @@ export class FeasibilityService {
       select: { estimatedCostUsd: true },
     });
     // Note: ClaimDraft does not have an estimatedCostUsd field in the schema.
-    return stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0)
-      + complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0)
-      + applications.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+    return (
+      stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+      complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+      applications.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0)
+    );
   }
 
   async startRun(projectId: string) {
@@ -349,13 +388,13 @@ export class FeasibilityService {
       data: {
         projectId,
         version,
-        status: "PENDING",
+        status: 'PENDING',
         startedAt: new Date(),
         stages: {
           create: STAGE_NAMES.map((stageName, index) => ({
             stageNumber: index + 1,
             stageName,
-            status: "PENDING",
+            status: 'PENDING',
           })),
         },
       },
@@ -368,7 +407,7 @@ export class FeasibilityService {
 
     await this.prisma.project.update({
       where: { id: projectId },
-      data: { status: "FEASIBILITY" },
+      data: { status: 'FEASIBILITY' },
     });
 
     return run;
@@ -396,7 +435,7 @@ export class FeasibilityService {
 
     // Validate that stages before fromStage are complete
     for (let i = 1; i < fromStage; i++) {
-      const stage = latestRun.stages.find(s => s.stageNumber === i);
+      const stage = latestRun.stages.find((s) => s.stageNumber === i);
       if (!stage || stage.status !== 'COMPLETE' || !stage.outputText) {
         throw new Error(`Stage ${i} must be complete before re-running from Stage ${fromStage}`);
       }
@@ -409,7 +448,7 @@ export class FeasibilityService {
       const stageNum = index + 1;
       if (stageNum < fromStage) {
         // Copy from prior run
-        const priorStage = latestRun.stages.find(s => s.stageNumber === stageNum)!;
+        const priorStage = latestRun.stages.find((s) => s.stageNumber === stageNum)!;
         return {
           stageNumber: stageNum,
           stageName,
@@ -467,7 +506,7 @@ export class FeasibilityService {
 
     // Auto-heal: if run is stuck as RUNNING/ERROR but all stages are COMPLETE,
     // fix the run status on read. Also backfill finalReport if missing.
-    const allStagesComplete = run.stages.length === 6 && run.stages.every(s => s.status === 'COMPLETE');
+    const allStagesComplete = run.stages.length === 6 && run.stages.every((s) => s.status === 'COMPLETE');
     const needsStatusFix = run.status !== 'COMPLETE' && allStagesComplete;
     const needsReportFix = run.status === 'COMPLETE' && !run.finalReport && allStagesComplete;
     if (needsStatusFix || needsReportFix) {
@@ -567,11 +606,11 @@ export class FeasibilityService {
     // Skip only if COMPLETE and has a report — otherwise heal
     if (run.status === 'COMPLETE' && run.finalReport) return;
 
-    const allComplete = run.stages.length === 6 && run.stages.every(s => s.status === 'COMPLETE');
+    const allComplete = run.stages.length === 6 && run.stages.every((s) => s.status === 'COMPLETE');
     if (!allComplete) return;
 
     // All 6 stages done — mark run COMPLETE with stage 6 as the report
-    const stage6 = run.stages.find(s => s.stageNumber === 6);
+    const stage6 = run.stages.find((s) => s.stageNumber === 6);
     const finalReport = run.finalReport || stage6?.outputText || null;
 
     await this.prisma.feasibilityRun.update({
@@ -603,10 +642,10 @@ export class FeasibilityService {
     const updateData: Prisma.FeasibilityRunUpdateInput = {};
     if (dto.status !== undefined) {
       updateData.status = dto.status;
-      if (dto.status === "COMPLETE" || dto.status === "ERROR" || dto.status === "CANCELLED") {
+      if (dto.status === 'COMPLETE' || dto.status === 'ERROR' || dto.status === 'CANCELLED') {
         updateData.completedAt = new Date();
       }
-      if (dto.status === "RUNNING") {
+      if (dto.status === 'RUNNING') {
         updateData.startedAt = new Date();
       }
     }
@@ -623,7 +662,7 @@ export class FeasibilityService {
 
   async cancelRun(projectId: string) {
     const run = await this.prisma.feasibilityRun.findFirst({
-      where: { projectId, status: { in: ["RUNNING", "PENDING"] } },
+      where: { projectId, status: { in: ['RUNNING', 'PENDING'] } },
       orderBy: { version: 'desc' },
     });
 
@@ -633,7 +672,7 @@ export class FeasibilityService {
 
     return this.prisma.feasibilityRun.update({
       where: { id: run.id },
-      data: { status: "CANCELLED" },
+      data: { status: 'CANCELLED' },
       include: {
         stages: {
           orderBy: { stageNumber: 'asc' },
@@ -642,7 +681,10 @@ export class FeasibilityService {
     });
   }
 
-  async exportReportToDisk(projectId: string, customExportPath?: string): Promise<{ folderPath: string; mdFile: string; htmlFile: string }> {
+  async exportReportToDisk(
+    projectId: string,
+    customExportPath?: string,
+  ): Promise<{ folderPath: string; mdFile: string; htmlFile: string }> {
     // Load project + latest completed run
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) throw new NotFoundException(`Project ${projectId} not found`);
@@ -658,7 +700,10 @@ export class FeasibilityService {
     const exportDir = resolveExportDir(customExportPath);
 
     // Slugify project title for folder name
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     const folderPath = path.join(exportDir, slug);
     fs.mkdirSync(folderPath, { recursive: true });
 
@@ -750,22 +795,24 @@ ${bodyHtml}
 
     // Append legal disclaimer watermark
     paragraphs.push(new Paragraph({ text: '' }));
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({ text: '---', color: '6B7280', size: 16 }),
-      ],
-    }));
-    paragraphs.push(new Paragraph({
-      children: [
-        new TextRun({ text: 'Disclaimer: ', bold: true, color: '6B7280', size: 16, font: 'Calibri' }),
-        new TextRun({
-          text: 'This report was generated by PatentForge, an open-source AI-powered patent landscape research tool. It is intended for informational and educational purposes only. This report does not constitute legal advice. No attorney-client relationship is created by this report. The author of this tool is not a lawyer. The AI system that generated this analysis is not a lawyer. Patent law is complex and fact-specific, and AI-generated analysis may contain errors, omissions, or hallucinated references — including fabricated patent numbers, inaccurate legal citations, and incorrect statutory interpretations presented with high confidence. Before making any filing, licensing, enforcement, or investment decisions based on this report, consult a registered patent attorney.',
-          color: '6B7280',
-          size: 16,
-          font: 'Calibri',
-        }),
-      ],
-    }));
+    paragraphs.push(
+      new Paragraph({
+        children: [new TextRun({ text: '---', color: '6B7280', size: 16 })],
+      }),
+    );
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'Disclaimer: ', bold: true, color: '6B7280', size: 16, font: 'Calibri' }),
+          new TextRun({
+            text: 'This report was generated by PatentForge, an open-source AI-powered patent landscape research tool. It is intended for informational and educational purposes only. This report does not constitute legal advice. No attorney-client relationship is created by this report. The author of this tool is not a lawyer. The AI system that generated this analysis is not a lawyer. Patent law is complex and fact-specific, and AI-generated analysis may contain errors, omissions, or hallucinated references — including fabricated patent numbers, inaccurate legal citations, and incorrect statutory interpretations presented with high confidence. Before making any filing, licensing, enforcement, or investment decisions based on this report, consult a registered patent attorney.',
+            color: '6B7280',
+            size: 16,
+            font: 'Calibri',
+          }),
+        ],
+      }),
+    );
 
     const doc = new Document({
       creator: 'PatentForge',
@@ -775,7 +822,10 @@ ${bodyHtml}
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = project.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     return { buffer, filename: `${slug}-feasibility.docx` };
   }
 
@@ -791,7 +841,7 @@ ${bodyHtml}
       },
     });
 
-    return runs.map(run => ({
+    return runs.map((run) => ({
       id: run.id,
       version: run.version,
       status: run.status,
@@ -804,7 +854,7 @@ ${bodyHtml}
   async updateRunStatus(runId: string, status: string, finalReport?: string) {
     const data: any = { status };
     if (finalReport !== undefined) data.finalReport = finalReport;
-    if (status === "COMPLETE" || status === "ERROR" || status === "CANCELLED") {
+    if (status === 'COMPLETE' || status === 'ERROR' || status === 'CANCELLED') {
       data.completedAt = new Date();
     }
 

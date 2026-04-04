@@ -18,10 +18,12 @@ import { HealthController } from './health.controller';
     // Serve frontend static files in production mode only.
     // Dev mode uses Vite's dev server on port 8080 instead.
     ...(process.env.NODE_ENV === 'production'
-      ? [ServeStaticModule.forRoot({
-          rootPath: process.env.FRONTEND_DIST_PATH || join(__dirname, '..', '..', 'frontend', 'dist'),
-          exclude: ['/api/(.*)'],
-        })]
+      ? [
+          ServeStaticModule.forRoot({
+            rootPath: process.env.FRONTEND_DIST_PATH || join(__dirname, '..', '..', 'frontend', 'dist'),
+            exclude: ['/api/(.*)'],
+          }),
+        ]
       : []),
     PrismaModule,
     ProjectsModule,

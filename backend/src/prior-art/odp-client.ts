@@ -56,7 +56,7 @@ interface ODPSearchResponse {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -68,20 +68,14 @@ interface QueryODPResult {
   wasRateLimited: boolean;
 }
 
-async function queryODP(
-  queryText: string,
-  apiKey: string,
-  retryCount = 0,
-): Promise<QueryODPResult> {
+async function queryODP(queryText: string, apiKey: string, retryCount = 0): Promise<QueryODPResult> {
   const body: ODPSearchBody = {
     q: `applicationMetaData.inventionTitle:${queryText}`,
     filters: [
       { name: 'applicationMetaData.applicationTypeLabelName', value: ['Utility'] },
       { name: 'applicationMetaData.publicationCategoryBag', value: ['Granted/Issued'] },
     ],
-    rangeFilters: [
-      { field: 'applicationMetaData.filingDate', valueFrom: '2005-01-01', valueTo: '2026-12-31' },
-    ],
+    rangeFilters: [{ field: 'applicationMetaData.filingDate', valueFrom: '2005-01-01', valueTo: '2026-12-31' }],
     pagination: { offset: 0, limit: RESULTS_PER_QUERY },
     sort: [{ field: 'applicationMetaData.filingDate', order: 'Desc' }],
     fields: ['applicationNumberText', 'applicationMetaData'],
@@ -103,7 +97,9 @@ async function queryODP(
 
     if (res.status === 429) {
       if (retryCount < MAX_RETRIES_ON_429) {
-        console.warn(`[ODP] Rate limited (429) for query "${queryText}", waiting ${RETRY_DELAY_ON_429_MS / 1000}s before retry...`);
+        console.warn(
+          `[ODP] Rate limited (429) for query "${queryText}", waiting ${RETRY_DELAY_ON_429_MS / 1000}s before retry...`,
+        );
         await sleep(RETRY_DELAY_ON_429_MS);
         const retried = await queryODP(queryText, apiKey, retryCount + 1);
         return { ...retried, wasRateLimited: true }; // preserve rate-limit signal even if retry succeeded

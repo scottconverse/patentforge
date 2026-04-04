@@ -74,7 +74,7 @@ describe('parseMarkdownToDocxParagraphs', () => {
   it('parses headings at all levels', () => {
     const elements = parseMarkdownToDocxParagraphs('# H1\n## H2\n### H3\n#### H4');
     expect(elements).toHaveLength(4);
-    expect(elements.every(e => e instanceof Paragraph)).toBe(true);
+    expect(elements.every((e) => e instanceof Paragraph)).toBe(true);
   });
 
   it('parses unordered bullets', () => {
@@ -97,7 +97,7 @@ describe('parseMarkdownToDocxParagraphs', () => {
     const md = '| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1 | Cell 2 |';
     const elements = parseMarkdownToDocxParagraphs(md);
     // Should produce a Table + empty paragraph after it
-    const tables = elements.filter(e => e instanceof Table);
+    const tables = elements.filter((e) => e instanceof Table);
     expect(tables).toHaveLength(1);
   });
 
@@ -149,7 +149,7 @@ describe('parseMarkdownToDocxParagraphs', () => {
     const elements = parseMarkdownToDocxParagraphs(md);
     expect(elements.length).toBeGreaterThan(10);
 
-    const tables = elements.filter(e => e instanceof Table);
+    const tables = elements.filter((e) => e instanceof Table);
     expect(tables).toHaveLength(1);
   });
 });

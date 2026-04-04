@@ -13,7 +13,13 @@ describe('searchPatentsViewMulti', () => {
       ok: true,
       json: async () => ({
         patents: [
-          { patent_id: '123', patent_title: 'Test A', patent_abstract: 'Abstract A', patent_date: '2023-01-01', patent_type: 'utility' },
+          {
+            patent_id: '123',
+            patent_title: 'Test A',
+            patent_abstract: 'Abstract A',
+            patent_date: '2023-01-01',
+            patent_type: 'utility',
+          },
         ],
       }),
     });
@@ -31,7 +37,13 @@ describe('searchPatentsViewMulti', () => {
         ok: true,
         json: async () => ({
           patents: [
-            { patent_id: '123', patent_title: 'Same Patent', patent_abstract: null, patent_date: null, patent_type: null },
+            {
+              patent_id: '123',
+              patent_title: 'Same Patent',
+              patent_abstract: null,
+              patent_date: null,
+              patent_type: null,
+            },
           ],
         }),
       };
@@ -47,7 +59,8 @@ describe('searchPatentsViewMulti', () => {
       ok: true,
       json: async () => ({
         error: true,
-        message: 'PatentsView is migrating to the USPTO Open Data Portal (ODP, available at data.uspto.gov). Please visit data.uspto.gov/support/transition-guidance/patentsview for more information.',
+        message:
+          'PatentsView is migrating to the USPTO Open Data Portal (ODP, available at data.uspto.gov). Please visit data.uspto.gov/support/transition-guidance/patentsview for more information.',
       }),
     });
 
@@ -63,7 +76,9 @@ describe('searchPatentsViewMulti', () => {
       return {
         ok: true,
         json: async () => ({
-          patents: [{ patent_id: '456', patent_title: 'Result', patent_abstract: null, patent_date: null, patent_type: null }],
+          patents: [
+            { patent_id: '456', patent_title: 'Result', patent_abstract: null, patent_date: null, patent_type: null },
+          ],
         }),
       };
     });
