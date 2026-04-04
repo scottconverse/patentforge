@@ -17,13 +17,13 @@ describe('modelPricing', () => {
 
   it('getModelPricing returns known model pricing', () => {
     const p = getModelPricing('claude-sonnet-4-20250514');
-    expect(p.inputPer1M).toBe(3.00);
-    expect(p.outputPer1M).toBe(15.00);
+    expect(p.inputPer1M).toBe(3.0);
+    expect(p.outputPer1M).toBe(15.0);
   });
 
   it('getModelPricing returns Sonnet fallback for unknown models', () => {
     const p = getModelPricing('unknown-model-xyz');
-    expect(p.inputPer1M).toBe(3.00);
-    expect(p.outputPer1M).toBe(15.00);
+    expect(p.inputPer1M).toBe(3.0);
+    expect(p.outputPer1M).toBe(15.0);
   });
 });

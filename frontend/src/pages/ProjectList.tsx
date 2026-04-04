@@ -48,7 +48,7 @@ export default function ProjectList() {
     try {
       setCreating(true);
       const project = await api.projects.create(newTitle.trim());
-      setProjects(prev => [project, ...prev]);
+      setProjects((prev) => [project, ...prev]);
       setNewTitle('');
       setShowNewForm(false);
       navigate(`/projects/${project.id}`);
@@ -69,7 +69,7 @@ export default function ProjectList() {
       setDeletingId(deleteTarget.id);
       setDeleteTarget(null);
       await api.projects.delete(deleteTarget.id);
-      setProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
+      setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
     } catch (e: any) {
       setError(e.message || 'Failed to delete project');
     } finally {
@@ -95,16 +95,13 @@ export default function ProjectList() {
 
       {/* New project form */}
       {showNewForm && (
-        <form
-          onSubmit={handleCreate}
-          className="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg"
-        >
+        <form onSubmit={handleCreate} className="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg">
           <label className="block text-sm font-medium text-gray-300 mb-2">Project Title</label>
           <div className="flex gap-3">
             <input
               type="text"
               value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
+              onChange={(e) => setNewTitle(e.target.value)}
               placeholder="e.g. AI-Powered Patent Claim Analyzer"
               autoFocus
               className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm"
@@ -118,7 +115,10 @@ export default function ProjectList() {
             </button>
             <button
               type="button"
-              onClick={() => { setShowNewForm(false); setNewTitle(''); }}
+              onClick={() => {
+                setShowNewForm(false);
+                setNewTitle('');
+              }}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
             >
               Cancel
@@ -129,13 +129,18 @@ export default function ProjectList() {
 
       {/* Error */}
       {error && (
-        <Alert variant="error" className="mb-4">{error}</Alert>
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
       )}
 
       {/* Loading */}
       {loading ? (
         <div className="flex items-center justify-center py-16 text-gray-500">
-          <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" aria-label="Loading" />
+          <span
+            className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3"
+            aria-label="Loading"
+          />
           Loading projects...
         </div>
       ) : projects.length === 0 ? (
@@ -146,7 +151,7 @@ export default function ProjectList() {
         </div>
       ) : (
         <div className="space-y-3">
-          {projects.map(project => (
+          {projects.map((project) => (
             <div
               key={project.id}
               className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4 hover:border-gray-700 transition-colors"

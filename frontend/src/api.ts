@@ -16,7 +16,9 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
       try {
         const json = JSON.parse(text);
         message = json.message || json.error || text;
-      } catch {}
+      } catch {
+        /* not JSON — use raw text */
+      }
       throw new Error(message);
     }
     if (res.status === 204) return undefined as T;
@@ -58,13 +60,21 @@ export const api = {
     patchStage: (projectId: string, stageNumber: number, data: Record<string, unknown>) =>
       req<any>('PATCH', `/projects/${projectId}/feasibility/stages/${stageNumber}`, data),
     exportToDisk: (projectId: string) =>
-      req<{ folderPath: string; mdFile: string; htmlFile: string }>('POST', `/projects/${projectId}/feasibility/export`),
+      req<{ folderPath: string; mdFile: string; htmlFile: string }>(
+        'POST',
+        `/projects/${projectId}/feasibility/export`,
+      ),
     exportToDocx: async (projectId: string): Promise<Blob> => {
       const res = await fetch(`${BASE}/projects/${projectId}/feasibility/export/docx`);
       if (!res.ok) {
         const text = await res.text();
         let message = text;
-        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        try {
+          const json = JSON.parse(text);
+          message = json.message || json.error || text;
+        } catch {
+          /* not JSON — use raw text */
+        }
         throw new Error(message);
       }
       return res.blob();
@@ -72,8 +82,14 @@ export const api = {
     getReport: (projectId: string) =>
       req<{ report: string | null; html: string | null }>('GET', `/projects/${projectId}/feasibility/report`),
     costEstimate: (projectId: string) =>
-      req<{ hasHistory: boolean; runsUsed: number; stagesUsed: number; avgInputTokens: number; avgOutputTokens: number; avgCostPerStage: number }>(
-        'GET', `/projects/${projectId}/feasibility/cost-estimate`),
+      req<{
+        hasHistory: boolean;
+        runsUsed: number;
+        stagesUsed: number;
+        avgInputTokens: number;
+        avgOutputTokens: number;
+        avgCostPerStage: number;
+      }>('GET', `/projects/${projectId}/feasibility/cost-estimate`),
     runs: (projectId: string) => req<any[]>('GET', `/projects/${projectId}/feasibility/runs`),
     getVersion: (projectId: string, version: number) =>
       req<any>('GET', `/projects/${projectId}/feasibility/${version}`),
@@ -81,26 +97,26 @@ export const api = {
       req<any>('POST', `/projects/${projectId}/feasibility/rerun`, { fromStage }),
   },
   patents: {
-    getDetail: (patentNumber: string) =>
-      req<PatentDetail>('GET', `/patents/${patentNumber}`),
+    getDetail: (patentNumber: string) => req<PatentDetail>('GET', `/patents/${patentNumber}`),
     getClaims: (patentNumber: string) =>
       req<{ claimsText: string | null; claimCount: number | null }>('GET', `/patents/${patentNumber}/claims`),
     getFamily: (patentNumber: string) =>
-      req<Array<{
-        patentNumber: string | null;
-        applicationNumber: string | null;
-        relationship: string;
-        filingDate: string | null;
-        grantDate: string | null;
-        title: string | null;
-        status: string | null;
-      }>>('GET', `/patents/${patentNumber}/family`),
+      req<
+        Array<{
+          patentNumber: string | null;
+          applicationNumber: string | null;
+          relationship: string;
+          filingDate: string | null;
+          grantDate: string | null;
+          title: string | null;
+          status: string | null;
+        }>
+      >('GET', `/patents/${patentNumber}/family`),
   },
   claimDraft: {
     start: (projectId: string) => req<any>('POST', `/projects/${projectId}/claims/draft`),
     getLatest: (projectId: string) => req<any>('GET', `/projects/${projectId}/claims`),
-    getVersion: (projectId: string, version: number) =>
-      req<any>('GET', `/projects/${projectId}/claims/${version}`),
+    getVersion: (projectId: string, version: number) => req<any>('GET', `/projects/${projectId}/claims/${version}`),
     updateClaim: (projectId: string, claimId: string, text: string) =>
       req<any>('PUT', `/projects/${projectId}/claims/edit/${claimId}`, { text }),
     regenerateClaim: (projectId: string, claimNumber: number) =>
@@ -110,7 +126,12 @@ export const api = {
       if (!res.ok) {
         const text = await res.text();
         let message = text;
-        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        try {
+          const json = JSON.parse(text);
+          message = json.message || json.error || text;
+        } catch {
+          /* not JSON — use raw text */
+        }
         throw new Error(message);
       }
       return res.blob();
@@ -119,26 +140,27 @@ export const api = {
   compliance: {
     startCheck: (projectId: string, draftVersion?: number) =>
       req<any>('POST', `/projects/${projectId}/compliance/check`, draftVersion ? { draftVersion } : {}),
-    getLatest: (projectId: string) =>
-      req<any>('GET', `/projects/${projectId}/compliance`),
-    getVersion: (projectId: string, version: number) =>
-      req<any>('GET', `/projects/${projectId}/compliance/${version}`),
+    getLatest: (projectId: string) => req<any>('GET', `/projects/${projectId}/compliance`),
+    getVersion: (projectId: string, version: number) => req<any>('GET', `/projects/${projectId}/compliance/${version}`),
     exportToDocx: async (projectId: string): Promise<Blob> => {
       const res = await fetch(`${BASE}/projects/${projectId}/compliance/export/docx`);
       if (!res.ok) {
         const text = await res.text();
         let message = text;
-        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        try {
+          const json = JSON.parse(text);
+          message = json.message || json.error || text;
+        } catch {
+          /* not JSON — use raw text */
+        }
         throw new Error(message);
       }
       return res.blob();
     },
   },
   application: {
-    start: (projectId: string) =>
-      req<any>('POST', `/projects/${projectId}/application/generate`),
-    getLatest: (projectId: string) =>
-      req<any>('GET', `/projects/${projectId}/application`),
+    start: (projectId: string) => req<any>('POST', `/projects/${projectId}/application/generate`),
+    getLatest: (projectId: string) => req<any>('GET', `/projects/${projectId}/application`),
     getVersion: (projectId: string, version: number) =>
       req<any>('GET', `/projects/${projectId}/application/${version}`),
     updateSection: (projectId: string, name: string, text: string) =>
@@ -148,22 +170,34 @@ export const api = {
       if (!res.ok) {
         const text = await res.text();
         let message = text;
-        try { const json = JSON.parse(text); message = json.message || json.error || text; } catch {}
+        try {
+          const json = JSON.parse(text);
+          message = json.message || json.error || text;
+        } catch {
+          /* not JSON — use raw text */
+        }
         throw new Error(message);
       }
       return res.blob();
     },
-    exportMarkdown: (projectId: string) =>
-      req<string>('GET', `/projects/${projectId}/application/export/markdown`),
+    exportMarkdown: (projectId: string) => req<string>('GET', `/projects/${projectId}/application/export/markdown`),
   },
   settings: {
     get: () => req<any>('GET', '/settings'),
     update: (data: unknown) => req<any>('PUT', '/settings', data),
-    validateKey: (apiKey: string) => req<{ valid: boolean; error?: string }>('POST', '/settings/validate-api-key', { apiKey }),
-    odpUsage: () => req<{
-      thisWeek: { totalQueries: number; totalResults: number; rateLimitHits: number; errorCount: number; callCount: number };
-      lastUsed: string | null;
-      weeklyLimits: { patentFileWrapperDocs: number; metadataRetrievals: number };
-    }>('GET', '/settings/odp-usage'),
+    validateKey: (apiKey: string) =>
+      req<{ valid: boolean; error?: string }>('POST', '/settings/validate-api-key', { apiKey }),
+    odpUsage: () =>
+      req<{
+        thisWeek: {
+          totalQueries: number;
+          totalResults: number;
+          rateLimitHits: number;
+          errorCount: number;
+          callCount: number;
+        };
+        lastUsed: string | null;
+        weeklyLimits: { patentFileWrapperDocs: number; metadataRetrievals: number };
+      }>('GET', '/settings/odp-usage'),
   },
 };

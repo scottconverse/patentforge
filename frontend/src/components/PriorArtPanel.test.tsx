@@ -6,18 +6,18 @@ import type { PriorArtSearch, PriorArtResult } from '../types';
 // Mock EventSource globally
 class MockEventSource {
   url: string;
-  listeners: Record<string, Function[]> = {};
+  listeners: Record<string, ((...args: unknown[]) => unknown)[]> = {};
   close = vi.fn();
   constructor(url: string) {
     this.url = url;
   }
-  addEventListener(event: string, handler: Function) {
+  addEventListener(event: string, handler: (...args: unknown[]) => unknown) {
     if (!this.listeners[event]) this.listeners[event] = [];
     this.listeners[event].push(handler);
   }
-  removeEventListener(event: string, handler: Function) {
+  removeEventListener(event: string, handler: (...args: unknown[]) => unknown) {
     if (this.listeners[event]) {
-      this.listeners[event] = this.listeners[event].filter(h => h !== handler);
+      this.listeners[event] = this.listeners[event].filter((h) => h !== handler);
     }
   }
 }
@@ -63,25 +63,19 @@ describe('PriorArtPanel', () => {
   });
 
   it('shows empty state when search is null', () => {
-    render(
-      <PriorArtPanel projectId={projectId} search={null} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={null} onUpdate={onUpdate} />);
     expect(screen.getByText(/Prior art search will run automatically/)).toBeInTheDocument();
   });
 
   it('shows empty state when search status is NONE', () => {
     const search = makeSearch({ status: 'NONE' as any, results: [] });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText(/Prior art search will run automatically/)).toBeInTheDocument();
   });
 
   it('shows loading state when status is RUNNING', () => {
     const search = makeSearch({ status: 'RUNNING', results: [] });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText(/Searching USPTO patent database/)).toBeInTheDocument();
     // Should show skeleton cards
     expect(document.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
@@ -89,17 +83,13 @@ describe('PriorArtPanel', () => {
 
   it('shows loading state when status is PENDING', () => {
     const search = makeSearch({ status: 'PENDING', results: [] });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText(/Searching USPTO patent database/)).toBeInTheDocument();
   });
 
   it('shows error state with ODP key prompt', () => {
     const search = makeSearch({ status: 'ERROR', results: [] });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('Structured prior art search unavailable')).toBeInTheDocument();
     expect(screen.getByText(/USPTO Open Data Portal API key/)).toBeInTheDocument();
     expect(screen.getByText(/feasibility analysis still uses AI web search/)).toBeInTheDocument();
@@ -107,18 +97,14 @@ describe('PriorArtPanel', () => {
 
   it('shows error state with link to Settings', () => {
     const search = makeSearch({ status: 'ERROR', results: [] });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     const settingsLink = screen.getByText(/USPTO Open Data Portal API key/);
     expect(settingsLink.closest('a')).toHaveAttribute('href', '/settings');
   });
 
   it('renders completed search with results', () => {
     const search = makeSearch();
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('1 patent found')).toBeInTheDocument();
     expect(screen.getByText('US10234567B2')).toBeInTheDocument();
     expect(screen.getByText('Widget Processing Method')).toBeInTheDocument();
@@ -133,40 +119,27 @@ describe('PriorArtPanel', () => {
         makeResult({ id: 'r2', patentNumber: 'US99999999A1', title: 'Another Widget' }),
       ],
     });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('2 patents found')).toBeInTheDocument();
   });
 
   it('shows parsed search queries as tags', () => {
     const search = makeSearch();
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('widget processing')).toBeInTheDocument();
     expect(screen.getByText('automated widget')).toBeInTheDocument();
   });
 
   it('handles invalid query JSON gracefully', () => {
     const search = makeSearch({ query: 'not valid json' });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     // Should not crash — just no query tags shown
     expect(screen.getByText('1 patent found')).toBeInTheDocument();
   });
 
   it('calls onPatentClick when a result card is clicked', () => {
     const search = makeSearch();
-    render(
-      <PriorArtPanel
-        projectId={projectId}
-        search={search}
-        onUpdate={onUpdate}
-        onPatentClick={onPatentClick}
-      />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} onPatentClick={onPatentClick} />);
     fireEvent.click(screen.getByText('US10234567B2'));
     expect(onPatentClick).toHaveBeenCalledWith('US10234567B2');
   });
@@ -175,9 +148,7 @@ describe('PriorArtPanel', () => {
     const search = makeSearch({
       results: [makeResult({ relevanceScore: 0.85 })],
     });
-    const { container } = render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    const { container } = render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('85%')).toBeInTheDocument();
     // Green for >=70%
     expect(container.querySelector('.bg-green-500')).toBeTruthy();
@@ -187,9 +158,7 @@ describe('PriorArtPanel', () => {
     const search = makeSearch({
       results: [makeResult({ relevanceScore: 0.55 })],
     });
-    const { container } = render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    const { container } = render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('55%')).toBeInTheDocument();
     expect(container.querySelector('.bg-amber-500')).toBeTruthy();
   });
@@ -198,18 +167,14 @@ describe('PriorArtPanel', () => {
     const search = makeSearch({
       results: [makeResult({ relevanceScore: 0.2 })],
     });
-    const { container } = render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    const { container } = render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('20%')).toBeInTheDocument();
     expect(container.querySelector('.bg-gray-500')).toBeTruthy();
   });
 
   it('shows empty results message when search is complete but no results', () => {
     const search = makeSearch({ results: [] });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('No relevant patents found for this invention.')).toBeInTheDocument();
   });
 
@@ -217,9 +182,7 @@ describe('PriorArtPanel', () => {
     const search = makeSearch({
       results: [makeResult({ snippet: 'Key finding about widgets.' })],
     });
-    render(
-      <PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />
-    );
+    render(<PriorArtPanel projectId={projectId} search={search} onUpdate={onUpdate} />);
     expect(screen.getByText('Key finding about widgets.')).toBeInTheDocument();
   });
 });

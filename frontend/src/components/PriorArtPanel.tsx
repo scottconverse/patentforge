@@ -33,8 +33,8 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
 
       const refresh = () => {
         fetch(`/api/projects/${projectId}/prior-art`)
-          .then(r => r.json())
-          .then(data => onUpdate(data))
+          .then((r) => r.json())
+          .then((data) => onUpdate(data))
           .catch(() => {});
       };
 
@@ -50,8 +50,11 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
   }, [projectId, search?.status]);
 
   const queries: string[] = (() => {
-    try { return search?.query ? JSON.parse(search.query) : []; }
-    catch { return []; }
+    try {
+      return search?.query ? JSON.parse(search.query) : [];
+    } catch {
+      return [];
+    }
   })();
 
   if (!search || search.status === 'NONE') {
@@ -66,16 +69,17 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 p-4 bg-blue-900/30 border border-blue-800 rounded-lg">
-          <span className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin flex-shrink-0" aria-label="Loading" />
+          <span
+            className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin flex-shrink-0"
+            aria-label="Loading"
+          />
           <div>
             <p className="text-sm font-medium text-blue-300">Searching USPTO patent database...</p>
-            {queries.length > 0 && (
-              <p className="text-xs text-gray-400 mt-0.5">Queries: {queries.join(' · ')}</p>
-            )}
+            {queries.length > 0 && <p className="text-xs text-gray-400 mt-0.5">Queries: {queries.join(' · ')}</p>}
           </div>
         </div>
         <div className="space-y-2">
-          {[1, 2, 3].map(i => (
+          {[1, 2, 3].map((i) => (
             <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-4 animate-pulse">
               <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
               <div className="h-3 bg-gray-800 rounded w-1/4 mb-3" />
@@ -98,7 +102,9 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
           </a>{' '}
           in Settings to enable structured patent search results with assignees, CPC codes, and filing dates.
         </p>
-        <p className="text-gray-400 mt-2">The feasibility analysis still uses AI web search for prior art research (Stage 2).</p>
+        <p className="text-gray-400 mt-2">
+          The feasibility analysis still uses AI web search for prior art research (Stage 2).
+        </p>
       </Alert>
     );
   }
@@ -143,16 +149,14 @@ export default function PriorArtPanel({ projectId, search, onUpdate, onPatentCli
         <p className="text-sm text-gray-500">No relevant patents found for this invention.</p>
       ) : (
         <div className="space-y-3">
-          {search.results.map(result => (
+          {search.results.map((result) => (
             <div
               key={result.id}
               onClick={() => onPatentClick?.(result.patentNumber)}
               className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2 cursor-pointer hover:border-blue-700 hover:bg-blue-950/20 transition-colors"
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="text-sm font-semibold text-blue-400 font-mono">
-                  {result.patentNumber}
-                </span>
+                <span className="text-sm font-semibold text-blue-400 font-mono">{result.patentNumber}</span>
                 <RelevanceBar score={result.relevanceScore} />
               </div>
               <p className="text-sm text-gray-200 leading-snug">{result.title}</p>

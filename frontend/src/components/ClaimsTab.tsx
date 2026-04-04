@@ -63,7 +63,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
           setGenerating(false);
           setError(d.status === 'ERROR' ? 'Claim generation failed. Try again.' : null);
         }
-      } catch {}
+      } catch {
+        /* poll error — ignore to avoid spamming error state */
+      }
     }, 3000);
     return () => {
       isMounted = false;
@@ -122,9 +124,13 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   }
 
   function toggleSection(key: string) {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   }
@@ -148,10 +154,15 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+          <div
+            className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+            aria-label="Loading"
+          />
           <span className="text-gray-300">Generating claim drafts...</span>
         </div>
-        <p className="text-xs text-gray-500 mt-3">This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims.</p>
+        <p className="text-xs text-gray-500 mt-3">
+          This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims.
+        </p>
       </div>
     );
   }
@@ -160,7 +171,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   if (!draft) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400 mb-4">No claim draft yet. Generate AI-drafted research claims based on your feasibility analysis.</p>
+        <p className="text-gray-400 mb-4">
+          No claim draft yet. Generate AI-drafted research claims based on your feasibility analysis.
+        </p>
         <button
           onClick={handleGenerate}
           className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
@@ -190,8 +203,8 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   }
 
   // State: Complete — show claims
-  const independentClaims = draft.claims.filter(c => c.claimType === 'INDEPENDENT');
-  const dependentClaims = draft.claims.filter(c => c.claimType === 'DEPENDENT');
+  const independentClaims = draft.claims.filter((c) => c.claimType === 'INDEPENDENT');
+  const dependentClaims = draft.claims.filter((c) => c.claimType === 'DEPENDENT');
 
   async function handleDownloadDocx() {
     setDocxLoading(true);
@@ -205,7 +218,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 2000);
     } catch (e: any) {
       setDocxError(e.message || 'Word export failed');
     } finally {
@@ -217,30 +233,29 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
     <div className="space-y-6">
       {/* DRAFT watermark */}
       <div className="bg-amber-900/20 border border-amber-800 rounded-lg p-3 text-center">
-        <p className="text-amber-300 text-xs font-semibold uppercase tracking-wider">
-          DRAFT — NOT FOR FILING
-        </p>
+        <p className="text-amber-300 text-xs font-semibold uppercase tracking-wider">DRAFT — NOT FOR FILING</p>
         <p className="text-amber-400/70 text-xs mt-1">
-          These are AI-generated research concepts. They must be reviewed by a registered patent attorney before any filing.
+          These are AI-generated research concepts. They must be reviewed by a registered patent attorney before any
+          filing.
         </p>
       </div>
 
       {/* View toggle + export */}
       <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 w-fit">
-        <button
-          onClick={() => setViewMode('list')}
-          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
-        >
-          List
-        </button>
-        <button
-          onClick={() => setViewMode('tree')}
-          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'tree' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
-        >
-          Tree
-        </button>
-      </div>
+        <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 w-fit">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'list' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
+          >
+            List
+          </button>
+          <button
+            onClick={() => setViewMode('tree')}
+            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'tree' ? 'bg-gray-700 text-gray-100' : 'text-gray-400 hover:text-gray-200'}`}
+          >
+            Tree
+          </button>
+        </div>
         <button
           onClick={handleDownloadDocx}
           disabled={docxLoading}
@@ -250,9 +265,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         </button>
       </div>
 
-      {docxError && (
-        <Alert variant="error">Word export failed: {docxError}</Alert>
-      )}
+      {docxError && <Alert variant="error">Word export failed: {docxError}</Alert>}
 
       {/* Tree view */}
       {viewMode === 'tree' && (
@@ -261,155 +274,225 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
           onClaimClick={(claimId) => {
             setViewMode('list');
             setEditingClaim(claimId);
-            const claim = draft.claims.find(c => c.id === claimId);
+            const claim = draft.claims.find((c) => c.id === claimId);
             if (claim) setEditText(claim.text);
           }}
         />
       )}
 
       {/* Claims list */}
-      {viewMode === 'list' && (<>
-      {independentClaims.map(indep => (
-        <div key={indep.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-          {/* Independent claim header */}
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-3">
-            <span className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded font-semibold">
-              Claim {indep.claimNumber}
-            </span>
-            <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded">
-              {indep.scopeLevel ?? 'INDEPENDENT'}
-            </span>
-            {indep.statutoryType && (
-              <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded capitalize">
-                {indep.statutoryType}
-              </span>
-            )}
-          </div>
-
-          {/* Claim text */}
-          <div className="p-4">
-            {editingClaim === indep.id ? (
-              <div>
-                <textarea
-                  value={editText}
-                  onChange={e => setEditText(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 text-sm font-mono resize-y"
-                  rows={6}
-                />
-                <div className="flex gap-2 mt-2">
-                  <button onClick={() => handleSaveClaim(indep.id)} className="px-3 py-1 bg-blue-600 text-white rounded text-xs">Save</button>
-                  <button onClick={() => setEditingClaim(null)} className="px-3 py-1 bg-gray-700 text-gray-300 rounded text-xs">Cancel</button>
-                </div>
+      {viewMode === 'list' && (
+        <>
+          {independentClaims.map((indep) => (
+            <div key={indep.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+              {/* Independent claim header */}
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-3">
+                <span className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded font-semibold">
+                  Claim {indep.claimNumber}
+                </span>
+                <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded">
+                  {indep.scopeLevel ?? 'INDEPENDENT'}
+                </span>
+                {indep.statutoryType && (
+                  <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded capitalize">
+                    {indep.statutoryType}
+                  </span>
+                )}
               </div>
-            ) : (
-              <div>
-                <div
-                  className="group relative text-sm text-gray-300 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
-                  onClick={() => { setEditingClaim(indep.id); setEditText(indep.text); }}
-                  title="Click to edit"
-                >
-                  <svg className="absolute top-1 right-1 w-3.5 h-3.5 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                  {indep.text}
-                </div>
-                <div className="flex items-center gap-3 mt-2">
-                  <button
-                    onClick={() => handleRegenerate(indep.claimNumber)}
-                    disabled={regenerating === indep.claimNumber}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
-                  >
-                    {regenerating === indep.claimNumber ? (
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
-                        Regenerating...
-                      </span>
-                    ) : (
-                      'Regenerate'
-                    )}
-                  </button>
-                </div>
-                {(() => {
-                  const overlappingArt = findOverlaps(indep.text, priorArtTitles ?? []);
-                  return overlappingArt.length > 0 ? (
-                    <div className="mt-1 flex items-center gap-1 text-amber-400 text-xs" title={`Potential overlap with: ${overlappingArt.map(a => a.patentNumber).join(', ')}`}>
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                      </svg>
-                      <span>Potential prior art overlap</span>
+
+              {/* Claim text */}
+              <div className="p-4">
+                {editingClaim === indep.id ? (
+                  <div>
+                    <textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 text-sm font-mono resize-y"
+                      rows={6}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleSaveClaim(indep.id)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-xs"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingClaim(null)}
+                        className="px-3 py-1 bg-gray-700 text-gray-300 rounded text-xs"
+                      >
+                        Cancel
+                      </button>
                     </div>
-                  ) : null;
-                })()}
-              </div>
-            )}
-          </div>
-
-          {/* Dependent claims */}
-          {dependentClaims.filter(d => d.parentClaimNumber === indep.claimNumber).map(dep => (
-            <div key={dep.id} className="border-t border-gray-800/50 px-4 py-3 pl-8">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-gray-500 font-mono">Claim {dep.claimNumber}</span>
-                <span className="text-xs text-gray-600">depends on {dep.parentClaimNumber}</span>
-              </div>
-              {editingClaim === dep.id ? (
-                <div>
-                  <textarea
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 text-xs font-mono resize-y"
-                    rows={3}
-                  />
-                  <div className="flex gap-2 mt-1">
-                    <button onClick={() => handleSaveClaim(dep.id)} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Save</button>
-                    <button onClick={() => setEditingClaim(null)} className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">Cancel</button>
                   </div>
-                </div>
-              ) : (
-                <div>
-                  <div
-                    className="group relative text-xs text-gray-400 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
-                    onClick={() => { setEditingClaim(dep.id); setEditText(dep.text); }}
-                    title="Click to edit"
-                  >
-                    <svg className="absolute top-1 right-1 w-3 h-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                    {dep.text}
-                  </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <button
-                      onClick={() => handleRegenerate(dep.claimNumber)}
-                      disabled={regenerating === dep.claimNumber}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                ) : (
+                  <div>
+                    <div
+                      className="group relative text-sm text-gray-300 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
+                      onClick={() => {
+                        setEditingClaim(indep.id);
+                        setEditText(indep.text);
+                      }}
+                      title="Click to edit"
                     >
-                      {regenerating === dep.claimNumber ? (
-                        <span className="inline-flex items-center gap-1">
-                          <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
-                          Regenerating...
-                        </span>
-                      ) : (
-                        'Regenerate'
-                      )}
-                    </button>
+                      <svg
+                        className="absolute top-1 right-1 w-3.5 h-3.5 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
+                      {indep.text}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <button
+                        onClick={() => handleRegenerate(indep.claimNumber)}
+                        disabled={regenerating === indep.claimNumber}
+                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                      >
+                        {regenerating === indep.claimNumber ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span
+                              className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"
+                              aria-label="Loading"
+                            />
+                            Regenerating...
+                          </span>
+                        ) : (
+                          'Regenerate'
+                        )}
+                      </button>
+                    </div>
+                    {(() => {
+                      const overlappingArt = findOverlaps(indep.text, priorArtTitles ?? []);
+                      return overlappingArt.length > 0 ? (
+                        <div
+                          className="mt-1 flex items-center gap-1 text-amber-400 text-xs"
+                          title={`Potential overlap with: ${overlappingArt.map((a) => a.patentNumber).join(', ')}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>Potential prior art overlap</span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
-                  {(() => {
-                    const overlappingArt = findOverlaps(dep.text, priorArtTitles ?? []);
-                    return overlappingArt.length > 0 ? (
-                      <div className="mt-1 flex items-center gap-1 text-amber-400 text-xs" title={`Potential overlap with: ${overlappingArt.map(a => a.patentNumber).join(', ')}`}>
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                        </svg>
-                        <span>Potential prior art overlap</span>
+                )}
+              </div>
+
+              {/* Dependent claims */}
+              {dependentClaims
+                .filter((d) => d.parentClaimNumber === indep.claimNumber)
+                .map((dep) => (
+                  <div key={dep.id} className="border-t border-gray-800/50 px-4 py-3 pl-8">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-500 font-mono">Claim {dep.claimNumber}</span>
+                      <span className="text-xs text-gray-600">depends on {dep.parentClaimNumber}</span>
+                    </div>
+                    {editingClaim === dep.id ? (
+                      <div>
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 text-xs font-mono resize-y"
+                          rows={3}
+                        />
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            onClick={() => handleSaveClaim(dep.id)}
+                            className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingClaim(null)}
+                            className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                    ) : null;
-                  })()}
-                </div>
-              )}
+                    ) : (
+                      <div>
+                        <div
+                          className="group relative text-xs text-gray-400 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
+                          onClick={() => {
+                            setEditingClaim(dep.id);
+                            setEditText(dep.text);
+                          }}
+                          title="Click to edit"
+                        >
+                          <svg
+                            className="absolute top-1 right-1 w-3 h-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                          {dep.text}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <button
+                            onClick={() => handleRegenerate(dep.claimNumber)}
+                            disabled={regenerating === dep.claimNumber}
+                            className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                          >
+                            {regenerating === dep.claimNumber ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"
+                                  aria-label="Loading"
+                                />
+                                Regenerating...
+                              </span>
+                            ) : (
+                              'Regenerate'
+                            )}
+                          </button>
+                        </div>
+                        {(() => {
+                          const overlappingArt = findOverlaps(dep.text, priorArtTitles ?? []);
+                          return overlappingArt.length > 0 ? (
+                            <div
+                              className="mt-1 flex items-center gap-1 text-amber-400 text-xs"
+                              title={`Potential overlap with: ${overlappingArt.map((a) => a.patentNumber).join(', ')}`}
+                            >
+                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <span>Potential prior art overlap</span>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
           ))}
-        </div>
-      ))}
-      </>)}
+        </>
+      )}
 
       {/* Collapsible sections: Strategy, Feedback, Specification */}
       {draft.plannerStrategy && (
@@ -461,27 +544,47 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
             Important: This is a research tool, not a legal service.
           </h2>
           <div className="text-sm text-gray-300 space-y-3 mb-6 max-h-64 overflow-y-auto">
-            <p>The claims generated below are <strong className="text-gray-100">AI-drafted research concepts</strong> to help you discuss patent strategy with your attorney. They are NOT ready for filing.</p>
+            <p>
+              The claims generated below are <strong className="text-gray-100">AI-drafted research concepts</strong> to
+              help you discuss patent strategy with your attorney. They are NOT ready for filing.
+            </p>
             <ul className="list-disc ml-5 space-y-2">
-              <li>Claims may be <strong className="text-gray-100">too broad or too narrow</strong> for your actual invention</li>
-              <li>The AI may have <strong className="text-gray-100">missed critical limitations</strong> needed to distinguish from prior art</li>
-              <li>Language may <strong className="text-gray-100">not survive patent examination</strong></li>
-              <li>Technical details may be <strong className="text-gray-100">fabricated or mischaracterized</strong></li>
+              <li>
+                Claims may be <strong className="text-gray-100">too broad or too narrow</strong> for your actual
+                invention
+              </li>
+              <li>
+                The AI may have <strong className="text-gray-100">missed critical limitations</strong> needed to
+                distinguish from prior art
+              </li>
+              <li>
+                Language may <strong className="text-gray-100">not survive patent examination</strong>
+              </li>
+              <li>
+                Technical details may be <strong className="text-gray-100">fabricated or mischaracterized</strong>
+              </li>
             </ul>
-            <p className="font-semibold text-gray-100">Every claim must be reviewed, revised, and finalized by a registered patent attorney before filing.</p>
+            <p className="font-semibold text-gray-100">
+              Every claim must be reviewed, revised, and finalized by a registered patent attorney before filing.
+            </p>
           </div>
           <label className="flex items-start gap-3 mb-4 cursor-pointer">
             <input
               type="checkbox"
               checked={acknowledged}
-              onChange={e => setAcknowledged(e.target.checked)}
+              onChange={(e) => setAcknowledged(e.target.checked)}
               className="mt-1 rounded border-gray-600"
             />
-            <span className="text-sm text-gray-300">I understand these are draft research concepts, not filing-ready claims</span>
+            <span className="text-sm text-gray-300">
+              I understand these are draft research concepts, not filing-ready claims
+            </span>
           </label>
           <div className="flex gap-3">
             <button
-              onClick={() => { setShowModal(false); if (acknowledged) handleGenerate(); }}
+              onClick={() => {
+                setShowModal(false);
+                if (acknowledged) handleGenerate();
+              }}
               disabled={!acknowledged}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
             >
@@ -502,15 +605,37 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
 
 function findOverlaps(claimText: string, priorArt: Array<{ patentNumber: string; title: string }>) {
   if (!priorArt?.length) return [];
-  const stopWords = new Set(['method', 'system', 'device', 'apparatus', 'comprising', 'wherein', 'claim', 'said', 'based', 'using', 'having', 'includes', 'providing']);
+  const stopWords = new Set([
+    'method',
+    'system',
+    'device',
+    'apparatus',
+    'comprising',
+    'wherein',
+    'claim',
+    'said',
+    'based',
+    'using',
+    'having',
+    'includes',
+    'providing',
+  ]);
   const claimLower = claimText.toLowerCase();
-  return priorArt.filter(art => {
-    const titleWords = art.title.toLowerCase().split(/\s+/).filter(w => w.length >= 4 && !stopWords.has(w));
-    return titleWords.some(word => claimLower.includes(word));
+  return priorArt.filter((art) => {
+    const titleWords = art.title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !stopWords.has(w));
+    return titleWords.some((word) => claimLower.includes(word));
   });
 }
 
-function CollapsibleSection({ title, isOpen, onToggle, content }: {
+function CollapsibleSection({
+  title,
+  isOpen,
+  onToggle,
+  content,
+}: {
   title: string;
   isOpen: boolean;
   onToggle: () => void;
@@ -527,9 +652,7 @@ function CollapsibleSection({ title, isOpen, onToggle, content }: {
       </button>
       {isOpen && (
         <div className="px-4 pb-4">
-          <pre className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap font-sans">
-            {content}
-          </pre>
+          <pre className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap font-sans">{content}</pre>
         </div>
       )}
     </div>

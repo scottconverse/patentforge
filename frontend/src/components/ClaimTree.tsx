@@ -18,9 +18,9 @@ interface ClaimTreeProps {
 // Layout constants
 const NODE_W = 140;
 const NODE_H = 48;
-const H_GAP = 24;   // horizontal gap between siblings
-const V_GAP = 56;   // vertical gap between levels
-const PAD = 16;      // SVG padding
+const H_GAP = 24; // horizontal gap between siblings
+const V_GAP = 56; // vertical gap between levels
+const PAD = 16; // SVG padding
 
 interface LayoutNode {
   claim: ClaimNode;
@@ -30,21 +30,17 @@ interface LayoutNode {
 }
 
 function buildTree(claims: ClaimNode[]): LayoutNode[] {
-  const independent = claims
-    .filter(c => c.claimType === 'INDEPENDENT')
-    .sort((a, b) => a.claimNumber - b.claimNumber);
+  const independent = claims.filter((c) => c.claimType === 'INDEPENDENT').sort((a, b) => a.claimNumber - b.claimNumber);
 
-  const dependent = claims
-    .filter(c => c.claimType === 'DEPENDENT')
-    .sort((a, b) => a.claimNumber - b.claimNumber);
+  const dependent = claims.filter((c) => c.claimType === 'DEPENDENT').sort((a, b) => a.claimNumber - b.claimNumber);
 
-  return independent.map(indep => ({
+  return independent.map((indep) => ({
     claim: indep,
     x: 0,
     y: 0,
     children: dependent
-      .filter(d => d.parentClaimNumber === indep.claimNumber)
-      .map(d => ({ claim: d, x: 0, y: 0, children: [] })),
+      .filter((d) => d.parentClaimNumber === indep.claimNumber)
+      .map((d) => ({ claim: d, x: 0, y: 0, children: [] })),
   }));
 }
 
@@ -52,13 +48,13 @@ function layoutTree(roots: LayoutNode[]): { nodes: LayoutNode[]; width: number; 
   if (roots.length === 0) return { nodes: [], width: 0, height: 0 };
 
   // Calculate width needed for each root subtree
-  const subtreeWidths = roots.map(root => {
+  const subtreeWidths = roots.map((root) => {
     const childCount = Math.max(root.children.length, 1);
     return childCount * NODE_W + (childCount - 1) * H_GAP;
   });
 
   const totalWidth = subtreeWidths.reduce((a, b) => a + b, 0) + (roots.length - 1) * H_GAP * 2;
-  const hasChildren = roots.some(r => r.children.length > 0);
+  const hasChildren = roots.some((r) => r.children.length > 0);
   const totalHeight = NODE_H + (hasChildren ? V_GAP + NODE_H : 0);
 
   // Position each root and its children
@@ -118,8 +114,8 @@ export default function ClaimTree({ claims, onClaimClick }: ClaimTreeProps) {
         className="mx-auto"
       >
         {/* Connector lines */}
-        {roots.map(root =>
-          root.children.map(child => (
+        {roots.map((root) =>
+          root.children.map((child) => (
             <line
               key={`line-${root.claim.claimNumber}-${child.claim.claimNumber}`}
               x1={root.x + NODE_W / 2}
@@ -129,11 +125,11 @@ export default function ClaimTree({ claims, onClaimClick }: ClaimTreeProps) {
               stroke="#4b5563"
               strokeWidth={1.5}
             />
-          ))
+          )),
         )}
 
         {/* Nodes */}
-        {layout.nodes.map(node => {
+        {layout.nodes.map((node) => {
           const isIndep = node.claim.claimType === 'INDEPENDENT';
           const fill = isIndep ? '#1e3a5f' : '#1f2937';
           const stroke = isIndep ? '#3b82f6' : '#4b5563';
@@ -146,7 +142,12 @@ export default function ClaimTree({ claims, onClaimClick }: ClaimTreeProps) {
             <g
               key={node.claim.id}
               onClick={() => onClaimClick?.(node.claim.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClaimClick?.(node.claim.id); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onClaimClick?.(node.claim.id);
+                }
+              }}
               className="cursor-pointer"
               role="button"
               tabIndex={0}
@@ -181,13 +182,7 @@ export default function ClaimTree({ claims, onClaimClick }: ClaimTreeProps) {
               >
                 {label}
               </text>
-              <text
-                x={node.x + NODE_W / 2}
-                y={node.y + 35}
-                textAnchor="middle"
-                className="text-[10px]"
-                fill="#9ca3af"
-              >
+              <text x={node.x + NODE_W / 2} y={node.y + 35} textAnchor="middle" className="text-[10px]" fill="#9ca3af">
                 {truncate(subtitle, 18)}
               </text>
             </g>

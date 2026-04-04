@@ -16,14 +16,25 @@ function triggerDownload(blob: Blob, filename: string) {
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
 }
 
 function slugify(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
-export default function ReportViewer({ report: _report, preRenderedHtml: _html, projectTitle, projectId }: ReportViewerProps) {
+export default function ReportViewer({
+  report: _report,
+  preRenderedHtml: _html,
+  projectTitle,
+  projectId,
+}: ReportViewerProps) {
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
@@ -78,7 +89,10 @@ export default function ReportViewer({ report: _report, preRenderedHtml: _html, 
         {iframeLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-950 rounded-lg border border-gray-800">
             <div className="flex items-center gap-3 text-gray-400">
-              <span className="w-5 h-5 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin" aria-label="Loading" />
+              <span
+                className="w-5 h-5 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin"
+                aria-label="Loading"
+              />
               Loading report...
             </div>
           </div>

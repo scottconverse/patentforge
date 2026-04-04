@@ -7,7 +7,7 @@ function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Layout />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 

@@ -27,7 +27,7 @@ interface ComplianceCheck {
 const RULE_LABELS: Record<string, string> = {
   '112a_written_description': '112(a) Written Description',
   '112b_definiteness': '112(b) Definiteness',
-  'mpep_608_formalities': 'MPEP 608 Formalities',
+  mpep_608_formalities: 'MPEP 608 Formalities',
   '101_eligibility': '101 Eligibility',
 };
 
@@ -61,7 +61,9 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
           setRunning(false);
           setError(c.status === 'ERROR' ? 'Compliance check failed. Try again.' : null);
         }
-      } catch {}
+      } catch {
+        /* poll error — ignore to avoid spamming error state */
+      }
     }, 3000);
     return () => {
       isMounted = false;
@@ -98,9 +100,13 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   }
 
   function toggleSection(key: string) {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   }
@@ -117,7 +123,10 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 2000);
     } catch (e: any) {
       setDocxError(e.message || 'Word export failed');
     } finally {
@@ -144,7 +153,10 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+          <div
+            className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+            aria-label="Loading"
+          />
           <span className="text-gray-300">Running compliance checks...</span>
         </div>
         <p className="text-xs text-gray-500 mt-3">This may take 1-3 minutes. Checking claims against patent rules.</p>
@@ -160,12 +172,8 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   // State 4: Error or no check yet — show run button
   return (
     <div className="text-center py-12">
-      {check?.status === 'ERROR' && (
-        <p className="text-red-400 mb-3">Compliance check failed.</p>
-      )}
-      {!check && (
-        <p className="text-gray-400 mb-4">No compliance check yet. Run a check against your claim drafts.</p>
-      )}
+      {check?.status === 'ERROR' && <p className="text-red-400 mb-3">Compliance check failed.</p>}
+      {!check && <p className="text-gray-400 mb-4">No compliance check yet. Run a check against your claim drafts.</p>}
       <button
         onClick={handleRunCheck}
         className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
@@ -182,12 +190,12 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     if (!check || !check.results) return null;
 
     const results = check.results;
-    const issueCount = results.filter(r => r.status === 'FAIL' || r.status === 'WARN').length;
+    const issueCount = results.filter((r) => r.status === 'FAIL' || r.status === 'WARN').length;
 
     // Group results by rule
     const grouped: Record<string, ComplianceResult[]> = {};
     for (const rule of RULE_ORDER) {
-      grouped[rule] = results.filter(r => r.rule === rule);
+      grouped[rule] = results.filter((r) => r.rule === rule);
     }
 
     return (
@@ -203,9 +211,7 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
           </button>
         </div>
 
-        {docxError && (
-          <Alert variant="error">Word export failed: {docxError}</Alert>
-        )}
+        {docxError && <Alert variant="error">Word export failed: {docxError}</Alert>}
 
         {/* UPL disclaimer banner */}
         <div className="bg-amber-900/20 border border-amber-800 rounded-lg p-3 text-center">
@@ -218,11 +224,11 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
         </div>
 
         {/* Overall status */}
-        <div className={`rounded-lg p-4 border ${
-          check.overallPass
-            ? 'bg-green-900/20 border-green-800'
-            : 'bg-red-900/20 border-red-800'
-        }`}>
+        <div
+          className={`rounded-lg p-4 border ${
+            check.overallPass ? 'bg-green-900/20 border-green-800' : 'bg-red-900/20 border-red-800'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <span className={`text-2xl ${check.overallPass ? 'text-green-400' : 'text-red-400'}`}>
               {check.overallPass ? '\u2713' : '\u2717'}
@@ -232,20 +238,21 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
                 {check.overallPass ? 'All checks passed' : `${issueCount} issue${issueCount !== 1 ? 's' : ''} found`}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {results.length} check{results.length !== 1 ? 's' : ''} across {Object.keys(grouped).filter(k => grouped[k].length > 0).length} rule categories
+                {results.length} check{results.length !== 1 ? 's' : ''} across{' '}
+                {Object.keys(grouped).filter((k) => grouped[k].length > 0).length} rule categories
               </p>
             </div>
           </div>
         </div>
 
         {/* Collapsible sections per rule */}
-        {RULE_ORDER.map(rule => {
+        {RULE_ORDER.map((rule) => {
           const ruleResults = grouped[rule];
           if (!ruleResults || ruleResults.length === 0) return null;
 
           const isOpen = expandedSections.has(rule);
-          const hasFailures = ruleResults.some(r => r.status === 'FAIL');
-          const hasWarnings = ruleResults.some(r => r.status === 'WARN');
+          const hasFailures = ruleResults.some((r) => r.status === 'FAIL');
+          const hasWarnings = ruleResults.some((r) => r.status === 'WARN');
 
           return (
             <div key={rule} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
@@ -281,9 +288,7 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
                             )}
                             <p className="text-sm text-gray-200">{r.detail}</p>
                           </div>
-                          {r.citation && (
-                            <p className="text-xs text-gray-500 mt-1">{r.citation}</p>
-                          )}
+                          {r.citation && <p className="text-xs text-gray-500 mt-1">{r.citation}</p>}
                           {r.suggestion && (
                             <div className="mt-2 bg-blue-900/20 border border-blue-800/50 rounded px-3 py-2">
                               <p className="text-xs text-blue-300">{r.suggestion}</p>
@@ -330,27 +335,45 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
             Important: This is a research tool, not a legal service.
           </h2>
           <div className="text-sm text-gray-300 space-y-3 mb-6 max-h-64 overflow-y-auto">
-            <p>The compliance check below is an <strong className="text-gray-100">AI-generated research pre-screen</strong> to help you discuss patent strategy with your attorney. It is NOT a legal opinion.</p>
+            <p>
+              The compliance check below is an{' '}
+              <strong className="text-gray-100">AI-generated research pre-screen</strong> to help you discuss patent
+              strategy with your attorney. It is NOT a legal opinion.
+            </p>
             <ul className="list-disc ml-5 space-y-2">
-              <li>Results may contain <strong className="text-gray-100">false positives or negatives</strong></li>
-              <li>The AI may <strong className="text-gray-100">miss compliance issues</strong> that a patent examiner would catch</li>
-              <li>MPEP citations may be <strong className="text-gray-100">outdated or inaccurate</strong></li>
-              <li>Suggestions are <strong className="text-gray-100">starting points, not final fixes</strong></li>
+              <li>
+                Results may contain <strong className="text-gray-100">false positives or negatives</strong>
+              </li>
+              <li>
+                The AI may <strong className="text-gray-100">miss compliance issues</strong> that a patent examiner
+                would catch
+              </li>
+              <li>
+                MPEP citations may be <strong className="text-gray-100">outdated or inaccurate</strong>
+              </li>
+              <li>
+                Suggestions are <strong className="text-gray-100">starting points, not final fixes</strong>
+              </li>
             </ul>
-            <p className="font-semibold text-gray-100">Every compliance result must be reviewed by a registered patent attorney.</p>
+            <p className="font-semibold text-gray-100">
+              Every compliance result must be reviewed by a registered patent attorney.
+            </p>
           </div>
           <label className="flex items-start gap-3 mb-4 cursor-pointer">
             <input
               type="checkbox"
               checked={acknowledged}
-              onChange={e => setAcknowledged(e.target.checked)}
+              onChange={(e) => setAcknowledged(e.target.checked)}
               className="mt-1 rounded border-gray-600"
             />
             <span className="text-sm text-gray-300">I understand this is AI-generated research, not legal advice</span>
           </label>
           <div className="flex gap-3">
             <button
-              onClick={() => { setShowModal(false); if (acknowledged) handleRunCheck(); }}
+              onClick={() => {
+                setShowModal(false);
+                if (acknowledged) handleRunCheck();
+              }}
               disabled={!acknowledged}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
             >

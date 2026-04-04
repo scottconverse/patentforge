@@ -13,7 +13,8 @@ export default function App() {
   const [showWizard, setShowWizard] = useState<boolean | null>(null);
 
   useEffect(() => {
-    api.settings.get()
+    api.settings
+      .get()
       .then((s: any) => {
         setShowWizard(!s.anthropicApiKey);
       })

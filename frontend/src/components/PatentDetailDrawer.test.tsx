@@ -40,9 +40,7 @@ describe('PatentDetailDrawer', () => {
   });
 
   it('renders nothing when patentNumber is null', () => {
-    const { container } = render(
-      <PatentDetailDrawer patentNumber={null} onClose={onClose} />
-    );
+    const { container } = render(<PatentDetailDrawer patentNumber={null} onClose={onClose} />);
     expect(container.innerHTML).toBe('');
   });
 
@@ -79,7 +77,7 @@ describe('PatentDetailDrawer', () => {
 
   it('shows error state when fetch fails with key message', async () => {
     (api.patents.getDetail as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('API error 404: Patent detail requires a USPTO API key')
+      new Error('API error 404: Patent detail requires a USPTO API key'),
     );
 
     render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
@@ -93,7 +91,7 @@ describe('PatentDetailDrawer', () => {
 
   it('shows generic error when fetch fails without key message', async () => {
     (api.patents.getDetail as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('API error 500: Internal server error')
+      new Error('API error 500: Internal server error'),
     );
 
     render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
@@ -112,10 +110,7 @@ describe('PatentDetailDrawer', () => {
 
     const link = screen.getByText(/Google Patents/);
     expect(link).toBeInTheDocument();
-    expect(link.closest('a')).toHaveAttribute(
-      'href',
-      'https://patents.google.com/patent/US10234567B2'
-    );
+    expect(link.closest('a')).toHaveAttribute('href', 'https://patents.google.com/patent/US10234567B2');
   });
 
   it('toggles claims section on click', async () => {
@@ -221,9 +216,7 @@ describe('PatentDetailDrawer', () => {
     const noClaimsDetail = { ...mockDetail, claimsText: null, claimCount: null };
     (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(noClaimsDetail);
 
-    (api.patents.getClaims as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('API error 500: Internal error'),
-    );
+    (api.patents.getClaims as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API error 500: Internal error'));
 
     render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
 
@@ -367,9 +360,7 @@ describe('PatentDetailDrawer', () => {
 
   it('shows error when family fetch fails', async () => {
     (api.patents.getDetail as ReturnType<typeof vi.fn>).mockResolvedValue(mockDetail);
-    (api.patents.getFamily as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('API error 500: Internal error'),
-    );
+    (api.patents.getFamily as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API error 500: Internal error'));
 
     render(<PatentDetailDrawer patentNumber="US10234567B2" onClose={onClose} />);
 

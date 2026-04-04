@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
-import { Project, InventionInput, FeasibilityRun, FeasibilityStage, RunStatus, AppSettings, FeasibilityRunSummary, PriorArtSearch } from '../types';
+import {
+  Project,
+  InventionInput,
+  FeasibilityRun,
+  FeasibilityStage,
+  RunStatus,
+  AppSettings,
+  FeasibilityRunSummary,
+  PriorArtSearch,
+} from '../types';
 import InventionForm from './InventionForm';
 import ReportViewer from '../components/ReportViewer';
 import StageProgress from '../components/StageProgress';
@@ -68,7 +77,10 @@ const ESTIMATED_WEB_SEARCH_COST = ESTIMATED_SEARCHES_PER_RUN * WEB_SEARCH_COST_P
 
 const COST_BUFFER = 1.25; // 25% buffer over estimate
 
-async function estimateRunCosts(projectId: string, model: string): Promise<{ tokenCost: number; webSearchCost: number; source: 'history' | 'static'; runsUsed: number }> {
+async function estimateRunCosts(
+  projectId: string,
+  model: string,
+): Promise<{ tokenCost: number; webSearchCost: number; source: 'history' | 'static'; runsUsed: number }> {
   const estimate = await api.feasibility.costEstimate(projectId);
   const p = getModelPricing(model);
   const stages = 6;
@@ -78,14 +90,24 @@ async function estimateRunCosts(projectId: string, model: string): Promise<{ tok
     return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'history', runsUsed: estimate.runsUsed };
   }
 
-  const tokenCost = stages * (
-    (estimate.avgInputTokens / 1_000_000) * p.inputPer1M +
-    (estimate.avgOutputTokens / 1_000_000) * p.outputPer1M
-  ) * COST_BUFFER;
+  const tokenCost =
+    stages *
+    ((estimate.avgInputTokens / 1_000_000) * p.inputPer1M + (estimate.avgOutputTokens / 1_000_000) * p.outputPer1M) *
+    COST_BUFFER;
   return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'static', runsUsed: 0 };
 }
 
-type ViewMode = 'overview' | 'invention-form' | 'running' | 'report' | 'stage-output' | 'history' | 'prior-art' | 'claims' | 'compliance' | 'application';
+type ViewMode =
+  | 'overview'
+  | 'invention-form'
+  | 'running'
+  | 'report'
+  | 'stage-output'
+  | 'history'
+  | 'prior-art'
+  | 'claims'
+  | 'compliance'
+  | 'application';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -114,11 +136,19 @@ export default function ProjectDetail() {
   const [selectedStage, setSelectedStage] = useState<FeasibilityStage | null>(null);
 
   // Toast notification
-  const [toast, setToast] = useState<{ message: string; detail?: string; type?: 'success' | 'error' | 'info' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; detail?: string; type?: 'success' | 'error' | 'info' } | null>(
+    null,
+  );
 
   // Cost confirmation modal
   const [costModal, setCostModal] = useState<{
-    tokenCost: number; webSearchCost: number; cap: number; model: string; source: 'history' | 'static'; runsUsed: number; stageCount?: number;
+    tokenCost: number;
+    webSearchCost: number;
+    cap: number;
+    model: string;
+    source: 'history' | 'static';
+    runsUsed: number;
+    stageCount?: number;
   } | null>(null);
   const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -141,19 +171,25 @@ export default function ProjectDetail() {
   const [reportHtml, setReportHtml] = useState<string | null>(null);
   useEffect(() => {
     if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
-      api.feasibility.getReport(id).then(data => {
-        setFullReportContent(data.report || null);
-        setReportHtml(data.html || null);
-      }).catch(err => {
-        // Report load failure is non-fatal — UI already shows "Loading report..." fallback
-      });
+      api.feasibility
+        .getReport(id)
+        .then((data) => {
+          setFullReportContent(data.report || null);
+          setReportHtml(data.html || null);
+        })
+        .catch((err) => {
+          // Report load failure is non-fatal — UI already shows "Loading report..." fallback
+        });
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
 
   // Re-fetch claim draft status when switching to tabs that depend on it
   useEffect(() => {
     if ((viewMode === 'compliance' || viewMode === 'application') && id) {
-      api.claimDraft.getLatest(id).then(d => setClaimDraftStatus(d)).catch(() => {});
+      api.claimDraft
+        .getLatest(id)
+        .then((d) => setClaimDraftStatus(d))
+        .catch(() => {});
     }
   }, [viewMode, id]);
 
@@ -167,10 +203,16 @@ export default function ProjectDetail() {
       setProject(data);
 
       // Load prior art search state
-      api.priorArt.get(id).then(pa => setPriorArtSearch(pa)).catch(() => {});
+      api.priorArt
+        .get(id)
+        .then((pa) => setPriorArtSearch(pa))
+        .catch(() => {});
 
       // Load claim draft status (for compliance tab)
-      api.claimDraft.getLatest(id).then(d => setClaimDraftStatus(d)).catch(() => {});
+      api.claimDraft
+        .getLatest(id)
+        .then((d) => setClaimDraftStatus(d))
+        .catch(() => {});
 
       // Determine initial view mode
       const latestRun = getLatestRun(data);
@@ -182,13 +224,19 @@ export default function ProjectDetail() {
           // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
           // No active abort controller means nothing is actually streaming. Mark it ERROR
           // in the backend, load whatever partial stage output exists, and show report view.
-          const partialStages = (latestRun.stages ?? []).map(s =>
-            (s.status === 'RUNNING' || s.status === 'PENDING')
-              ? { ...s, status: 'ERROR' as RunStatus, errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.' }
-              : s
+          const partialStages = (latestRun.stages ?? []).map((s) =>
+            s.status === 'RUNNING' || s.status === 'PENDING'
+              ? {
+                  ...s,
+                  status: 'ERROR' as RunStatus,
+                  errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.',
+                }
+              : s,
           );
           setStages(partialStages.length ? partialStages : makePlaceholderStages());
-          setRunError('Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.');
+          setRunError(
+            'Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.',
+          );
           setViewMode('report');
           // Patch backend so it doesn't stay RUNNING forever
           try {
@@ -276,7 +324,7 @@ export default function ProjectDetail() {
     }
 
     const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
-    const cap = appSettings.costCapUsd ?? 5.00;
+    const cap = appSettings.costCapUsd ?? 5.0;
     const { tokenCost, webSearchCost, source, runsUsed } = await estimateRunCosts(id, model);
 
     // Store run closure and show modal
@@ -320,21 +368,34 @@ export default function ProjectDetail() {
     }
 
     const model = appSettings.defaultModel || 'claude-haiku-4-5-20251001';
-    const cap = appSettings.costCapUsd ?? 5.00;
+    const cap = appSettings.costCapUsd ?? 5.0;
     const remainingStages = 6 - resumeFrom + 1;
     // Estimate cost only for remaining stages
     const { tokenCost, webSearchCost, source, runsUsed } = await estimateRunCosts(id, model);
-    const partialTokenCost = parseFloat((tokenCost * remainingStages / 6).toFixed(3));
-    const partialWebCost = parseFloat((webSearchCost * remainingStages / 6).toFixed(2));
+    const partialTokenCost = parseFloat(((tokenCost * remainingStages) / 6).toFixed(3));
+    const partialWebCost = parseFloat(((webSearchCost * remainingStages) / 6).toFixed(2));
 
     pendingRunRef.current = async () => {
       setCostModal(null);
       await proceedWithRun(appSettings, inv, resumeFrom, completedOutputs);
     };
-    setCostModal({ tokenCost: partialTokenCost, webSearchCost: partialWebCost, cap, model, source, runsUsed, stageCount: remainingStages });
+    setCostModal({
+      tokenCost: partialTokenCost,
+      webSearchCost: partialWebCost,
+      cap,
+      model,
+      source,
+      runsUsed,
+      stageCount: remainingStages,
+    });
   }
 
-  async function proceedWithRun(appSettings: AppSettings, inv: InventionInput, startFromStage = 1, previousOutputs: Record<number, string> = {}) {
+  async function proceedWithRun(
+    appSettings: AppSettings,
+    inv: InventionInput,
+    startFromStage = 1,
+    previousOutputs: Record<number, string> = {},
+  ) {
     if (!id) return;
 
     setRunError(null);
@@ -343,9 +404,11 @@ export default function ProjectDetail() {
     setActiveStageNum(undefined);
     // When resuming, preserve completed stage display; otherwise reset to placeholders
     if (startFromStage > 1) {
-      setStages(prev => prev.map(s =>
-        s.stageNumber < startFromStage ? s : { ...s, status: 'PENDING' as RunStatus, outputText: undefined }
-      ));
+      setStages((prev) =>
+        prev.map((s) =>
+          s.stageNumber < startFromStage ? s : { ...s, status: 'PENDING' as RunStatus, outputText: undefined },
+        ),
+      );
     } else {
       setStages(makePlaceholderStages());
     }
@@ -380,19 +443,23 @@ export default function ProjectDetail() {
         runIdRef.current = runId;
         try {
           await api.feasibility.patchRun(id, { status: 'RUNNING', runId });
-        } catch { /* non-fatal */ }
+        } catch {
+          /* non-fatal */
+        }
       } else {
         const run = await api.feasibility.start(id, { narrative });
         runId = run.id;
         runIdRef.current = runId;
-        setProject(prev => {
+        setProject((prev) => {
           if (!prev) return prev;
           const existing = prev.feasibility || [];
           return { ...prev, feasibility: [...existing, run] };
         });
         try {
           await api.feasibility.patchRun(id, { status: 'RUNNING', runId });
-        } catch { /* non-fatal */ }
+        } catch {
+          /* non-fatal */
+        }
       }
 
       // Wait up to 45s for prior art to complete before starting pipeline
@@ -405,20 +472,25 @@ export default function ProjectDetail() {
               const search = await api.priorArt.get(projectId);
               setPriorArtSearch(search);
               if (search.results.length > 0) {
-                const rows = search.results.slice(0, 10).map(r =>
-                  `| ${r.patentNumber} | ${r.title.slice(0, 60)} | ${Math.round(r.relevanceScore * 100)}% |`
-                );
+                const rows = search.results
+                  .slice(0, 10)
+                  .map(
+                    (r) => `| ${r.patentNumber} | ${r.title.slice(0, 60)} | ${Math.round(r.relevanceScore * 100)}% |`,
+                  );
                 const table = ['| Patent | Title | Relevance |', '|---|---|---|', ...rows].join('\n');
-                const abstracts = search.results.slice(0, 5).map(r =>
-                  `**${r.patentNumber}** — ${r.title}\n${r.snippet || r.abstract?.slice(0, 250) || ''}`
-                ).join('\n\n');
+                const abstracts = search.results
+                  .slice(0, 5)
+                  .map((r) => `**${r.patentNumber}** — ${r.title}\n${r.snippet || r.abstract?.slice(0, 250) || ''}`)
+                  .join('\n\n');
                 return `${table}\n\n**Key abstracts:**\n\n${abstracts}`;
               }
               return null;
             }
             if (status.status === 'ERROR' || status.status === 'NONE') return null;
-          } catch { return null; }
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          } catch {
+            return null;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 3000));
         }
         return null;
       }
@@ -475,11 +547,7 @@ export default function ProjectDetail() {
       let totalActualCost = 0;
 
       const updateStageStatus = (stageNum: number, updates: Partial<FeasibilityStage>) => {
-        setStages(prev =>
-          prev.map(s =>
-            s.stageNumber === stageNum ? { ...s, ...updates } : s
-          )
-        );
+        setStages((prev) => prev.map((s) => (s.stageNumber === stageNum ? { ...s, ...updates } : s)));
       };
 
       while (true) {
@@ -517,15 +585,16 @@ export default function ProjectDetail() {
                 status: 'RUNNING',
                 startedAt: currentStageStart,
               });
-
             } else if (eventType === 'token') {
               stageOutputAccumulator += data.text || '';
               streamDirty = true;
               scheduleStreamUpdate();
-
             } else if (eventType === 'stage_complete') {
               // Flush any pending stream update
-              if (throttleTimer !== null) { clearTimeout(throttleTimer); throttleTimer = null; }
+              if (throttleTimer !== null) {
+                clearTimeout(throttleTimer);
+                throttleTimer = null;
+              }
               setStreamText(stageOutputAccumulator);
               streamDirty = false;
 
@@ -565,14 +634,19 @@ export default function ProjectDetail() {
                 // If cost cap exceeded, cancel the pipeline
                 if (patchResult?.costCapExceeded) {
                   // Cost cap exceeded — cancel pipeline and show UI error (below)
-                  try { await api.feasibility.cancel(id); } catch {}
-                  setError(`Cost cap reached ($${patchResult.cumulativeCost.toFixed(2)} of $${patchResult.costCapUsd.toFixed(2)}). Pipeline stopped. Increase the cap in Settings to continue.`);
+                  try {
+                    await api.feasibility.cancel(id);
+                  } catch {
+                    /* best-effort cancel — ignore failure */
+                  }
+                  setError(
+                    `Cost cap reached ($${patchResult.cumulativeCost.toFixed(2)} of $${patchResult.costCapUsd.toFixed(2)}). Pipeline stopped. Increase the cap in Settings to continue.`,
+                  );
                   setViewMode('overview');
                 }
               } catch {
                 // non-fatal
               }
-
             } else if (eventType === 'stage_error') {
               updateStageStatus(currentStageNum, {
                 status: 'ERROR',
@@ -580,7 +654,6 @@ export default function ProjectDetail() {
                 completedAt: new Date().toISOString(),
               });
               setRunError(`Stage ${currentStageNum} error: ${data.error || 'Unknown error'}`);
-
             } else if (eventType === 'pipeline_complete') {
               pipelineCompleted = true;
               // Persist finalReport to backend
@@ -609,21 +682,16 @@ export default function ProjectDetail() {
               }
               await loadProject();
               return;
-
             } else if (eventType === 'pipeline_error') {
               setRunError(data.error || 'Pipeline failed');
-              setStages(prev =>
-                prev.map(s =>
-                  s.status === 'RUNNING' ? { ...s, status: 'ERROR' as RunStatus } : s
-                )
+              setStages((prev) =>
+                prev.map((s) => (s.status === 'RUNNING' ? { ...s, status: 'ERROR' as RunStatus } : s)),
               );
             } else if (eventType === 'cancelled') {
-              setStages(prev =>
-                prev.map(s =>
-                  s.status === 'RUNNING' || s.status === 'PENDING'
-                    ? { ...s, status: 'CANCELLED' as RunStatus }
-                    : s
-                )
+              setStages((prev) =>
+                prev.map((s) =>
+                  s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'CANCELLED' as RunStatus } : s,
+                ),
               );
               setRunError('Analysis was cancelled.');
             }
@@ -637,29 +705,24 @@ export default function ProjectDetail() {
       if (!pipelineCompleted) {
         setRunError(
           `Connection to analysis service lost after Stage ${currentStageNum || '?'}. ` +
-          `Check the feasibility service logs and re-run.`
+            `Check the feasibility service logs and re-run.`,
         );
-        setStages(prev =>
-          prev.map(s =>
-            s.status === 'RUNNING' || s.status === 'PENDING'
-              ? { ...s, status: 'ERROR' as RunStatus }
-              : s
-          )
+        setStages((prev) =>
+          prev.map((s) =>
+            s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'ERROR' as RunStatus } : s,
+          ),
         );
       }
-
     } catch (e: any) {
       if (e.name === 'AbortError') {
         setRunError('Analysis cancelled.');
         return;
       }
       setRunError(e.message || 'Failed to run feasibility analysis');
-      setStages(prev =>
-        prev.map(s =>
-          s.status === 'RUNNING' || s.status === 'PENDING'
-            ? { ...s, status: 'ERROR' as RunStatus }
-            : s
-        )
+      setStages((prev) =>
+        prev.map((s) =>
+          s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'ERROR' as RunStatus } : s,
+        ),
       );
     }
   }
@@ -670,12 +733,10 @@ export default function ProjectDetail() {
       setCancelling(true);
       abortRef.current?.abort();
       await api.feasibility.cancel(id);
-      setStages(prev =>
-        prev.map(s =>
-          s.status === 'RUNNING' || s.status === 'PENDING'
-            ? { ...s, status: 'CANCELLED' as RunStatus }
-            : s
-        )
+      setStages((prev) =>
+        prev.map((s) =>
+          s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'CANCELLED' as RunStatus } : s,
+        ),
       );
       setRunError('Analysis cancelled.');
     } catch {
@@ -693,7 +754,10 @@ export default function ProjectDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-500">
-        <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" aria-label="Loading" />
+        <span
+          className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3"
+          aria-label="Loading"
+        />
         Loading project...
       </div>
     );
@@ -720,9 +784,12 @@ export default function ProjectDetail() {
 
   if (!project) return null;
 
-  const displayStages = (viewMode === 'running' || viewMode === 'report')
-    ? stages
-    : (latestRun?.stages?.length ? latestRun.stages : makePlaceholderStages());
+  const displayStages =
+    viewMode === 'running' || viewMode === 'report'
+      ? stages
+      : latestRun?.stages?.length
+        ? latestRun.stages
+        : makePlaceholderStages();
 
   const totalRunCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
 
@@ -732,7 +799,9 @@ export default function ProjectDetail() {
     <div className="max-w-7xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link to="/" className="hover:text-gray-300 transition-colors">Projects</Link>
+        <Link to="/" className="hover:text-gray-300 transition-colors">
+          Projects
+        </Link>
         <span>/</span>
         <span className="text-gray-300 truncate max-w-xs">{project.title}</span>
         <span
@@ -758,30 +827,50 @@ export default function ProjectDetail() {
                   : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${project.invention ? 'border-green-500 bg-green-900 text-green-400' : 'border-gray-600 text-gray-500'}`}>
+              <span
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${project.invention ? 'border-green-500 bg-green-900 text-green-400' : 'border-gray-600 text-gray-500'}`}
+              >
                 {project.invention ? '✓' : '1'}
               </span>
               <span>Invention Intake</span>
             </button>
 
             {/* Feasibility */}
-            <div className={`px-3 py-2 rounded text-sm mb-2 ${
-              viewMode === 'running' || viewMode === 'report'
-                ? 'bg-blue-950 border border-blue-800'
-                : 'text-gray-400'
-            }`}>
+            <div
+              className={`px-3 py-2 rounded text-sm mb-2 ${
+                viewMode === 'running' || viewMode === 'report' ? 'bg-blue-950 border border-blue-800' : 'text-gray-400'
+              }`}
+            >
               <div className="flex items-center gap-2 mb-2">
-                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
-                  latestRun?.status === 'COMPLETE' ? 'border-green-500 bg-green-900 text-green-400' :
-                  latestRun?.status === 'RUNNING' ? 'border-blue-500' :
-                  'border-gray-600 text-gray-500'
-                }`}>
-                  {latestRun?.status === 'COMPLETE' ? '✓' :
-                   latestRun?.status === 'RUNNING' ? (
-                     <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
-                   ) : '2'}
+                <span
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                    latestRun?.status === 'COMPLETE'
+                      ? 'border-green-500 bg-green-900 text-green-400'
+                      : latestRun?.status === 'RUNNING'
+                        ? 'border-blue-500'
+                        : 'border-gray-600 text-gray-500'
+                  }`}
+                >
+                  {latestRun?.status === 'COMPLETE' ? (
+                    '✓'
+                  ) : latestRun?.status === 'RUNNING' ? (
+                    <span
+                      className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"
+                      aria-label="Loading"
+                    />
+                  ) : (
+                    '2'
+                  )}
                 </span>
-                <span className={latestRun?.status === 'COMPLETE' ? 'text-green-400' : latestRun?.status === 'RUNNING' ? 'text-blue-300' : 'text-gray-400'}>
+                <span
+                  className={
+                    latestRun?.status === 'COMPLETE'
+                      ? 'text-green-400'
+                      : latestRun?.status === 'RUNNING'
+                        ? 'text-blue-300'
+                        : 'text-gray-400'
+                  }
+                >
                   Feasibility
                 </span>
               </div>
@@ -827,34 +916,38 @@ export default function ProjectDetail() {
           {/* Quick actions */}
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions</h3>
-            {project.invention && viewMode !== 'running' && (() => {
-              // Show Resume button if there are completed stages but the run didn't finish
-              const hasPartial = displayStages.some(s => s.status === 'COMPLETE' && s.outputText) &&
-                displayStages.some(s => s.status === 'ERROR' || s.status === 'PENDING');
-              return hasPartial ? (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => handleResume()}
-                    className="w-full px-3 py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm font-medium transition-colors"
-                  >
-                    ▶ Resume (from Stage {displayStages.find(s => s.status === 'ERROR' || s.status === 'PENDING')?.stageNumber ?? '?'})
-                  </button>
+            {project.invention &&
+              viewMode !== 'running' &&
+              (() => {
+                // Show Resume button if there are completed stages but the run didn't finish
+                const hasPartial =
+                  displayStages.some((s) => s.status === 'COMPLETE' && s.outputText) &&
+                  displayStages.some((s) => s.status === 'ERROR' || s.status === 'PENDING');
+                return hasPartial ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleResume()}
+                      className="w-full px-3 py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm font-medium transition-colors"
+                    >
+                      ▶ Resume (from Stage{' '}
+                      {displayStages.find((s) => s.status === 'ERROR' || s.status === 'PENDING')?.stageNumber ?? '?'})
+                    </button>
+                    <button
+                      onClick={() => handleRunFeasibility()}
+                      className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
+                    >
+                      Run from Start
+                    </button>
+                  </div>
+                ) : (
                   <button
                     onClick={() => handleRunFeasibility()}
-                    className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
+                    className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
                   >
-                    Run from Start
+                    Run Feasibility
                   </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => handleRunFeasibility()}
-                  className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
-                >
-                  Run Feasibility
-                </button>
-              );
-            })()}
+                );
+              })()}
             {viewMode === 'running' && (
               <button
                 onClick={handleCancel}
@@ -938,11 +1031,11 @@ export default function ProjectDetail() {
                 projectId={project.id}
                 initialData={project.invention}
                 onSaved={(inv) => {
-                  setProject(prev => prev ? { ...prev, invention: inv } : prev);
+                  setProject((prev) => (prev ? { ...prev, invention: inv } : prev));
                   setViewMode('overview');
                 }}
                 onRunFeasibility={(inv) => {
-                  setProject(prev => prev ? { ...prev, invention: inv } : prev);
+                  setProject((prev) => (prev ? { ...prev, invention: inv } : prev));
                   handleRunFeasibility(inv);
                 }}
               />
@@ -1056,7 +1149,10 @@ export default function ProjectDetail() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" aria-label="Loading" />
+                  <span
+                    className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin"
+                    aria-label="Loading"
+                  />
                   <h2 className="text-lg font-semibold text-gray-100">Running Feasibility Analysis</h2>
                 </div>
                 <button
@@ -1081,11 +1177,7 @@ export default function ProjectDetail() {
               )}
 
               {!runError && streamText && (
-                <StreamingOutput
-                  text={streamText}
-                  stageName={currentStageName}
-                  isComplete={isStreamComplete}
-                />
+                <StreamingOutput text={streamText} stageName={currentStageName} isComplete={isStreamComplete} />
               )}
 
               {!runError && !streamText && (
@@ -1102,16 +1194,17 @@ export default function ProjectDetail() {
           {viewMode === 'report' && (
             <div className="space-y-4">
               {runError && (
-                <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
-                  {runError}
-                </div>
+                <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">{runError}</div>
               )}
               {selectedRunVersion && (
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                   <span>Viewing</span>
                   <span className="px-2 py-0.5 bg-gray-800 rounded font-mono text-gray-300">v{selectedRunVersion}</span>
                   <button
-                    onClick={() => { setSelectedRunVersion(null); setHistoricalReport(null); }}
+                    onClick={() => {
+                      setSelectedRunVersion(null);
+                      setHistoricalReport(null);
+                    }}
                     className="text-blue-400 hover:text-blue-300 ml-2 transition-colors"
                   >
                     View latest →
@@ -1128,7 +1221,10 @@ export default function ProjectDetail() {
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
                   <div className="inline-flex items-center gap-3 text-gray-400">
-                    <div className="w-5 h-5 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin" aria-label="Loading" />
+                    <div
+                      className="w-5 h-5 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin"
+                      aria-label="Loading"
+                    />
                     Loading report...
                   </div>
                   <button
@@ -1147,23 +1243,33 @@ export default function ProjectDetail() {
             <div className="space-y-3">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-100">Run History</h2>
-                <button onClick={() => setViewMode('overview')} className="text-sm text-gray-400 hover:text-gray-200 transition-colors">
+                <button
+                  onClick={() => setViewMode('overview')}
+                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                >
                   ← Back
                 </button>
               </div>
-              {runHistory.length === 0 && (
-                <p className="text-gray-500 text-sm">No runs found.</p>
-              )}
-              {runHistory.map(run => (
-                <div key={run.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center justify-between">
+              {runHistory.length === 0 && <p className="text-gray-500 text-sm">No runs found.</p>}
+              {runHistory.map((run) => (
+                <div
+                  key={run.id}
+                  className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center justify-between"
+                >
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-100">Version {run.version}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        run.status === 'COMPLETE' ? 'bg-green-900 text-green-300' :
-                        run.status === 'ERROR' ? 'bg-red-900 text-red-300' :
-                        'bg-gray-700 text-gray-400'
-                      }`}>{run.status}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          run.status === 'COMPLETE'
+                            ? 'bg-green-900 text-green-300'
+                            : run.status === 'ERROR'
+                              ? 'bg-red-900 text-red-300'
+                              : 'bg-gray-700 text-gray-400'
+                        }`}
+                      >
+                        {run.status}
+                      </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1 space-x-3">
                       {run.completedAt && <span>{new Date(run.completedAt).toLocaleString()}</span>}
@@ -1232,7 +1338,7 @@ export default function ProjectDetail() {
               <ClaimsTab
                 projectId={id!}
                 hasFeasibility={!!latestRun && latestRun.status === 'COMPLETE'}
-                priorArtTitles={priorArtSearch?.results?.map(r => ({ patentNumber: r.patentNumber, title: r.title }))}
+                priorArtTitles={priorArtSearch?.results?.map((r) => ({ patentNumber: r.patentNumber, title: r.title }))}
               />
             </div>
           )}
@@ -1251,7 +1357,12 @@ export default function ProjectDetail() {
               </div>
               <ComplianceTab
                 projectId={id!}
-                hasClaims={!!claimDraftStatus && claimDraftStatus.status === 'COMPLETE' && Array.isArray(claimDraftStatus.claims) && claimDraftStatus.claims.length > 0}
+                hasClaims={
+                  !!claimDraftStatus &&
+                  claimDraftStatus.status === 'COMPLETE' &&
+                  Array.isArray(claimDraftStatus.claims) &&
+                  claimDraftStatus.claims.length > 0
+                }
               />
             </div>
           )}
@@ -1270,7 +1381,12 @@ export default function ProjectDetail() {
               </div>
               <ApplicationTab
                 projectId={id!}
-                hasClaims={!!claimDraftStatus && claimDraftStatus.status === 'COMPLETE' && Array.isArray(claimDraftStatus.claims) && claimDraftStatus.claims.length > 0}
+                hasClaims={
+                  !!claimDraftStatus &&
+                  claimDraftStatus.status === 'COMPLETE' &&
+                  Array.isArray(claimDraftStatus.claims) &&
+                  claimDraftStatus.claims.length > 0
+                }
               />
             </div>
           )}
@@ -1287,7 +1403,10 @@ export default function ProjectDetail() {
                     {selectedStage.model && <span className="font-mono">{selectedStage.model}</span>}
                     {selectedStage.webSearchUsed && <span className="text-blue-400">🔍 Web search used</span>}
                     {selectedStage.inputTokens != null && (
-                      <span>{selectedStage.inputTokens.toLocaleString()} in / {selectedStage.outputTokens?.toLocaleString()} out tokens</span>
+                      <span>
+                        {selectedStage.inputTokens.toLocaleString()} in / {selectedStage.outputTokens?.toLocaleString()}{' '}
+                        out tokens
+                      </span>
                     )}
                     {selectedStage.estimatedCostUsd != null && selectedStage.estimatedCostUsd > 0 && (
                       <span className="text-amber-500">{formatCost(selectedStage.estimatedCostUsd)}</span>
@@ -1297,12 +1416,18 @@ export default function ProjectDetail() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                      const slug = project.title
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '');
                       const blob = new Blob([selectedStage.outputText || ''], { type: 'text/markdown' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      const stageName = selectedStage.stageName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                      const stageName = selectedStage.stageName
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '');
                       a.download = `${slug}-${selectedStage.stageNumber}-${stageName}.md`;
                       a.click();
                       setTimeout(() => URL.revokeObjectURL(url), 2000);
@@ -1333,12 +1458,7 @@ export default function ProjectDetail() {
 
       {/* Toast */}
       {toast && (
-        <Toast
-          message={toast.message}
-          detail={toast.detail}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
+        <Toast message={toast.message} detail={toast.detail} type={toast.type} onClose={() => setToast(null)} />
       )}
 
       {/* Cost Confirmation Modal (Feature F) */}
@@ -1351,16 +1471,15 @@ export default function ProjectDetail() {
           source={costModal.source}
           runsUsed={costModal.runsUsed}
           stageCount={costModal.stageCount}
-          onConfirm={() => { pendingRunRef.current?.(); }}
+          onConfirm={() => {
+            pendingRunRef.current?.();
+          }}
           onCancel={() => setCostModal(null)}
         />
       )}
 
       {/* Patent Detail Drawer */}
-      <PatentDetailDrawer
-        patentNumber={drawerPatent}
-        onClose={() => setDrawerPatent(null)}
-      />
+      <PatentDetailDrawer patentNumber={drawerPatent} onClose={() => setDrawerPatent(null)} />
     </div>
   );
 }

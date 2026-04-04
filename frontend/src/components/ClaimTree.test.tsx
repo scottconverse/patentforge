@@ -2,10 +2,17 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ClaimTree from './ClaimTree';
 
-function makeClaim(overrides: Partial<{
-  id: string; claimNumber: number; claimType: string; scopeLevel: string | null;
-  statutoryType: string | null; parentClaimNumber: number | null; text: string;
-}> = {}) {
+function makeClaim(
+  overrides: Partial<{
+    id: string;
+    claimNumber: number;
+    claimType: string;
+    scopeLevel: string | null;
+    statutoryType: string | null;
+    parentClaimNumber: number | null;
+    text: string;
+  }> = {},
+) {
   return {
     id: `claim-${overrides.claimNumber ?? 1}`,
     claimNumber: 1,

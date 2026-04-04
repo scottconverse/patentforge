@@ -10,10 +10,24 @@ interface CostConfirmModalProps {
   onCancel: () => void;
 }
 
-export default function CostConfirmModal({ tokenCost, webSearchCost, cap, model, source, runsUsed, stageCount = 6, onConfirm, onCancel }: CostConfirmModalProps) {
+export default function CostConfirmModal({
+  tokenCost,
+  webSearchCost,
+  cap,
+  model,
+  source,
+  runsUsed,
+  stageCount = 6,
+  onConfirm,
+  onCancel,
+}: CostConfirmModalProps) {
   const totalCost = tokenCost + webSearchCost;
   const exceedsCap = cap > 0 && totalCost > cap;
-  const modelName = model.includes('haiku') ? 'Claude Haiku 4.5' : model.includes('opus') ? 'Claude Opus 4' : 'Claude Sonnet 4';
+  const modelName = model.includes('haiku')
+    ? 'Claude Haiku 4.5'
+    : model.includes('opus')
+      ? 'Claude Opus 4'
+      : 'Claude Sonnet 4';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
@@ -26,7 +40,9 @@ export default function CostConfirmModal({ tokenCost, webSearchCost, cap, model,
           </div>
           <div className="border-t border-gray-700 pt-2 mt-2 space-y-1.5">
             <div className="flex justify-between text-gray-300">
-              <span>Token cost ({stageCount} {stageCount === 1 ? 'stage' : 'stages'})</span>
+              <span>
+                Token cost ({stageCount} {stageCount === 1 ? 'stage' : 'stages'})
+              </span>
               <span className="font-mono">~${tokenCost.toFixed(3)}</span>
             </div>
             <div className="flex justify-between text-gray-400">

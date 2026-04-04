@@ -50,11 +50,19 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wizard-title"
+    >
       <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6">
-        <h2 id="wizard-title" className="text-xl font-bold text-gray-100 mb-2">Welcome to PatentForge!</h2>
+        <h2 id="wizard-title" className="text-xl font-bold text-gray-100 mb-2">
+          Welcome to PatentForge!
+        </h2>
         <p className="text-sm text-gray-400 mb-5">
-          To get started, you need an Anthropic API key. PatentForge uses Claude to analyze patents and generate reports.
+          To get started, you need an Anthropic API key. PatentForge uses Claude to analyze patents and generate
+          reports.
         </p>
 
         <div className="text-sm text-gray-300 space-y-2 mb-5">
@@ -85,7 +93,7 @@ export default function FirstRunWizard({ onComplete }: FirstRunWizardProps) {
             id="wizard-api-key"
             type="password"
             value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
+            onChange={(e) => setApiKey(e.target.value)}
             placeholder="sk-ant-..."
             autoComplete="off"
             className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"

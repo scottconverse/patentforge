@@ -60,9 +60,11 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         if (a.status === 'COMPLETE' || a.status === 'ERROR') {
           setApplication(a);
           setGenerating(false);
-          setError(a.status === 'ERROR' ? (a.errorMessage || 'Application generation failed. Try again.') : null);
+          setError(a.status === 'ERROR' ? a.errorMessage || 'Application generation failed. Try again.' : null);
         }
-      } catch {}
+      } catch {
+        /* poll error — ignore to avoid spamming error state */
+      }
     }, 3000);
     return () => {
       isMounted = false;
@@ -102,7 +104,7 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
     if (!editingSection) return;
     try {
       await api.application.updateSection(projectId, editingSection, editText);
-      setApplication((prev: any) => prev ? { ...prev, [editingSection]: editText } : prev);
+      setApplication((prev: any) => (prev ? { ...prev, [editingSection]: editText } : prev));
       setEditingSection(null);
     } catch (e: any) {
       setError(e.message);
@@ -110,7 +112,12 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   }
 
   function slugify(text: string): string {
-    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'application';
+    return (
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'application'
+    );
   }
 
   async function handleDownloadDocx() {
@@ -126,7 +133,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 2000);
     } catch (e: any) {
       setDocxError(e.message || 'Word export failed');
     } finally {
@@ -147,7 +157,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 2000);
     } catch (e: any) {
       setError(e.message || 'Markdown export failed');
     } finally {
@@ -174,7 +187,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+          <div
+            className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+            aria-label="Loading"
+          />
           <span className="text-gray-300">Generating patent application...</span>
         </div>
         <p className="text-xs text-gray-500 mt-3">This may take several minutes. Building all application sections.</p>
@@ -191,7 +207,9 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   return (
     <div className="text-center py-12">
       {application?.status === 'ERROR' && (
-        <p className="text-red-400 mb-3">Generation failed{application.errorMessage ? `: ${application.errorMessage}` : '.'}</p>
+        <p className="text-red-400 mb-3">
+          Generation failed{application.errorMessage ? `: ${application.errorMessage}` : '.'}
+        </p>
       )}
       {!application && (
         <p className="text-gray-400 mb-4">No application draft yet. Generate one from your claim drafts.</p>
@@ -241,9 +259,7 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
           </button>
         </div>
 
-        {docxError && (
-          <Alert variant="error">Word export failed: {docxError}</Alert>
-        )}
+        {docxError && <Alert variant="error">Word export failed: {docxError}</Alert>}
 
         {/* UPL disclaimer banner */}
         <div className="bg-amber-900/20 border border-amber-800 rounded-lg p-3 text-center">
@@ -269,13 +285,22 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
             <ol className="text-yellow-400/70 text-sm mt-1 ml-5 list-decimal space-y-1">
               <li>
                 Go to{' '}
-                <a href="/settings" className="text-blue-400 hover:underline font-medium">Settings</a>
-                {' '}and enter a USPTO Open Data Portal API key. You can get a free key at{' '}
-                <a href="https://data.uspto.gov/myodp" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-medium">
+                <a href="/settings" className="text-blue-400 hover:underline font-medium">
+                  Settings
+                </a>{' '}
+                and enter a USPTO Open Data Portal API key. You can get a free key at{' '}
+                <a
+                  href="https://data.uspto.gov/myodp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline font-medium"
+                >
                   data.uspto.gov/myodp
                 </a>
               </li>
-              <li>Go to the <strong className="text-yellow-300">Prior Art</strong> tab and run a prior art search</li>
+              <li>
+                Go to the <strong className="text-yellow-300">Prior Art</strong> tab and run a prior art search
+              </li>
               <li>Then regenerate this application — the IDS will be populated automatically</li>
             </ol>
           </div>
@@ -285,10 +310,13 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         <div className="flex flex-col md:flex-row gap-4">
           {/* Section navigation */}
           <nav className="md:w-48 flex-shrink-0 space-y-1">
-            {SECTION_KEYS.map(key => (
+            {SECTION_KEYS.map((key) => (
               <button
                 key={key}
-                onClick={() => { setActiveSection(key); setEditingSection(null); }}
+                onClick={() => {
+                  setActiveSection(key);
+                  setEditingSection(null);
+                }}
                 className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                   activeSection === key
                     ? 'bg-blue-900 border border-blue-700 text-blue-200'
@@ -306,7 +334,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
               <h3 className="text-sm font-semibold text-gray-200">{SECTION_LABELS[activeSection]}</h3>
               {editingSection !== activeSection && sectionText && (
                 <button
-                  onClick={() => { setEditingSection(activeSection); setEditText(sectionText); }}
+                  onClick={() => {
+                    setEditingSection(activeSection);
+                    setEditText(sectionText);
+                  }}
                   className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                   aria-label={`Edit ${SECTION_LABELS[activeSection]} section`}
                 >
@@ -319,7 +350,7 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
               <div className="space-y-2">
                 <textarea
                   value={editText}
-                  onChange={e => setEditText(e.target.value)}
+                  onChange={(e) => setEditText(e.target.value)}
                   className="w-full h-64 bg-gray-800 border border-gray-700 rounded p-3 text-sm text-gray-200 font-mono resize-y focus:outline-none focus:border-blue-600"
                 />
                 <div className="flex gap-2">
@@ -341,28 +372,36 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
               <div className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
                 {sectionText.split('\n').map((line: string, i: number) => (
                   <div key={i} className="flex gap-3">
-                    <span className="text-gray-600 text-xs select-none w-6 text-right flex-shrink-0 mt-0.5">{i + 1}</span>
+                    <span className="text-gray-600 text-xs select-none w-6 text-right flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
                     <span>{line || '\u00A0'}</span>
                   </div>
                 ))}
               </div>
+            ) : activeSection === 'crossReferences' ? (
+              <div className="space-y-2">
+                <p className="text-gray-400 text-sm">No cross-references to related applications.</p>
+                <p className="text-gray-500 text-xs">
+                  If you have filed related patent applications (provisionals, continuations, divisionals), click Edit
+                  to add references to them here.
+                </p>
+                <button
+                  onClick={() => {
+                    setEditingSection('crossReferences');
+                    setEditText('');
+                  }}
+                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Add Cross-References
+                </button>
+              </div>
+            ) : activeSection === 'idsTable' ? (
+              <p className="text-gray-500 text-sm italic">
+                No prior art data. See the instructions above to populate the IDS.
+              </p>
             ) : (
-              activeSection === 'crossReferences' ? (
-                <div className="space-y-2">
-                  <p className="text-gray-400 text-sm">No cross-references to related applications.</p>
-                  <p className="text-gray-500 text-xs">If you have filed related patent applications (provisionals, continuations, divisionals), click Edit to add references to them here.</p>
-                  <button
-                    onClick={() => { setEditingSection('crossReferences'); setEditText(''); }}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    Add Cross-References
-                  </button>
-                </div>
-              ) : activeSection === 'idsTable' ? (
-                <p className="text-gray-500 text-sm italic">No prior art data. See the instructions above to populate the IDS.</p>
-              ) : (
-                <p className="text-gray-500 text-sm italic">No content for this section.</p>
-              )
+              <p className="text-gray-500 text-sm italic">No content for this section.</p>
             )}
           </div>
         </div>
@@ -371,7 +410,8 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         {application.estimatedCostUsd != null && application.estimatedCostUsd > 0 && (
           <div className="pt-4 border-t border-gray-800 text-right">
             <span className="text-xs text-gray-500">
-              Estimated cost: <span className="text-amber-400 font-mono">${application.estimatedCostUsd.toFixed(2)}</span>
+              Estimated cost:{' '}
+              <span className="text-amber-400 font-mono">${application.estimatedCostUsd.toFixed(2)}</span>
             </span>
           </div>
         )}
@@ -392,27 +432,44 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
             Important: This is a research tool, not a legal service.
           </h2>
           <div className="text-sm text-gray-300 space-y-3 mb-6 max-h-64 overflow-y-auto">
-            <p>The patent application draft below is an <strong className="text-gray-100">AI-generated research document</strong> to help you discuss patent strategy with your attorney. It is NOT a legal filing.</p>
+            <p>
+              The patent application draft below is an{' '}
+              <strong className="text-gray-100">AI-generated research document</strong> to help you discuss patent
+              strategy with your attorney. It is NOT a legal filing.
+            </p>
             <ul className="list-disc ml-5 space-y-2">
-              <li>The draft may contain <strong className="text-gray-100">errors or missing elements</strong></li>
-              <li>Claims and descriptions may be <strong className="text-gray-100">incomplete or overbroad</strong></li>
-              <li>Statutory requirements may not be <strong className="text-gray-100">fully satisfied</strong></li>
-              <li>This is a <strong className="text-gray-100">starting point, not a final application</strong></li>
+              <li>
+                The draft may contain <strong className="text-gray-100">errors or missing elements</strong>
+              </li>
+              <li>
+                Claims and descriptions may be <strong className="text-gray-100">incomplete or overbroad</strong>
+              </li>
+              <li>
+                Statutory requirements may not be <strong className="text-gray-100">fully satisfied</strong>
+              </li>
+              <li>
+                This is a <strong className="text-gray-100">starting point, not a final application</strong>
+              </li>
             </ul>
-            <p className="font-semibold text-gray-100">Every section must be reviewed by a registered patent attorney before filing.</p>
+            <p className="font-semibold text-gray-100">
+              Every section must be reviewed by a registered patent attorney before filing.
+            </p>
           </div>
           <label className="flex items-start gap-3 mb-4 cursor-pointer">
             <input
               type="checkbox"
               checked={acknowledged}
-              onChange={e => setAcknowledged(e.target.checked)}
+              onChange={(e) => setAcknowledged(e.target.checked)}
               className="mt-1 rounded border-gray-600"
             />
             <span className="text-sm text-gray-300">I understand this is AI-generated research, not legal advice</span>
           </label>
           <div className="flex gap-3">
             <button
-              onClick={() => { setShowModal(false); if (acknowledged) startGeneration(); }}
+              onClick={() => {
+                setShowModal(false);
+                if (acknowledged) startGeneration();
+              }}
               disabled={!acknowledged}
               className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors"
             >

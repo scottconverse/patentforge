@@ -34,6 +34,7 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
 
   useEffect(() => {
     if (!patentNumber) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on prop change is intentional
       setDetail(null);
       setError(null);
       return;
@@ -52,9 +53,16 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
     setFamilyError(null);
     setFamilyMembers(null);
     familyFetchedRef.current = false;
-    api.patents.getDetail(patentNumber)
-      .then(d => { setDetail(d); setLoading(false); })
-      .catch(err => { setError(err.message); setLoading(false); });
+    api.patents
+      .getDetail(patentNumber)
+      .then((d) => {
+        setDetail(d);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, [patentNumber]);
 
   // Close on click outside
@@ -166,7 +174,10 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                   <Label>Assignee{detail.assignee.length > 1 ? 's' : ''}</Label>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {detail.assignee.map((a, i) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-300">
+                      <span
+                        key={i}
+                        className="text-xs px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-300"
+                      >
                         {a}
                       </span>
                     ))}
@@ -219,13 +230,14 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                       claimsFetchedRef.current = true;
                       setClaimsLoading(true);
                       setClaimsError(null);
-                      api.patents.getClaims(patentNumber!)
-                        .then(res => {
+                      api.patents
+                        .getClaims(patentNumber!)
+                        .then((res) => {
                           setLazyClaimsText(res.claimsText);
                           setLazyClaimCount(res.claimCount);
                           setClaimsLoading(false);
                         })
-                        .catch(err => {
+                        .catch((err) => {
                           setClaimsError(err.message);
                           setClaimsLoading(false);
                         });
@@ -240,7 +252,10 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                   <div className="mt-2 pl-4 border-l-2 border-gray-700">
                     {claimsLoading && (
                       <div className="flex items-center gap-2 py-2">
-                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+                        <div
+                          className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+                          aria-label="Loading"
+                        />
                         <span className="text-xs text-gray-400">Loading claims from USPTO...</span>
                       </div>
                     )}
@@ -257,11 +272,11 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                         </a>
                       </p>
                     )}
-                    {(detail.claimsText || lazyClaimsText) ? (
+                    {detail.claimsText || lazyClaimsText ? (
                       <pre className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap font-sans">
                         {detail.claimsText || lazyClaimsText}
                       </pre>
-                    ) : (!claimsLoading && !claimsError) ? (
+                    ) : !claimsLoading && !claimsError ? (
                       <p className="text-xs text-gray-500 italic">
                         Claims text not available.{' '}
                         <a
@@ -288,12 +303,13 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                       familyFetchedRef.current = true;
                       setFamilyLoading(true);
                       setFamilyError(null);
-                      api.patents.getFamily(patentNumber!)
-                        .then(res => {
+                      api.patents
+                        .getFamily(patentNumber!)
+                        .then((res) => {
                           setFamilyMembers(res);
                           setFamilyLoading(false);
                         })
-                        .catch(err => {
+                        .catch((err) => {
                           setFamilyError(err.message);
                           setFamilyLoading(false);
                         });
@@ -308,7 +324,10 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                   <div className="mt-2 pl-4 border-l-2 border-gray-700">
                     {familyLoading && (
                       <div className="flex items-center gap-2 py-2">
-                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+                        <div
+                          className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+                          aria-label="Loading"
+                        />
                         <span className="text-xs text-gray-400">Loading patent family from USPTO...</span>
                       </div>
                     )}
@@ -329,13 +348,15 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                                 {member.relationship}
                               </span>
                               {member.status && (
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                  member.status === 'granted'
-                                    ? 'bg-green-900/40 text-green-400'
-                                    : member.status === 'abandoned'
-                                      ? 'bg-red-900/40 text-red-400'
-                                      : 'bg-yellow-900/40 text-yellow-400'
-                                }`}>
+                                <span
+                                  className={`text-xs px-1.5 py-0.5 rounded ${
+                                    member.status === 'granted'
+                                      ? 'bg-green-900/40 text-green-400'
+                                      : member.status === 'abandoned'
+                                        ? 'bg-red-900/40 text-red-400'
+                                        : 'bg-yellow-900/40 text-yellow-400'
+                                  }`}
+                                >
                                   {member.status}
                                 </span>
                               )}
@@ -351,9 +372,7 @@ export default function PatentDetailDrawer({ patentNumber, onClose }: PatentDeta
                               </a>
                             )}
                             {!member.patentNumber && member.applicationNumber && (
-                              <span className="text-xs text-gray-400 font-mono">
-                                App. {member.applicationNumber}
-                              </span>
+                              <span className="text-xs text-gray-400 font-mono">App. {member.applicationNumber}</span>
                             )}
                             {member.title && (
                               <p className="text-xs text-gray-400 leading-snug truncate" title={member.title}>

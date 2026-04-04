@@ -41,12 +41,13 @@ export default function Toast({ message, detail, type = 'success', duration = 60
         <span className="text-lg font-bold leading-none mt-0.5">{icon}</span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">{message}</p>
-          {detail && (
-            <p className="text-xs opacity-75 mt-0.5 break-all">{detail}</p>
-          )}
+          {detail && <p className="text-xs opacity-75 mt-0.5 break-all">{detail}</p>}
         </div>
         <button
-          onClick={() => { setVisible(false); setTimeout(onClose, 300); }}
+          onClick={() => {
+            setVisible(false);
+            setTimeout(onClose, 300);
+          }}
           className="text-current opacity-50 hover:opacity-100 text-lg leading-none ml-1"
         >
           ×

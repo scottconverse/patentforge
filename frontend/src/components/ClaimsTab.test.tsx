@@ -22,8 +22,26 @@ const mockDraft = {
   version: 1,
   status: 'COMPLETE',
   claims: [
-    { id: 'c1', claimNumber: 1, claimType: 'INDEPENDENT', scopeLevel: 'BROAD', statutoryType: 'method', parentClaimNumber: null, text: 'A neural network method comprising training a model on patent data.', examinerNotes: '' },
-    { id: 'c2', claimNumber: 2, claimType: 'DEPENDENT', scopeLevel: null, statutoryType: null, parentClaimNumber: 1, text: 'The method of claim 1, wherein the model uses transformer architecture.', examinerNotes: '' },
+    {
+      id: 'c1',
+      claimNumber: 1,
+      claimType: 'INDEPENDENT',
+      scopeLevel: 'BROAD',
+      statutoryType: 'method',
+      parentClaimNumber: null,
+      text: 'A neural network method comprising training a model on patent data.',
+      examinerNotes: '',
+    },
+    {
+      id: 'c2',
+      claimNumber: 2,
+      claimType: 'DEPENDENT',
+      scopeLevel: null,
+      statutoryType: null,
+      parentClaimNumber: 1,
+      text: 'The method of claim 1, wherein the model uses transformer architecture.',
+      examinerNotes: '',
+    },
   ],
   specLanguage: null,
   plannerStrategy: null,
@@ -54,7 +72,7 @@ describe('ClaimsTab', () => {
         projectId="proj-1"
         hasFeasibility={true}
         priorArtTitles={[{ patentNumber: 'US12345', title: 'Neural Network Processing System' }]}
-      />
+      />,
     );
     await waitFor(() => {
       expect(screen.getByText(/A neural network method/)).toBeTruthy();
@@ -70,7 +88,16 @@ describe('ClaimsTab', () => {
     const draftStopOnly = {
       ...mockDraft,
       claims: [
-        { id: 'c1', claimNumber: 1, claimType: 'INDEPENDENT', scopeLevel: 'BROAD', statutoryType: 'method', parentClaimNumber: null, text: 'A method comprising using a device.', examinerNotes: '' },
+        {
+          id: 'c1',
+          claimNumber: 1,
+          claimType: 'INDEPENDENT',
+          scopeLevel: 'BROAD',
+          statutoryType: 'method',
+          parentClaimNumber: null,
+          text: 'A method comprising using a device.',
+          examinerNotes: '',
+        },
       ],
     };
     (api.claimDraft.getLatest as any).mockResolvedValue(draftStopOnly);
@@ -79,7 +106,7 @@ describe('ClaimsTab', () => {
         projectId="proj-1"
         hasFeasibility={true}
         priorArtTitles={[{ patentNumber: 'US88888', title: 'Method Using the Apparatus' }]}
-      />
+      />,
     );
     await waitFor(() => {
       expect(screen.getByText(/A method comprising using a device/)).toBeTruthy();
@@ -93,7 +120,16 @@ describe('ClaimsTab', () => {
     const draftWithMethodOnly = {
       ...mockDraft,
       claims: [
-        { id: 'c1', claimNumber: 1, claimType: 'INDEPENDENT', scopeLevel: 'BROAD', statutoryType: 'method', parentClaimNumber: null, text: 'A method for processing data in a system.', examinerNotes: '' },
+        {
+          id: 'c1',
+          claimNumber: 1,
+          claimType: 'INDEPENDENT',
+          scopeLevel: 'BROAD',
+          statutoryType: 'method',
+          parentClaimNumber: null,
+          text: 'A method for processing data in a system.',
+          examinerNotes: '',
+        },
       ],
     };
     (api.claimDraft.getLatest as any).mockResolvedValue(draftWithMethodOnly);
@@ -102,7 +138,7 @@ describe('ClaimsTab', () => {
         projectId="proj-1"
         hasFeasibility={true}
         priorArtTitles={[{ patentNumber: 'US99999', title: 'Method System Device Apparatus' }]}
-      />
+      />,
     );
     await waitFor(() => {
       expect(screen.getByText(/A method for processing data/)).toBeTruthy();
@@ -175,9 +211,9 @@ describe('ClaimsTab', () => {
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
     // Click the modal's generate button — sets generating=true, draft is still null
-    const modalGenerateBtn = screen.getAllByText('Generate Draft Claims').find(
-      btn => btn.closest('.fixed') !== null
-    )!;
+    const modalGenerateBtn = screen
+      .getAllByText('Generate Draft Claims')
+      .find((btn) => btn.closest('.fixed') !== null)!;
     fireEvent.click(modalGenerateBtn);
     // Spinner should appear (generating=true, draft=null)
     await waitFor(() => {

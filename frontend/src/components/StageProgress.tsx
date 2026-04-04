@@ -20,7 +20,10 @@ function StatusIcon({ status }: { status: RunStatus }) {
   if (status === 'RUNNING') {
     return (
       <span className="flex items-center justify-center w-6 h-6">
-        <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" aria-label="Loading" />
+        <span
+          className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"
+          aria-label="Loading"
+        />
       </span>
     );
   }
@@ -44,12 +47,15 @@ function StatusIcon({ status }: { status: RunStatus }) {
   );
 }
 
-
-export default function StageProgress({ stages, activeStage, onStageClick, onRerunFromStage, pipelineIdle }: StageProgressProps) {
+export default function StageProgress({
+  stages,
+  activeStage,
+  onStageClick,
+  onRerunFromStage,
+  pipelineIdle,
+}: StageProgressProps) {
   if (!stages || stages.length === 0) {
-    return (
-      <div className="text-gray-500 text-sm italic">No stages yet.</div>
-    );
+    return <div className="text-gray-500 text-sm italic">No stages yet.</div>;
   }
 
   return (
@@ -76,24 +82,19 @@ export default function StageProgress({ stages, activeStage, onStageClick, onRer
                   {stage.stageName}
                 </span>
               </div>
-              {stage.errorMessage && (
-                <div className="text-xs text-red-400 mt-0.5 truncate">{stage.errorMessage}</div>
-              )}
-              {cost && (
-                <div className="text-xs text-amber-600 mt-0.5">{cost}</div>
-              )}
+              {stage.errorMessage && <div className="text-xs text-red-400 mt-0.5 truncate">{stage.errorMessage}</div>}
+              {cost && <div className="text-xs text-amber-600 mt-0.5">{cost}</div>}
             </div>
             <div className="flex flex-col items-end gap-0.5 shrink-0">
-              {duration && (
-                <span className="text-xs text-gray-500 font-mono">{duration}</span>
-              )}
+              {duration && <span className="text-xs text-gray-500 font-mono">{duration}</span>}
               <div className="flex items-center gap-1.5">
-                {isClickable && (
-                  <span className="text-xs text-blue-600">view</span>
-                )}
+                {isClickable && <span className="text-xs text-blue-600">view</span>}
                 {stage.status === 'COMPLETE' && pipelineIdle && onRerunFromStage && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); onRerunFromStage(stage.stageNumber); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRerunFromStage(stage.stageNumber);
+                    }}
                     className="text-xs text-amber-600 hover:text-amber-400 transition-colors"
                     title={`Re-run from Stage ${stage.stageNumber}`}
                   >

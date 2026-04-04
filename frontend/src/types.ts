@@ -1,4 +1,12 @@
-export type ProjectStatus = 'INTAKE' | 'FEASIBILITY' | 'PRIOR_ART' | 'DRAFTING' | 'COMPLIANCE' | 'APPLICATION' | 'FILED' | 'ABANDONED';
+export type ProjectStatus =
+  | 'INTAKE'
+  | 'FEASIBILITY'
+  | 'PRIOR_ART'
+  | 'DRAFTING'
+  | 'COMPLIANCE'
+  | 'APPLICATION'
+  | 'FILED'
+  | 'ABANDONED';
 export type RunStatus = 'PENDING' | 'RUNNING' | 'COMPLETE' | 'ERROR' | 'CANCELLED' | 'STALE';
 
 export interface Project {

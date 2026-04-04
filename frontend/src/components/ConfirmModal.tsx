@@ -17,9 +17,8 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
-  const confirmClasses = variant === 'danger'
-    ? 'bg-red-600 hover:bg-red-700 text-white'
-    : 'bg-blue-600 hover:bg-blue-700 text-white';
+  const confirmClasses =
+    variant === 'danger' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">

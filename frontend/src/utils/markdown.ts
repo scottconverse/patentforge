@@ -78,13 +78,13 @@ export function markdownToHtml(markdown: string): string {
       i += 2; // skip separator row
       output.push('<table>');
       output.push('<thead><tr>');
-      headerCells.forEach(cell => output.push(`<th>${inlineFormat(cell)}</th>`));
+      headerCells.forEach((cell) => output.push(`<th>${inlineFormat(cell)}</th>`));
       output.push('</tr></thead>');
       output.push('<tbody>');
       while (i < lines.length && lines[i].includes('|')) {
         const cells = parseTableRow(lines[i]);
         output.push('<tr>');
-        cells.forEach(cell => output.push(`<td>${inlineFormat(cell)}</td>`));
+        cells.forEach((cell) => output.push(`<td>${inlineFormat(cell)}</td>`));
         output.push('</tr>');
         i++;
       }
@@ -152,22 +152,16 @@ function parseTableRow(line: string): string[] {
     .replace(/^\|/, '')
     .replace(/\|$/, '')
     .split('|')
-    .map(cell => cell.trim());
+    .map((cell) => cell.trim());
 }
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function inlineFormat(text: string): string {
   // Escape HTML first
-  text = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   // Inline code (before bold/italic to avoid conflicts)
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>');

@@ -54,9 +54,7 @@ describe('ComplianceTab', () => {
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
     // Click modal's run button — sets running=true, check is still null
-    const modalRunBtn = screen.getAllByText('Run Compliance Check').find(
-      btn => btn.closest('.fixed') !== null
-    )!;
+    const modalRunBtn = screen.getAllByText('Run Compliance Check').find((btn) => btn.closest('.fixed') !== null)!;
     fireEvent.click(modalRunBtn);
     // Spinner should appear (running=true, check=null)
     await waitFor(() => {
@@ -79,7 +77,13 @@ describe('ComplianceTab', () => {
       status: 'COMPLETE',
       overallPass: true,
       results: [
-        { rule: '112a_written_description', status: 'PASS', claimNumber: 1, detail: 'Supported by specification', citation: 'MPEP 2163' },
+        {
+          rule: '112a_written_description',
+          status: 'PASS',
+          claimNumber: 1,
+          detail: 'Supported by specification',
+          citation: 'MPEP 2163',
+        },
       ],
     });
     render(<ComplianceTab projectId="test-123" hasClaims={true} />);
@@ -107,7 +111,14 @@ describe('ComplianceTab', () => {
       status: 'COMPLETE',
       overallPass: false,
       results: [
-        { rule: '112b_definiteness', status: 'FAIL', claimNumber: 2, detail: 'Missing antecedent basis', citation: 'MPEP 2173.05(e)', suggestion: 'Add antecedent basis for "the device"' },
+        {
+          rule: '112b_definiteness',
+          status: 'FAIL',
+          claimNumber: 2,
+          detail: 'Missing antecedent basis',
+          citation: 'MPEP 2173.05(e)',
+          suggestion: 'Add antecedent basis for "the device"',
+        },
       ],
     });
     render(<ComplianceTab projectId="test-123" hasClaims={true} />);
@@ -140,10 +151,28 @@ describe('ComplianceTab', () => {
       status: 'COMPLETE',
       overallPass: false,
       results: [
-        { rule: '112a_written_description', status: 'PASS', claimNumber: 1, detail: 'Supported', citation: 'MPEP 2163' },
+        {
+          rule: '112a_written_description',
+          status: 'PASS',
+          claimNumber: 1,
+          detail: 'Supported',
+          citation: 'MPEP 2163',
+        },
         { rule: '112b_definiteness', status: 'FAIL', claimNumber: 2, detail: 'Unclear scope', citation: 'MPEP 2173' },
-        { rule: 'mpep_608_formalities', status: 'WARN', claimNumber: null, detail: 'Missing reference numerals', citation: 'MPEP 608.01(m)' },
-        { rule: '101_eligibility', status: 'PASS', claimNumber: 1, detail: 'Eligible subject matter', citation: '35 USC 101' },
+        {
+          rule: 'mpep_608_formalities',
+          status: 'WARN',
+          claimNumber: null,
+          detail: 'Missing reference numerals',
+          citation: 'MPEP 608.01(m)',
+        },
+        {
+          rule: '101_eligibility',
+          status: 'PASS',
+          claimNumber: 1,
+          detail: 'Eligible subject matter',
+          citation: '35 USC 101',
+        },
       ],
     });
     render(<ComplianceTab projectId="test-123" hasClaims={true} />);
@@ -161,9 +190,7 @@ describe('ComplianceTab', () => {
       status: 'COMPLETE',
       overallPass: true,
       estimatedCostUsd: 0.42,
-      results: [
-        { rule: '112a_written_description', status: 'PASS', claimNumber: 1, detail: 'OK', citation: '' },
-      ],
+      results: [{ rule: '112a_written_description', status: 'PASS', claimNumber: 1, detail: 'OK', citation: '' }],
     });
     render(<ComplianceTab projectId="test-123" hasClaims={true} />);
     await waitFor(() => {

@@ -24,7 +24,7 @@ export default function Settings() {
     maxTokens: 32000,
     interStageDelaySeconds: 5,
     exportPath: '',
-    costCapUsd: 5.00,
+    costCapUsd: 5.0,
     usptoApiKey: '',
   });
   const [loading, setLoading] = useState(true);
@@ -34,13 +34,22 @@ export default function Settings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showUsptoKey, setShowUsptoKey] = useState(false);
   const [odpUsage, setOdpUsage] = useState<{
-    thisWeek: { totalQueries: number; totalResults: number; rateLimitHits: number; errorCount: number; callCount: number };
+    thisWeek: {
+      totalQueries: number;
+      totalResults: number;
+      rateLimitHits: number;
+      errorCount: number;
+      callCount: number;
+    };
     lastUsed: string | null;
   } | null>(null);
 
   useEffect(() => {
     loadSettings();
-    api.settings.odpUsage().then(setOdpUsage).catch(() => {});
+    api.settings
+      .odpUsage()
+      .then(setOdpUsage)
+      .catch(() => {});
   }, []);
 
   async function loadSettings() {
@@ -72,13 +81,16 @@ export default function Settings() {
   }
 
   function update(key: keyof AppSettings, value: any) {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-500">
-        <span className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3" aria-label="Loading" />
+        <span
+          className="w-6 h-6 rounded-full border-2 border-gray-600 border-t-blue-500 animate-spin mr-3"
+          aria-label="Loading"
+        />
         Loading settings...
       </div>
     );
@@ -88,7 +100,9 @@ export default function Settings() {
     <div className="max-w-2xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link to="/" className="hover:text-gray-300 transition-colors">Projects</Link>
+        <Link to="/" className="hover:text-gray-300 transition-colors">
+          Projects
+        </Link>
         <span>/</span>
         <span className="text-gray-300">Settings</span>
       </div>
@@ -100,54 +114,60 @@ export default function Settings() {
 
       <form onSubmit={handleSave} autoComplete="off" className="space-y-6">
         {/* Hidden dummy input to prevent Chrome autofill */}
-        <input type="text" name="prevent-autofill" style={{display:'none'}} autoComplete="username" />
+        <input type="text" name="prevent-autofill" style={{ display: 'none' }} autoComplete="username" />
 
         {/* API Keys */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">API Keys</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Anthropic API Key
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Anthropic API Key</label>
             <div className="flex gap-2">
               <input
                 type={showApiKey ? 'text' : 'password'}
                 value={settings.anthropicApiKey || ''}
-                onChange={e => update('anthropicApiKey', e.target.value)}
+                onChange={(e) => update('anthropicApiKey', e.target.value)}
                 placeholder="sk-ant-..."
                 autoComplete="new-password"
                 className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
               />
               <button
                 type="button"
-                onClick={() => setShowApiKey(v => !v)}
+                onClick={() => setShowApiKey((v) => !v)}
                 className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
               >
                 {showApiKey ? 'Hide' : 'Show'}
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              You are connecting to your own Anthropic API account. AI processing is performed by Anthropic's servers under their <a href="https://www.anthropic.com/policies/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">terms of service</a>. Review their data privacy policies before submitting invention details.
+              You are connecting to your own Anthropic API account. AI processing is performed by Anthropic's servers
+              under their{' '}
+              <a
+                href="https://www.anthropic.com/policies/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:underline"
+              >
+                terms of service
+              </a>
+              . Review their data privacy policies before submitting invention details.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              USPTO Open Data Portal Key
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">USPTO Open Data Portal Key</label>
             <div className="flex gap-2">
               <input
                 type={showUsptoKey ? 'text' : 'password'}
                 value={settings.usptoApiKey || ''}
-                onChange={e => update('usptoApiKey', e.target.value)}
+                onChange={(e) => update('usptoApiKey', e.target.value)}
                 placeholder="Optional — 30-character key"
                 autoComplete="new-password"
                 className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
               />
               <button
                 type="button"
-                onClick={() => setShowUsptoKey(v => !v)}
+                onClick={() => setShowUsptoKey((v) => !v)}
                 className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
               >
                 {showUsptoKey ? 'Hide' : 'Show'}
@@ -155,17 +175,25 @@ export default function Settings() {
             </div>
             <p className="text-xs text-gray-500 mt-1">
               Optional. Adds structured patent search results with assignees, CPC codes, and filing dates. Free at{' '}
-              <a href="https://data.uspto.gov/myodp" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">data.uspto.gov</a>{' '}
+              <a
+                href="https://data.uspto.gov/myodp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:underline"
+              >
+                data.uspto.gov
+              </a>{' '}
               (requires ID.me verification). Everything works without this key.
             </p>
           </div>
-
         </div>
 
         {/* ODP API Usage */}
         {odpUsage && settings.usptoApiKey && (
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">USPTO API Usage (Last 7 Days)</h2>
+            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+              USPTO API Usage (Last 7 Days)
+            </h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="bg-gray-800 rounded p-3">
                 <div className="text-gray-500 text-xs">Queries</div>
@@ -188,7 +216,8 @@ export default function Settings() {
             </div>
             {odpUsage.thisWeek.rateLimitHits > 0 && (
               <p className="text-amber-400 text-xs">
-                {odpUsage.thisWeek.rateLimitHits} rate limit hit{odpUsage.thisWeek.rateLimitHits > 1 ? 's' : ''} this week
+                {odpUsage.thisWeek.rateLimitHits} rate limit hit{odpUsage.thisWeek.rateLimitHits > 1 ? 's' : ''} this
+                week
               </p>
             )}
           </div>
@@ -202,11 +231,13 @@ export default function Settings() {
             <label className="block text-sm font-medium text-gray-300 mb-1">Default Model</label>
             <select
               value={settings.defaultModel || ''}
-              onChange={e => update('defaultModel', e.target.value)}
+              onChange={(e) => update('defaultModel', e.target.value)}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             >
-              {MODELS.map(m => (
-                <option key={m.value} value={m.value}>{m.label}</option>
+              {MODELS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
               ))}
             </select>
           </div>
@@ -215,14 +246,18 @@ export default function Settings() {
             <label className="block text-sm font-medium text-gray-300 mb-1">Research Model</label>
             <select
               value={settings.researchModel || ''}
-              onChange={e => update('researchModel', e.target.value)}
+              onChange={(e) => update('researchModel', e.target.value)}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             >
-              {RESEARCH_MODELS.map(m => (
-                <option key={m.value} value={m.value}>{m.label}</option>
+              {RESEARCH_MODELS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">Used for prior art search stages. Defaults to the main model if not set.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Used for prior art search stages. Defaults to the main model if not set.
+            </p>
           </div>
         </div>
 
@@ -231,37 +266,32 @@ export default function Settings() {
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Analysis Parameters</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Max Tokens
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Max Tokens</label>
             <input
               type="number"
               min={1000}
               max={100000}
               step={1000}
               value={settings.maxTokens ?? 32000}
-              onChange={e => update('maxTokens', parseInt(e.target.value, 10))}
+              onChange={(e) => update('maxTokens', parseInt(e.target.value, 10))}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             />
             <p className="text-xs text-gray-500 mt-1">Maximum tokens per stage output. Range: 1,000–100,000.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Inter-Stage Delay (seconds)
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Inter-Stage Delay (seconds)</label>
             <input
               type="number"
               min={0}
               max={60}
               step={1}
               value={settings.interStageDelaySeconds ?? 5}
-              onChange={e => update('interStageDelaySeconds', parseInt(e.target.value, 10))}
+              onChange={(e) => update('interStageDelaySeconds', parseInt(e.target.value, 10))}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             />
             <p className="text-xs text-gray-500 mt-1">Pause between pipeline stages. Range: 0–60 seconds.</p>
           </div>
-
         </div>
 
         {/* Export & Cost */}
@@ -272,11 +302,13 @@ export default function Settings() {
             <input
               type="text"
               value={settings.exportPath || ''}
-              onChange={e => update('exportPath', e.target.value)}
+              onChange={(e) => update('exportPath', e.target.value)}
               placeholder="Server path for MD/HTML export"
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
             />
-            <p className="text-xs text-gray-500 mt-1">Server folder for MD/HTML file export. Word downloads go to your browser's download folder.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Server folder for MD/HTML file export. Word downloads go to your browser's download folder.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Cost Cap (USD)</label>
@@ -284,19 +316,17 @@ export default function Settings() {
               type="number"
               min={0}
               step={0.5}
-              value={settings.costCapUsd ?? 5.00}
-              onChange={e => update('costCapUsd', parseFloat(e.target.value) || 0)}
+              value={settings.costCapUsd ?? 5.0}
+              onChange={(e) => update('costCapUsd', parseFloat(e.target.value) || 0)}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
             />
-            <p className="text-xs text-gray-500 mt-1">Show a warning before running if estimated cost exceeds this amount. Set 0 to disable.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Show a warning before running if estimated cost exceeds this amount. Set 0 to disable.
+            </p>
           </div>
         </div>
 
-        {error && (
-          <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
-            {error}
-          </div>
-        )}
+        {error && <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">{error}</div>}
 
         {saved && (
           <div className="p-3 bg-green-900/40 border border-green-800 rounded text-green-300 text-sm">
