@@ -78,7 +78,7 @@ export default function StageProgress({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 font-mono">#{stage.stageNumber}</span>
-                <span className={`text-sm truncate ${isActive ? 'text-blue-300' : 'text-gray-300'}`}>
+                <span className={`text-sm ${isActive ? 'text-blue-300' : 'text-gray-300'}`}>
                   {stage.stageName}
                 </span>
               </div>
