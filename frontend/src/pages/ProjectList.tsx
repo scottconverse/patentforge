@@ -24,6 +24,7 @@ export default function ProjectList() {
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -44,7 +45,11 @@ export default function ProjectList() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim()) {
+      setTitleError('Project title is required.');
+      return;
+    }
+    setTitleError(null);
     try {
       setCreating(true);
       const project = await api.projects.create(newTitle.trim());
@@ -101,7 +106,7 @@ export default function ProjectList() {
             <input
               type="text"
               value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
+              onChange={(e) => { setNewTitle(e.target.value); setTitleError(null); }}
               placeholder="e.g. AI-Powered Patent Claim Analyzer"
               required
               autoFocus
@@ -125,6 +130,9 @@ export default function ProjectList() {
               Cancel
             </button>
           </div>
+          {titleError && (
+            <p className="mt-2 text-sm text-red-400">{titleError}</p>
+          )}
         </form>
       )}
 
