@@ -27,8 +27,8 @@ jobs:
       - name: Lint
         run: cd backend && npm run lint
 
-      - name: Run tests
-        run: cd backend && npm test
+      - name: Run tests with coverage
+        run: cd backend && npm run test:cov
 
       - name: Run integration tests
         run: cd backend && npm run test:integration
@@ -50,8 +50,8 @@ jobs:
       - name: Lint
         run: cd frontend && npm run lint
 
-      - name: Run tests
-        run: cd frontend && npm test
+      - name: Run tests with coverage
+        run: cd frontend && npm run test:cov
 
   claim-drafter-tests:
     name: Claim Drafter Tests (pytest)

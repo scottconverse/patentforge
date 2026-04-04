@@ -12,4 +12,12 @@ module.exports = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
+  coverageThreshold: {
+    global: {
+      lines: 42,
+      branches: 37,
+      functions: 31,
+      statements: 43,
+    },
+  },
 };
