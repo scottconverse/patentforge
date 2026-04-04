@@ -236,6 +236,27 @@ We use conventional commit prefixes:
 - **React functional components** with hooks
 - **No TODO/FIXME comments** — either fix the issue or open a GitHub issue
 
+### Linting and Formatting
+
+Both backend and frontend enforce code style with ESLint and Prettier. Run these before committing:
+
+```bash
+# Backend
+cd backend && npm run lint && npm run format:check
+
+# Frontend
+cd frontend && npm run lint && npm run format:check
+```
+
+To auto-fix issues:
+
+```bash
+cd backend && npm run lint:fix && npm run format
+cd frontend && npm run lint:fix && npm run format
+```
+
+CI will fail if lint errors are present.
+
 ## Architecture Notes
 
 PatentForge uses a federated service architecture. Each capability (feasibility analysis, prior art search, claim drafting, etc.) is an independent service that communicates with the central backend over HTTP/SSE. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
