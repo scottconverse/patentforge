@@ -1,16 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
 import {
-  Project,
   InventionInput,
-  FeasibilityRun,
   FeasibilityStage,
   RunStatus,
   AppSettings,
   FeasibilityRunSummary,
-  PriorArtSearch,
 } from '../types';
+import { useProjectDetail, ViewMode } from '../hooks/useProjectDetail';
 import InventionForm from './InventionForm';
 import ReportViewer from '../components/ReportViewer';
 import StageProgress from '../components/StageProgress';
@@ -97,28 +95,26 @@ async function estimateRunCosts(
   return { tokenCost, webSearchCost: ESTIMATED_WEB_SEARCH_COST, source: 'static', runsUsed: 0 };
 }
 
-type ViewMode =
-  | 'overview'
-  | 'invention-form'
-  | 'running'
-  | 'report'
-  | 'stage-output'
-  | 'history'
-  | 'prior-art'
-  | 'claims'
-  | 'compliance'
-  | 'application';
-
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   // UI mode
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
+
+  // ----- Project data hook -----
+  const {
+    project,
+    setProject,
+    loading,
+    error,
+    setError,
+    loadProject,
+    getLatestRun,
+    priorArtSearch,
+    setPriorArtSearch,
+    claimDraftStatus,
+  } = useProjectDetail(id, viewMode);
 
   // Streaming state
   const [stages, setStages] = useState<FeasibilityStage[]>(makePlaceholderStages());
@@ -157,12 +153,6 @@ export default function ProjectDetail() {
   const [selectedRunVersion, setSelectedRunVersion] = useState<number | null>(null);
   const [historicalReport, setHistoricalReport] = useState<string | null>(null);
 
-  // Prior art
-  const [priorArtSearch, setPriorArtSearch] = useState<PriorArtSearch | null>(null);
-
-  // Claim draft status (for compliance tab)
-  const [claimDraftStatus, setClaimDraftStatus] = useState<{ status: string; claims?: any[] } | null>(null);
-
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
 
@@ -177,99 +167,64 @@ export default function ProjectDetail() {
           setFullReportContent(data.report || null);
           setReportHtml(data.html || null);
         })
-        .catch((err) => {
+        .catch((_err) => {
           // Report load failure is non-fatal — UI already shows "Loading report..." fallback
         });
     }
   }, [viewMode, id, historicalReport, fullReportContent]);
 
-  // Re-fetch claim draft status when switching to tabs that depend on it
+  // Abort SSE stream on unmount
   useEffect(() => {
-    if ((viewMode === 'compliance' || viewMode === 'application') && id) {
-      api.claimDraft
-        .getLatest(id)
-        .then((d) => setClaimDraftStatus(d))
-        .catch(() => {});
-    }
-  }, [viewMode, id]);
-
-  // ----- Load project -----
-  const loadProject = useCallback(async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await api.projects.get(id);
-      setProject(data);
-
-      // Load prior art search state
-      api.priorArt
-        .get(id)
-        .then((pa) => setPriorArtSearch(pa))
-        .catch(() => {});
-
-      // Load claim draft status (for compliance tab)
-      api.claimDraft
-        .getLatest(id)
-        .then((d) => setClaimDraftStatus(d))
-        .catch(() => {});
-
-      // Determine initial view mode
-      const latestRun = getLatestRun(data);
-      if (latestRun) {
-        if (latestRun.status === 'COMPLETE' || latestRun.status === 'ERROR') {
-          setStages(latestRun.stages?.length ? latestRun.stages : makePlaceholderStages());
-          setViewMode('overview');
-        } else if (latestRun.status === 'RUNNING') {
-          // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
-          // No active abort controller means nothing is actually streaming. Mark it ERROR
-          // in the backend, load whatever partial stage output exists, and show report view.
-          const partialStages = (latestRun.stages ?? []).map((s) =>
-            s.status === 'RUNNING' || s.status === 'PENDING'
-              ? {
-                  ...s,
-                  status: 'ERROR' as RunStatus,
-                  errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.',
-                }
-              : s,
-          );
-          setStages(partialStages.length ? partialStages : makePlaceholderStages());
-          setRunError(
-            'Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.',
-          );
-          setViewMode('report');
-          // Patch backend so it doesn't stay RUNNING forever
-          try {
-            await api.feasibility.patchRun(data.id, { status: 'ERROR', runId: runIdRef.current || undefined });
-          } catch {
-            // non-fatal
-          }
-        } else {
-          setViewMode('overview');
-        }
-      } else if (!data.invention) {
-        setViewMode('invention-form');
-      } else {
-        setViewMode('overview');
-      }
-    } catch (e: any) {
-      setError(e.message || 'Failed to load project');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    loadProject();
     return () => {
       abortRef.current?.abort();
     };
-  }, [loadProject]);
+  }, []);
 
-  function getLatestRun(p: Project | null): FeasibilityRun | null {
-    if (!p?.feasibility || !Array.isArray(p.feasibility) || p.feasibility.length === 0) return null;
-    return [...p.feasibility].sort((a, b) => b.version - a.version)[0];
-  }
+  // View mode initialization — runs after project is loaded
+  const projectLoadedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!project || loading) return;
+    // Only run view init once per project id to avoid resetting view on re-fetches
+    // triggered by pipeline complete. Skip if already initialized for this project.
+    if (projectLoadedRef.current === project.id) return;
+    projectLoadedRef.current = project.id;
+
+    const latestRun = getLatestRun(project);
+    if (latestRun) {
+      if (latestRun.status === 'COMPLETE' || latestRun.status === 'ERROR') {
+        setStages(latestRun.stages?.length ? latestRun.stages : makePlaceholderStages());
+        setViewMode('overview');
+      } else if (latestRun.status === 'RUNNING') {
+        // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
+        // No active abort controller means nothing is actually streaming. Mark it ERROR
+        // in the backend, load whatever partial stage output exists, and show report view.
+        const partialStages = (latestRun.stages ?? []).map((s) =>
+          s.status === 'RUNNING' || s.status === 'PENDING'
+            ? {
+                ...s,
+                status: 'ERROR' as RunStatus,
+                errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.',
+              }
+            : s,
+        );
+        setStages(partialStages.length ? partialStages : makePlaceholderStages());
+        setRunError(
+          'Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.',
+        );
+        setViewMode('report');
+        // Patch backend so it doesn't stay RUNNING forever
+        api.feasibility
+          .patchRun(project.id, { status: 'ERROR', runId: runIdRef.current || undefined })
+          .catch(() => {/* non-fatal */});
+      } else {
+        setViewMode('overview');
+      }
+    } else if (!project.invention) {
+      setViewMode('invention-form');
+    } else {
+      setViewMode('overview');
+    }
+  }, [project, loading, getLatestRun]);
 
   // ----- History handlers (Feature E) -----
   async function handleShowHistory() {
@@ -748,7 +703,6 @@ export default function ProjectDetail() {
 
   // ----- Derived state -----
   const latestRun = getLatestRun(project);
-  const isRunning = viewMode === 'running' && !runError;
 
   // ----- Render -----
   if (loading) {
