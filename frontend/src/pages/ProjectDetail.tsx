@@ -10,7 +10,7 @@ import { useRunHistory } from '../hooks/useRunHistory';
 import { useFeasibilityRun, makePlaceholderStages } from '../hooks/useFeasibilityRun';
 import InventionForm from './InventionForm';
 import ReportViewer from '../components/ReportViewer';
-import StageProgress from '../components/StageProgress';
+import ProjectSidebar from '../components/ProjectSidebar';
 import StreamingOutput from '../components/StreamingOutput';
 import Toast from '../components/Toast';
 import CostConfirmModal from '../components/CostConfirmModal';
@@ -43,6 +43,8 @@ export default function ProjectDetail() {
     priorArtSearch,
     setPriorArtSearch,
     claimDraftStatus,
+    complianceStatus,
+    applicationStatus,
   } = useProjectDetail(id, viewMode);
 
   // Stage output viewer
@@ -244,205 +246,47 @@ export default function ProjectDetail() {
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* ---- LEFT SIDEBAR ---- */}
-        <aside className="w-full md:w-64 shrink-0 space-y-4">
-          {/* Pipeline nav */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Pipeline</h3>
-
-            {/* Intake */}
-            <button
-              onClick={() => setViewMode(viewMode === 'invention-form' ? 'overview' : 'invention-form')}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors mb-2 ${
-                viewMode === 'invention-form'
-                  ? 'bg-blue-900 text-blue-300 border border-blue-700'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
-              }`}
-            >
-              <span
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${project.invention ? 'border-green-500 bg-green-900 text-green-400' : 'border-gray-600 text-gray-500'}`}
-              >
-                {project.invention ? '✓' : '1'}
-              </span>
-              <span>Invention Intake</span>
-            </button>
-
-            {/* Feasibility */}
-            <div
-              className={`px-3 py-2 rounded text-sm mb-2 ${
-                viewMode === 'running' || viewMode === 'report' ? 'bg-blue-950 border border-blue-800' : 'text-gray-400'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
-                    latestRun?.status === 'COMPLETE'
-                      ? 'border-green-500 bg-green-900 text-green-400'
-                      : latestRun?.status === 'RUNNING'
-                        ? 'border-blue-500'
-                        : 'border-gray-600 text-gray-500'
-                  }`}
-                >
-                  {latestRun?.status === 'COMPLETE' ? (
-                    '✓'
-                  ) : latestRun?.status === 'RUNNING' ? (
-                    <span
-                      className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"
-                      aria-label="Loading"
-                    />
-                  ) : (
-                    '2'
-                  )}
-                </span>
-                <span
-                  className={
-                    latestRun?.status === 'COMPLETE'
-                      ? 'text-green-400'
-                      : latestRun?.status === 'RUNNING'
-                        ? 'text-blue-300'
-                        : 'text-gray-400'
-                  }
-                >
-                  Feasibility
-                </span>
-              </div>
-              <StageProgress
-                stages={displayStages}
-                activeStage={activeStageNum}
-                pipelineIdle={viewMode !== 'running'}
-                onStageClick={(stage) => {
-                  setSelectedStage(stage);
-                  setViewMode('stage-output');
-                }}
-                onRerunFromStage={async (fromStage) => {
-                  if (!id || !project?.invention) return;
-                  try {
-                    // Create a new versioned run with stages 1..fromStage-1 copied
-                    const newRun = await api.feasibility.rerunFromStage(id, fromStage);
-                    runIdRef.current = newRun.id;
-                    const copiedOutputs: Record<number, string> = {};
-                    for (const s of newRun.stages) {
-                      if (s.status === 'COMPLETE' && s.outputText) {
-                        copiedOutputs[s.stageNumber] = s.outputText;
-                      }
-                    }
-                    // Set copied stages into the UI immediately
-                    setStages(newRun.stages);
-                    // Delegate to existing pipeline runner
-                    const appSettings = await api.settings.get();
-                    await proceedWithRun(appSettings, project.invention!, fromStage, copiedOutputs);
-                  } catch (err: any) {
-                    setToast({ message: 'Re-run failed', detail: err.message, type: 'error' });
-                  }
-                }}
-              />
-              {totalRunCost > 0 && (
-                <div className="flex justify-between text-xs text-gray-500 pt-2 px-1 border-t border-gray-800 mt-1">
-                  <span>Total API cost</span>
-                  <span className="text-amber-400 font-mono">{formatCost(totalRunCost)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions</h3>
-            {project.invention &&
-              viewMode !== 'running' &&
-              (() => {
-                // Show Resume button if there are completed stages but the run didn't finish
-                const hasPartial =
-                  displayStages.some((s) => s.status === 'COMPLETE' && s.outputText) &&
-                  displayStages.some((s) => s.status === 'ERROR' || s.status === 'PENDING');
-                return hasPartial ? (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => handleResume()}
-                      className="w-full px-3 py-2 bg-green-700 hover:bg-green-600 text-white rounded text-sm font-medium transition-colors"
-                    >
-                      ▶ Resume (from Stage{' '}
-                      {displayStages.find((s) => s.status === 'ERROR' || s.status === 'PENDING')?.stageNumber ?? '?'})
-                    </button>
-                    <button
-                      onClick={() => handleRunFeasibility()}
-                      className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
-                    >
-                      Run from Start
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleRunFeasibility()}
-                    className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
-                  >
-                    Run Feasibility
-                  </button>
-                );
-              })()}
-            {viewMode === 'running' && (
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="w-full px-3 py-2 bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white rounded text-sm font-medium transition-colors"
-              >
-                {cancelling ? 'Cancelling...' : 'Cancel Analysis'}
-              </button>
-            )}
-            {latestRun?.status === 'COMPLETE' && viewMode !== 'running' && (
-              <button
-                onClick={() => setViewMode('report')}
-                className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
-              >
-                View Report
-              </button>
-            )}
-            {latestRun && viewMode !== 'running' && (
-              <button
-                onClick={handleShowHistory}
-                className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-sm transition-colors"
-              >
-                History
-              </button>
-            )}
-            <button
-              onClick={() => setViewMode('prior-art')}
-              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center justify-between ${
-                viewMode === 'prior-art' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-              }`}
-            >
-              <span>Prior Art</span>
-              {priorArtSearch && priorArtSearch.results.length > 0 && (
-                <span className="text-xs bg-gray-600 text-gray-200 px-1.5 py-0.5 rounded-full">
-                  {priorArtSearch.results.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setViewMode('claims')}
-              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                viewMode === 'claims' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-              }`}
-            >
-              Claims
-            </button>
-            <button
-              onClick={() => setViewMode('compliance')}
-              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                viewMode === 'compliance' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-              }`}
-            >
-              Compliance
-            </button>
-            <button
-              onClick={() => setViewMode('application')}
-              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                viewMode === 'application' ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-              }`}
-            >
-              Application
-            </button>
-          </div>
-        </aside>
+        <ProjectSidebar
+          project={project}
+          viewMode={viewMode}
+          displayStages={displayStages}
+          activeStageNum={activeStageNum}
+          latestRun={latestRun}
+          totalRunCost={totalRunCost}
+          cancelling={cancelling}
+          isRunning={viewMode === 'running'}
+          priorArtSearch={priorArtSearch}
+          claimDraftStatus={claimDraftStatus}
+          complianceStatus={complianceStatus}
+          applicationStatus={applicationStatus}
+          onViewModeChange={setViewMode}
+          onRunFeasibility={() => handleRunFeasibility()}
+          onResume={() => handleResume()}
+          onCancel={handleCancel}
+          onShowHistory={handleShowHistory}
+          onStageClick={(stage) => {
+            setSelectedStage(stage);
+            setViewMode('stage-output');
+          }}
+          onRerunFromStage={async (fromStage) => {
+            if (!id || !project?.invention) return;
+            try {
+              const newRun = await api.feasibility.rerunFromStage(id, fromStage);
+              runIdRef.current = newRun.id;
+              const copiedOutputs: Record<number, string> = {};
+              for (const s of newRun.stages) {
+                if (s.status === 'COMPLETE' && s.outputText) {
+                  copiedOutputs[s.stageNumber] = s.outputText;
+                }
+              }
+              setStages(newRun.stages);
+              const appSettings = await api.settings.get();
+              await proceedWithRun(appSettings, project.invention!, fromStage, copiedOutputs);
+            } catch (err: any) {
+              setToast({ message: 'Re-run failed', detail: err.message, type: 'error' });
+            }
+          }}
+        />
 
         {/* ---- MAIN CONTENT ---- */}
         <main className="flex-1 min-w-0">
