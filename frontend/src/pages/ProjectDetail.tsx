@@ -6,9 +6,9 @@ import {
   FeasibilityStage,
   RunStatus,
   AppSettings,
-  FeasibilityRunSummary,
 } from '../types';
 import { useProjectDetail, ViewMode } from '../hooks/useProjectDetail';
+import { useRunHistory } from '../hooks/useRunHistory';
 import InventionForm from './InventionForm';
 import ReportViewer from '../components/ReportViewer';
 import StageProgress from '../components/StageProgress';
@@ -149,9 +149,15 @@ export default function ProjectDetail() {
   const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
 
   // Run history (Feature E)
-  const [runHistory, setRunHistory] = useState<FeasibilityRunSummary[]>([]);
-  const [selectedRunVersion, setSelectedRunVersion] = useState<number | null>(null);
-  const [historicalReport, setHistoricalReport] = useState<string | null>(null);
+  const {
+    runHistory,
+    selectedRunVersion,
+    historicalReport,
+    setSelectedRunVersion,
+    setHistoricalReport,
+    handleShowHistory,
+    handleLoadHistoricalRun,
+  } = useRunHistory(id, setViewMode, setToast);
 
   // Patent detail drawer
   const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
@@ -225,30 +231,6 @@ export default function ProjectDetail() {
       setViewMode('overview');
     }
   }, [project, loading, getLatestRun]);
-
-  // ----- History handlers (Feature E) -----
-  async function handleShowHistory() {
-    if (!id) return;
-    try {
-      const summaries = await api.feasibility.runs(id);
-      setRunHistory(summaries);
-      setViewMode('history');
-    } catch (e: any) {
-      setToast({ message: 'Failed to load history', detail: e.message, type: 'error' });
-    }
-  }
-
-  async function handleLoadHistoricalRun(version: number) {
-    if (!id) return;
-    try {
-      const run = await api.feasibility.getVersion(id, version);
-      setHistoricalReport(run.finalReport ?? null);
-      setSelectedRunVersion(version);
-      setViewMode('report');
-    } catch (e: any) {
-      setToast({ message: 'Failed to load run', detail: e.message, type: 'error' });
-    }
-  }
 
   // ----- Run feasibility -----
   async function handleRunFeasibility(invention?: InventionInput) {
