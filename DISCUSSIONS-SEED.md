@@ -32,6 +32,14 @@ Hey everyone! PatentForge is now open source.
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
+**What's new in v0.8.0:**
+- **Code quality enforcement** — ESLint + Prettier across all TypeScript services, TypeScript strict mode (backend `noImplicitAny` + frontend `strictNullChecks`), coverage thresholds enforced in CI
+- **Backend integration tests** — 19 HTTP-level tests with supertest covering projects CRUD, settings, and auth guard
+- **Sidebar status badges** — Prior Art, Claims, Compliance, Application buttons now show green/red dots and counts so you can see what's done at a glance
+- **Mobile-responsive sidebar** — Pipeline and Actions sections collapse into an accordion on small screens so you can see your content immediately
+- **Pre-push git hook** — automated release verification runs before every push; can't accidentally ship broken docs or wrong test counts
+- **ProjectDetail decomposition** — the largest frontend component (1,486 lines) split into focused hooks and components for maintainability
+
 **What's new in v0.7.1:**
 - **18 bug fixes** from external code review — run targeting race conditions, API key security (backend validation), cost cap scope (all pipelines), SSE error handling, request timeouts, component polling cleanup, claim regeneration context, settings defaults, resume sort order, DOCX filenames, delete confirmation text, Docker password parameterization, shared utility extraction, USPTO URL standardization, blockquote Word support, marked() consistency, finalReport type corruption fix
 
@@ -41,7 +49,7 @@ Hey everyone! PatentForge is now open source.
 - **First-run wizard** — guides new users through API key setup on first launch
 
 **What's next:**
-- v0.8 — Auto-update mechanism, expanded platform support
+- v0.9 — ProjectDetail further decomposition, auto-update mechanism, expanded platform support
 
 If you're an inventor who's been through the patent process before, I'd love your feedback on whether this output would have been useful at the start of your journey.
 
