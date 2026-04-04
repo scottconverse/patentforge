@@ -16,16 +16,19 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.7.1):**
+**Current status (v0.8.0):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
 - **Compliance checking** — 4-check automated validation (35 USC 112(a), 35 USC 112(b), MPEP 608, 35 USC 101) with traffic-light results and MPEP citations
 - **Application generator** — 5-agent LangGraph pipeline assembles a complete USPTO-formatted application (background, summary, description, abstract, IDS); exports to Word (.docx, USPTO-compliant) or Markdown
+- **Sidebar status badges** — visual indicators (green/red dots, spinners, counts) show pipeline step completion at a glance
+- **Mobile-responsive sidebar** — collapsible accordion on small screens keeps main content visible
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 459 automated tests (Jest + Vitest + Playwright E2E + pytest) with GitHub Actions CI
+- 532 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
+- ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 

@@ -1,4 +1,4 @@
-# PatentForge User Manual — v0.7.1
+# PatentForge User Manual — v0.8.0
 
 A step-by-step guide for using PatentForge to research and prepare for a patent consultation.
 
@@ -31,15 +31,15 @@ The simplest way to install PatentForge is to download the installer for your pl
 
 | Platform | Download | Size |
 |----------|----------|------|
-| **Windows** | [PatentForge-0.7.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0-Setup.exe) | ~100 MB |
-| **Mac (Beta)** | [PatentForge-0.7.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.dmg) | ~100 MB |
-| **Linux (Beta)** | [PatentForge-0.7.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.7.0.AppImage) | ~120 MB |
+| **Windows** | [PatentForge-0.8.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.0-Setup.exe) | ~100 MB |
+| **Mac (Beta)** | [PatentForge-0.8.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.0.dmg) | ~100 MB |
+| **Linux (Beta)** | [PatentForge-0.8.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.0.AppImage) | ~120 MB |
 
 **Windows:** Double-click the `.exe` installer. Follow the prompts — accept the license, choose an install location (the default is fine), and click Install. When finished, PatentForge launches automatically.
 
 **Mac (Beta):** Open the `.dmg` file. Drag the PatentForge icon into your Applications folder. Double-click PatentForge in Applications to launch. You may need to right-click and choose "Open" the first time, since the app is not notarized.
 
-**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-0.7.0.AppImage`) and run it. On some systems you may need to install FUSE first.
+**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-0.8.0.AppImage`) and run it. On some systems you may need to install FUSE first.
 
 Mac and Linux installers are beta — please report issues on [GitHub Issues](https://github.com/scottconverse/patentforge/issues).
 
@@ -63,7 +63,7 @@ Before you can run any analysis, you need an Anthropic API key:
 
 You must configure both an API key and a model before running any analysis. The key is encrypted (AES-256-GCM with a per-installation random salt) and saved in your local database — it is never stored as plain text.
 
-You can change your API key and model at any time in **Settings** (gear icon in the top navigation bar).
+You can change your API key and model at any time in **Settings** (gear icon in the top navigation bar). The navigation bar also has a **Projects** link that takes you back to your project list from anywhere in the app — the link is highlighted when you are on the Projects page.
 
 ### System Tray
 
@@ -187,7 +187,7 @@ Click **Save Draft** to save your work without starting the analysis.
 3. Click **"Run Analysis"** to confirm and start
 
 The analysis runs through 6 stages sequentially. You'll see:
-- A **stage progress panel** on the left showing which stage is active
+- A **stage progress panel** on the left showing which stage is active — stage names are displayed in full (not truncated)
 - **Real-time streaming text** on the right as the AI writes its findings
 - Each stage takes 1-3 minutes depending on the complexity of your invention
 
@@ -206,6 +206,15 @@ When the analysis completes, you'll see:
 - The **consolidated report** rendered in the main panel
 - **Individual stage outputs** accessible by clicking each stage in the sidebar
 - **Total API cost** shown below the stage list
+
+The left sidebar also contains buttons for the post-analysis tools: **Prior Art**, **Claims**, **Compliance**, and **Application**. Each button shows a status badge so you can see at a glance what's been done:
+
+- **Green dot** — that section is complete (e.g., claims have been drafted)
+- **Spinning indicator** — that section is currently running
+- **Red dot** — that section encountered an error
+- **Result count** — when results exist, a small number appears showing how many items were found or generated (e.g., "12 patents" on Prior Art, "20 claims" on Claims)
+
+**On a phone or small screen:** The sidebar sections collapse by default to save space. Tap **"Pipeline"** or **"Actions"** to expand them. Everything works the same — the sections just start closed so you see more of the report.
 
 **Remember:** This output is structured research to help you prepare for a conversation with a patent professional. It is not a legal opinion. The AI's findings may contain errors, omissions, or hallucinated references — including fabricated patent numbers and inaccurate legal citations. All findings should be verified by a qualified patent attorney before making any decisions.
 
@@ -451,6 +460,14 @@ After a completed analysis, you can re-run any individual stage without restarti
 
 Your previous analysis version is preserved — you can view it in the **History** section.
 
+### History Run Cards
+
+The History section lists all previous runs for a project. Each card shows the run version, date, status, and cost.
+
+- **Completed runs** show a link to view the report for that version.
+- **ERROR and CANCELLED runs** show a **Re-run** button so you can try again, along with "No report available" (since those runs never produced a finished report). Click Re-run to start a new analysis from the beginning.
+- Runs that are still in progress show their current status.
+
 ---
 
 ## Settings
@@ -490,6 +507,8 @@ If the analysis stops before completing all 6 stages (due to a network issue, ra
 2. You'll see a **"Resume"** button next to the partially completed run
 3. Click Resume — it picks up from the last completed stage
 4. The cost estimate will reflect only the remaining stages
+
+If the project enters a full error state (the entire run failed rather than stalling), the project detail page shows two buttons: **Retry** (starts a new run from the beginning) and **Back to Projects** (returns to the project list without retrying). Use Retry if you want to try again immediately, or Back to Projects if you want to revisit your invention form first.
 
 ### "Rate limited" error
 

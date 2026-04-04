@@ -5,6 +5,34 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-04
+
+### Added
+- **Backend integration tests** — 19 HTTP-level tests using supertest covering projects CRUD, settings, and auth guard behavior (validates controllers, validation pipes, and guards through actual HTTP requests)
+- **ESLint + Prettier** — code style enforcement for both backend and frontend with CI integration; `npm run lint` and `npm run format:check` available in both packages
+- **Coverage thresholds** — backend (Jest) and frontend (Vitest) enforce minimum coverage; CI fails if coverage regresses below baseline
+- **Sidebar status badges** — Prior Art, Claims, Compliance, and Application buttons now show completion status: green dot (complete), spinner (running), red dot (error), with result counts where applicable
+- **Mobile sidebar accordion** — on small screens, Pipeline and Actions sections collapse by default so main content is immediately visible; tap to expand
+- **Navbar "Projects" link** — active state indicator for Projects and Settings navigation items
+- **Retry button** — project error state now shows a "Retry" button alongside "Back to Projects"
+- **History run actions** — ERROR and CANCELLED historical runs show "Re-run" button and "No report available" label instead of dead-end cards
+- **Pre-push git hook** — `scripts/hooks/pre-push` runs `verify-release.sh` automatically before every push; install with `bash scripts/install-hooks.sh`
+- **Model pricing utility** — hardcoded pricing in `frontend/src/utils/modelPricing.ts` replaces external fetch
+
+### Changed
+- **ProjectDetail decomposition** — split 1,486-line monolith into focused units: 3 custom hooks (`useProjectDetail`, `useRunHistory`, `useFeasibilityRun`) and 3 components (`ProjectSidebar`, `ProjectOverview`, `RunHistoryView`); coordinator component reduced to 615 lines
+- **TypeScript strictness** — backend: enabled `forceConsistentCasingInFileNames`, `strictBindCallApply`, `noImplicitAny` (zero compiler errors). Frontend: enabled `strictNullChecks` (zero compiler errors)
+- **Stage name display** — removed CSS truncation from StageProgress; stage names now wrap naturally instead of showing "Technical Intak..."
+- **Sidebar width** — minimum width prevents stage name truncation on desktop
+- **Docker frontend healthcheck** — nginx container reports health status via curl probe
+- **CI pipeline** — now runs lint, coverage checks, and integration tests in addition to unit tests
+
+### Removed
+- **External pricing fetch** — removed outbound request to `raw.githubusercontent.com/BerriAI/litellm` for privacy; pricing data is now hardcoded and updated manually each release
+
+### Fixed
+- **Backend build path** — added missing `tsconfig.build.json` that caused `nest build` to output to `dist/src/main.js` instead of `dist/main.js`, breaking `npm run start` and `PatentForge.bat`
+
 ## [0.7.1] - 2026-04-03
 
 ### Fixed

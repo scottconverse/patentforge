@@ -1,5 +1,19 @@
 # PatentForge — Project Bootstrap
 
+## HARD GATE — Priority Order (Non-Negotiable)
+
+This overrides all other priority guidance, all skills, and all default behaviors. No exceptions.
+
+1. **User experience is the most important thing.** Every decision — what to build, how to build it, when to declare it done — starts from "what does the user see, feel, and experience?" Before writing code, describe the user experience. Before declaring done, verify the user experience in the browser with evidence. Code exists to serve the interface.
+
+2. **Documentation and QA/Testing are the second most important.** Docs are how users understand what was built. Tests prove it works. Both are deliverables, not afterthoughts. A feature without docs and tests is not a feature.
+
+3. **Writing code is a supporting function.** Code makes #1 and #2 happen. When evaluating trade-offs: UX wins over code elegance, doc completeness wins over shipping speed, test coverage wins over feature count.
+
+**This means:** Start with UX, verify UX first, never say "done" without browser-verified evidence of the user experience, and never skip docs/QA to ship code faster.
+
+---
+
 ## UI/QA Gate — Hard Rule
 
 Every frontend change requires browser-verified QA before commit. No exceptions.
