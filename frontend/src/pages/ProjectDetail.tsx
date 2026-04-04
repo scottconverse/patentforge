@@ -1170,14 +1170,27 @@ export default function ProjectDetail() {
                       {run.totalCostUsd > 0 && <span className="text-amber-500">{formatCost(run.totalCostUsd)}</span>}
                     </div>
                   </div>
-                  {run.status === 'COMPLETE' && (
-                    <button
-                      onClick={() => handleLoadHistoricalRun(run.version)}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
-                    >
-                      View Report
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {run.status === 'COMPLETE' && (
+                      <button
+                        onClick={() => handleLoadHistoricalRun(run.version)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                      >
+                        View Report
+                      </button>
+                    )}
+                    {(run.status === 'ERROR' || run.status === 'CANCELLED') && (
+                      <>
+                        <span className="text-xs text-gray-500">No report available</span>
+                        <button
+                          onClick={() => handleRunFeasibility()}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                        >
+                          Re-run
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
