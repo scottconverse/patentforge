@@ -2,6 +2,9 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 
 export default function Layout() {
   const location = useLocation();
+  const isProjects = location.pathname === '/' || location.pathname.startsWith('/projects');
+  const isSettings = location.pathname === '/settings';
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-950 text-gray-100">
       <nav className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
@@ -10,8 +13,14 @@ export default function Layout() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
+            to="/"
+            className={`text-sm transition-colors ${isProjects ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+          >
+            Projects
+          </Link>
+          <Link
             to="/settings"
-            className={`text-sm transition-colors ${location.pathname === '/settings' ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`text-sm transition-colors ${isSettings ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
           >
             Settings
           </Link>
