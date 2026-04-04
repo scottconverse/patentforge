@@ -15,7 +15,8 @@
     "format:check": "prettier --check src/**/*.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "test:integration": "jest --config test/jest-integration.config.js --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -39,6 +40,7 @@
     "@types/express": "^4.17.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
+    "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
     "@vercel/ncc": "^0.38.4",
@@ -48,6 +50,7 @@
     "postject": "^1.0.0-alpha.6",
     "prettier": "^3.8.1",
     "prisma": "^5.0.0",
+    "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "typescript": "^5.0.0"
   }
