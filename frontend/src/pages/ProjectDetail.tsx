@@ -703,9 +703,17 @@ export default function ProjectDetail() {
     return (
       <div className="max-w-2xl mx-auto py-8">
         <div className="p-4 bg-red-900/40 border border-red-800 rounded-lg text-red-300">{error}</div>
-        <button onClick={() => navigate('/')} className="mt-4 text-sm text-blue-400 hover:text-blue-300">
-          ← Back to Projects
-        </button>
+        <div className="mt-4 flex items-center gap-4">
+          <button
+            onClick={() => loadProject()}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+          >
+            Retry
+          </button>
+          <button onClick={() => navigate('/')} className="text-sm text-blue-400 hover:text-blue-300">
+            ← Back to Projects
+          </button>
+        </div>
       </div>
     );
   }
