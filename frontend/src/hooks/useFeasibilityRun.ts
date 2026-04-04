@@ -566,6 +566,10 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
                 });
               }
               await loadProject();
+              // Explicitly transition to overview — the view init effect
+              // won't re-trigger because projectLoadedRef guards against
+              // re-initialization for the same project ID.
+              setViewMode('overview');
               return;
             } else if (eventType === 'pipeline_error') {
               setRunError(data.error || 'Pipeline failed');
