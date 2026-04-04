@@ -24,7 +24,13 @@ Optional:
    cd patentforge
    ```
 
-2. **Install dependencies** (all six services)
+2. **Install git hooks** (required — blocks pushes that fail verification)
+   ```bash
+   bash scripts/install-hooks.sh
+   ```
+   This installs a `pre-push` hook that runs `scripts/verify-release.sh` before every push. If any check fails, the push is blocked. To bypass in an emergency: `SKIP_VERIFY=1 git push`.
+
+3. **Install dependencies** (all six services)
    ```bash
    cd backend && npm ci && cd ..
    cd services/feasibility && npm ci && cd ../..
@@ -36,7 +42,7 @@ Optional:
 
    > **Note:** The frontend uses `npm install` (not `npm ci`) because esbuild includes platform-specific optional binaries. A lockfile generated on one OS won't contain binaries for other platforms, causing `npm ci` to fail with `EBADPLATFORM`. The backend and feasibility services don't have this issue and can use `npm ci`.
 
-3. **Set up the database**
+4. **Set up the database**
    ```bash
    cd backend
    # Create .env for local SQLite dev (the repo-root .env.example targets PostgreSQL/Docker)
@@ -46,7 +52,7 @@ Optional:
    cd ..
    ```
 
-4. **Start all services**
+5. **Start all services**
 
    On Windows, run the launcher from the project root:
    ```
@@ -74,9 +80,9 @@ Optional:
    cd frontend && npm run dev
    ```
 
-5. **Open the app** at http://localhost:8080
+6. **Open the app** at http://localhost:8080
 
-6. **Configure your API key** in Settings (gear icon) before running any analysis.
+7. **Configure your API key** in Settings (gear icon) before running any analysis.
 
 ### Docker Setup (optional alternative)
 

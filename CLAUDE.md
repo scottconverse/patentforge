@@ -12,11 +12,11 @@ Every frontend change requires browser-verified QA before commit. No exceptions.
 
 Before ANY push to GitHub, you MUST complete both of these. No exceptions, no shortcuts.
 
-1. **Run `bash scripts/verify-release.sh`** and paste the COMPLETE output. If any check shows FAIL, fix it before pushing. The script checks: version consistency across all packages, required files exist, all diagrams referenced in docs, all services mentioned in docs, changelog has current version, no secrets in code, test count matches docs, git status clean. Non-zero exit = push blocked.
+**Technical gate (automated):** A `pre-push` git hook runs `scripts/verify-release.sh` automatically before every push. If any check fails, the push is blocked. The hook is installed by `bash scripts/install-hooks.sh` (run once after cloning). The script checks: version consistency across all packages, required files exist, all diagrams referenced in docs, all services mentioned in docs, changelog has current version, no secrets in code, test count matches docs, git status clean. Non-zero exit = push blocked. Emergency bypass: `SKIP_VERIFY=1 git push` — use only when you understand why you're skipping.
 
-2. **Invoke the `patentforge-release-checklist` skill** and complete every task with evidence. This covers: browser UI verification with screenshots, copy/content review, documentation audit (every file, every version, every diagram reference), and diagram verification. Each task requires pasted evidence — not self-certification.
+**Quality gate (manual):** Invoke the `patentforge-release-checklist` skill and complete every task with evidence. This covers: browser UI verification with screenshots, copy/content review, documentation audit (every file, every version, every diagram reference), and diagram verification. Each task requires pasted evidence — not self-certification.
 
-Both gates must pass. Running verify-release.sh alone is not sufficient. Completing the skill alone is not sufficient. Both.
+Both gates must pass. The hook enforces the technical gate automatically. The skill is your responsibility — run it before pushing. If context is running low, save state and do it in the next session rather than skipping it.
 
 ---
 
