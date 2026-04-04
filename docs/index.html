@@ -256,7 +256,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <p>5-agent sequential pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52 with paragraph numbering, page numbers, and draft watermark.</p>
       </div>
       <div class="feature-card">
-        <h3>532 Automated Tests</h3>
+        <h3>513 Automated Tests</h3>
         <p>Jest backend tests with supertest API integration coverage, Vitest component tests, pytest for claim-drafter, compliance-checker, and application-generator, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. ESLint + Prettier enforcement, TypeScript strict mode across all services, and coverage thresholds enforced in CI. GitHub Actions CI on every push.</p>
       </div>
       <div class="feature-card">
@@ -336,7 +336,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
       <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.8.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>v0.8.0:</strong> <strong>Code quality &amp; UI polish</strong> — ESLint + Prettier enforcement across all services, TypeScript strict mode (backend + frontend strictNullChecks), backend API integration tests with supertest, coverage thresholds enforced in CI, sidebar status badges for pipeline steps, mobile-responsive sidebar accordion, pre-push git hook for release verification. 532 automated tests.</li>
+        <li><strong>v0.8.0:</strong> <strong>Code quality &amp; UI polish</strong> — ESLint + Prettier enforcement across all services, TypeScript strict mode (backend + frontend strictNullChecks), backend API integration tests with supertest, coverage thresholds enforced in CI, sidebar status badges for pipeline steps, mobile-responsive sidebar accordion, pre-push git hook for release verification. 513 automated tests.</li>
         <li><strong>v0.7.1:</strong> Polish patch — 18 bug fixes including run targeting, API key security, cost cap scope, SSE resilience, and DOCX export quality</li>
         <li><strong>v0.7.0:</strong> <strong>One-click installer</strong> — Windows (.exe via Inno Setup), Mac (.dmg, beta), Linux (.AppImage, beta). System tray app (Go) manages all 5 services with health monitoring and auto-restart. Node SEA binaries for backend and feasibility (no Node.js runtime needed). Portable Python 3.12 bundled. First-run API key setup wizard. CI release workflow builds all platforms on tag push.</li>
         <li><strong>v0.6.1:</strong> Hardening patch — removed Docker <code>--accept-data-loss</code>, configurable backend port, startup env validation with actionable errors, runtime source maps, form/modal accessibility fixes, real disclaimer-flow E2E test</li>
@@ -344,7 +344,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
         <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
         <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
-        <li>532 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>513 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
