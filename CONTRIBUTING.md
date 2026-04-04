@@ -257,6 +257,22 @@ cd frontend && npm run lint:fix && npm run format
 
 CI will fail if lint errors are present.
 
+### Test Coverage
+
+Coverage thresholds prevent silent regression. CI fails if coverage drops below the baseline.
+
+```bash
+# Run with coverage
+cd backend && npm run test:cov
+cd frontend && npm run test:cov
+```
+
+Current baselines (set 2026-04-04):
+- Backend: lines 44%, branches 39%, functions 33%, statements 45%
+- Frontend: lines 26%, branches 30%, functions 26%, statements 27%
+
+When adding new code, add tests. When the baseline increases, update the thresholds in `backend/jest.config.js` and `frontend/vite.config.ts`.
+
 ## Architecture Notes
 
 PatentForge uses a federated service architecture. Each capability (feasibility analysis, prior art search, claim drafting, etc.) is an independent service that communicates with the central backend over HTTP/SSE. See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
