@@ -1,3 +1,4 @@
+import * as http from 'http';
 import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
@@ -213,7 +214,7 @@ export class ComplianceService implements OnModuleInit {
     // Use http.request for full timeout control — fetch has a ~5 min socket timeout
     const result = await new Promise<any>((resolve, reject) => {
       const url = new URL(`${COMPLIANCE_CHECKER_URL}/check`);
-      const http = require('http');
+
       const data = JSON.stringify(requestBody);
       const req = http.request(
         {

@@ -1,3 +1,4 @@
+import * as http from 'http';
 import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
@@ -261,7 +262,7 @@ export class ClaimDraftService implements OnModuleInit {
     // that can't be overridden, but AI claim drafting takes 5-8 minutes.
     const result = await new Promise<any>((resolve, reject) => {
       const url = new URL(`${CLAIM_DRAFTER_URL}/draft/sync`);
-      const http = require('http');
+
       const data = JSON.stringify(requestBody);
       const req = http.request(
         {

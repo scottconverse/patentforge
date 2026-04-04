@@ -1,3 +1,4 @@
+import * as http from 'http';
 import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
@@ -289,7 +290,7 @@ export class ApplicationService implements OnModuleInit {
     // that can't be overridden, but AI application generation takes 10-15 minutes.
     const result = await new Promise<any>((resolve, reject) => {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/generate/sync`);
-      const http = require('http');
+
       const data = JSON.stringify(requestBody);
       const req = http.request(
         {
@@ -436,7 +437,7 @@ export class ApplicationService implements OnModuleInit {
 
     const buffer = await new Promise<Buffer>((resolve, reject) => {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/export/docx`);
-      const http = require('http');
+
       const data = JSON.stringify(sectionData);
       const req = http.request(
         {
@@ -509,7 +510,7 @@ export class ApplicationService implements OnModuleInit {
 
     const text = await new Promise<string>((resolve, reject) => {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/export/markdown`);
-      const http = require('http');
+
       const data = JSON.stringify(sectionData);
       const req = http.request(
         {
