@@ -167,6 +167,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
   const [isPipelineStreaming, setIsPipelineStreaming] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
+  const isRunningRef = useRef(false);
   const runIdRef = useRef<string | null>(null);
   const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -284,6 +285,9 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     previousOutputs: Record<number, string> = {},
   ) {
     if (!projectId) return;
+    // Guard against concurrent pipeline runs (rapid Resume→Cancel→Resume)
+    if (isRunningRef.current) return;
+    isRunningRef.current = true;
 
     setIsPipelineStreaming(true);
     setRunError(null);
@@ -554,8 +558,8 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
               } catch {
                 // non-fatal
               }
-              // Auto-export to desktop
-              try {
+              // Auto-export to desktop (opt-in via Settings)
+              if (appSettings.autoExport !== false) try {
                 const exportResult = await api.feasibility.exportToDisk(projectId);
                 setToast({
                   message: `Analysis complete · actual cost: ${formatCost(totalActualCost)}`,
@@ -617,6 +621,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
         ),
       );
     } finally {
+      isRunningRef.current = false;
       setIsPipelineStreaming(false);
     }
   }
@@ -625,6 +630,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     if (!projectId) return;
     try {
       setCancelling(true);
+      isRunningRef.current = false;
       abortRef.current?.abort();
       await api.feasibility.cancel(projectId);
       setStages((prev) =>

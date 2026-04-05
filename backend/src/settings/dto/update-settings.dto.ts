@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, IsNumber, Min } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsNumber, IsBoolean, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateSettingsDto {
@@ -29,6 +29,10 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   exportPath?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  autoExport?: boolean;
 
   @IsOptional()
   @IsNumber()

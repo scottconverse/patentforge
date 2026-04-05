@@ -32,6 +32,14 @@ export function useViewInit({
 }) {
   const projectLoadedRef = useRef<string | null>(null);
 
+  // Reset the guard when the project ID changes (e.g. user navigates to a different project)
+  // so view init runs again for the new project.
+  useEffect(() => {
+    if (project && projectLoadedRef.current && projectLoadedRef.current !== project.id) {
+      projectLoadedRef.current = null;
+    }
+  }, [project?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!project || loading) return;
     // Only run view init once per project id to avoid resetting view on re-fetches
@@ -61,7 +69,9 @@ export function useViewInit({
         setRunError(
           'Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.',
         );
-        setViewMode('report');
+        // Show overview (not report) so the user sees the error banner AND has
+        // direct access to the Re-run button without navigating back first.
+        setViewMode('overview');
         // Patch backend so it doesn't stay RUNNING forever
         api.feasibility
           .patchRun(project.id, { status: 'ERROR', runId: runIdRef.current || undefined })

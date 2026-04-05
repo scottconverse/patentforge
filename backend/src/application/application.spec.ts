@@ -6,7 +6,9 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('ApplicationService', () => {
   let service: ApplicationService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mocks are idiomatic in NestJS unit tests
   let prisma: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let settings: any;
 
   beforeEach(async () => {
@@ -107,7 +109,7 @@ describe('ApplicationService', () => {
       const app = { id: 'a1', background: 'old' };
       prisma.patentApplication.findFirst.mockResolvedValue(app);
       prisma.patentApplication.update.mockResolvedValue({ ...app, background: 'new' });
-      const result = await service.updateSection('p1', 'background', 'new');
+      await service.updateSection('p1', 'background', 'new');
       expect(prisma.patentApplication.update).toHaveBeenCalledWith({
         where: { id: 'a1' },
         data: { background: 'new' },

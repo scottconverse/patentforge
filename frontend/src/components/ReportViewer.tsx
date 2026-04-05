@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../api';
+import { slugify } from '../utils/slugify';
+import { DISCLAIMER_SHORT } from '../utils/disclaimer';
 
 interface ReportViewerProps {
   report: string;
@@ -22,13 +24,6 @@ function triggerDownload(blob: Blob, filename: string) {
   }, 2000);
 }
 
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
 export default function ReportViewer({
   report: _report,
   preRenderedHtml: _html,
@@ -37,12 +32,35 @@ export default function ReportViewer({
 }: ReportViewerProps) {
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
+  const [htmlLoading, setHtmlLoading] = useState(false);
+  const [iframeHtml, setIframeHtml] = useState<string | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
   const slug = slugify(projectTitle);
 
-  // Report HTML is served directly by the backend — no client-side markdown parsing
-  const reportHtmlUrl = `/api/projects/${projectId}/feasibility/report/html`;
-  const exportHtmlUrl = `/api/projects/${projectId}/feasibility/export/html`;
+  // Fetch report HTML via the api module (works with auth headers) instead
+  // of setting iframe src directly (which can't send Authorization headers).
+  useEffect(() => {
+    let cancelled = false;
+    api.feasibility.getReportHtml(projectId).then((html) => {
+      if (!cancelled) setIframeHtml(html);
+    }).catch(() => {
+      if (!cancelled) setIframeHtml('<p style="color:#ef4444;padding:2rem;">Failed to load report.</p>');
+    });
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  const handleDownloadHtml = async () => {
+    setHtmlLoading(true);
+    try {
+      const html = await api.feasibility.getExportHtml(projectId);
+      const blob = new Blob([html], { type: 'text/html' });
+      triggerDownload(blob, `${slug}-feasibility.html`);
+    } catch {
+      // non-fatal
+    } finally {
+      setHtmlLoading(false);
+    }
+  };
 
   const handleDownloadDocx = async () => {
     setDocxLoading(true);
@@ -62,13 +80,13 @@ export default function ReportViewer({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-100">Feasibility Report</h2>
         <div className="flex gap-2">
-          <a
-            href={exportHtmlUrl}
-            download={`${slug}-feasibility.html`}
-            className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors inline-block"
+          <button
+            onClick={handleDownloadHtml}
+            disabled={htmlLoading}
+            className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-200 rounded transition-colors"
           >
-            Download HTML
-          </a>
+            {htmlLoading ? 'Preparing...' : 'Download HTML'}
+          </button>
           <button
             onClick={handleDownloadDocx}
             disabled={docxLoading}
@@ -82,7 +100,7 @@ export default function ReportViewer({
       {/* UPL disclaimer banner */}
       <div className="p-3 bg-amber-900/20 border border-amber-800 rounded-lg text-center">
         <p className="text-xs text-amber-200/80">
-          <strong className="text-amber-200">Research tool — not legal advice.</strong> This AI-generated report is for informational and educational purposes only. It does not constitute legal advice or create an attorney-client relationship. Always consult a registered patent attorney before making filing, licensing, or enforcement decisions.
+          <strong className="text-amber-200">{DISCLAIMER_SHORT.split('.')[0]}.</strong> {DISCLAIMER_SHORT.split('. ').slice(1).join('. ')}
         </p>
       </div>
 
@@ -105,9 +123,10 @@ export default function ReportViewer({
           </div>
         )}
         <iframe
-          src={reportHtmlUrl}
+          srcDoc={iframeHtml ?? undefined}
           title="Feasibility Report"
-          className={`w-full rounded-lg border border-gray-800 transition-opacity duration-300 ${iframeLoading ? 'opacity-0' : 'opacity-100'}`}
+          sandbox="allow-same-origin"
+          className={`w-full rounded-lg border border-gray-800 transition-opacity duration-300 ${iframeLoading || !iframeHtml ? 'opacity-0' : 'opacity-100'}`}
           style={{ height: 'calc(100vh - 180px)', minHeight: '600px', background: '#030712' }}
           onLoad={() => setIframeLoading(false)}
         />

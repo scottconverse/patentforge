@@ -71,8 +71,10 @@ export interface AppSettings {
   maxTokens: number;
   interStageDelaySeconds: number;
   exportPath: string;
+  autoExport: boolean;
   costCapUsd: number;
   usptoApiKey: string;
+  encryptionHealthy?: boolean;
 }
 
 export interface FeasibilityRunSummary {

@@ -267,9 +267,9 @@ cd backend && npm run test:cov
 cd frontend && npm run test:cov
 ```
 
-Current baselines (updated 2026-04-05, v0.8.2):
-- Backend: lines 44%, branches 39%, functions 33%, statements 45%
-- Frontend: lines 36%, branches 36%, functions 32%, statements 35%
+Current baselines (updated 2026-04-05, v0.8.3):
+- Backend: lines 44%, branches 38%, functions 32%, statements 43%
+- Frontend: lines 38%, branches 38%, functions 32%, statements 38%
 
 When adding new code, add tests. When the baseline increases, update the thresholds in `backend/jest.config.js` and `frontend/vite.config.ts`.
 

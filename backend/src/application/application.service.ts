@@ -6,6 +6,22 @@ import { SettingsService } from '../settings/settings.service';
 const APPLICATION_GENERATOR_URL = process.env.APPLICATION_GENERATOR_URL || 'http://localhost:3003';
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
 
+/** Response from the Python application-generator /generate/sync endpoint. */
+interface AppGeneratorResponse {
+  status: string;
+  error_message?: string;
+  title?: string;
+  abstract?: string | null;
+  background?: string | null;
+  summary?: string | null;
+  detailed_description?: string | null;
+  claims?: string | null;
+  figure_descriptions?: string | null;
+  cross_references?: string | null;
+  ids_table?: string | null;
+  total_estimated_cost_usd?: number | null;
+}
+
 /**
  * Valid section names that can be individually updated.
  * Maps section name to Prisma column name.
@@ -117,8 +133,8 @@ export class ApplicationService implements OnModuleInit {
         select: { estimatedCostUsd: true },
       });
       const claimDrafts = await this.prisma.claimDraft.findMany({
-        where: { projectId },
-        select: { id: true },
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
       });
       // Include compliance check costs
       const complianceChecks = await this.prisma.complianceCheck.findMany({
@@ -132,6 +148,7 @@ export class ApplicationService implements OnModuleInit {
       });
       const spent =
         stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        claimDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0) +
         complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
         prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
@@ -258,8 +275,9 @@ export class ApplicationService implements OnModuleInit {
             max_tokens: settings.maxTokens,
           },
         });
-      } catch (err: any) {
-        console.error(`[Application] Pipeline failed for application ${app.id}:`, err.message);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[Application] Pipeline failed for application ${app.id}:`, msg);
       } finally {
         // Ensure application is never left in RUNNING status
         const current = await this.prisma.patentApplication.findUnique({ where: { id: app.id } });
@@ -288,7 +306,7 @@ export class ApplicationService implements OnModuleInit {
 
     // Use http.request for full timeout control — fetch has a ~5 min socket timeout
     // that can't be overridden, but AI application generation takes 10-15 minutes.
-    const result = await new Promise<any>((resolve, reject) => {
+    const result = await new Promise<AppGeneratorResponse>((resolve, reject) => {
       const url = new URL(`${APPLICATION_GENERATOR_URL}/generate/sync`);
 
       const data = JSON.stringify(requestBody);
@@ -301,7 +319,7 @@ export class ApplicationService implements OnModuleInit {
           headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
           timeout: 900_000, // 15 minutes — application generation with large context can take 10+ min
         },
-        (res: any) => {
+        (res) => {
           const chunks: Buffer[] = [];
           res.on('data', (c: Buffer) => chunks.push(c));
           res.on('end', () => {
@@ -448,7 +466,7 @@ export class ApplicationService implements OnModuleInit {
           headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
           timeout: 60_000,
         },
-        (res: any) => {
+        (res) => {
           const chunks: Buffer[] = [];
           res.on('data', (c: Buffer) => chunks.push(c));
           res.on('end', () => {
@@ -521,7 +539,7 @@ export class ApplicationService implements OnModuleInit {
           headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
           timeout: 60_000,
         },
-        (res: any) => {
+        (res) => {
           const chunks: Buffer[] = [];
           res.on('data', (c: Buffer) => chunks.push(c));
           res.on('end', () => {

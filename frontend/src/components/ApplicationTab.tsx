@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import { slugify } from '../utils/slugify';
 import Alert from './Alert';
 
 interface ApplicationTabProps {
@@ -110,15 +111,6 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
     } catch (e: any) {
       setError(e.message);
     }
-  }
-
-  function slugify(text: string): string {
-    return (
-      text
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || 'application'
-    );
   }
 
   async function handleDownloadDocx() {

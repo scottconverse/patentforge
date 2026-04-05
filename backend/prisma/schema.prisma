@@ -227,8 +227,9 @@ model AppSettings {
   researchModel          String @default("")
   maxTokens              Int    @default(32000)
   interStageDelaySeconds Int    @default(5)
-  exportPath             String @default("")
-  costCapUsd             Float  @default(5.00)
+  exportPath             String  @default("")
+  autoExport             Boolean @default(true)
+  costCapUsd             Float   @default(5.00)
   usptoApiKey            String @default("")
   encryptionSalt         String @default("")
 }

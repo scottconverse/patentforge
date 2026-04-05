@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
-import { encrypt, decrypt, generateSalt } from './encryption';
+import { encrypt, decrypt, generateSalt, DecryptionError } from './encryption';
 
 const SINGLETON_ID = 'singleton';
 
@@ -9,6 +9,7 @@ const SINGLETON_ID = 'singleton';
 export class SettingsService implements OnModuleInit {
   private readonly logger = new Logger(SettingsService.name);
   private salt: string = '';
+  private encryptionHealthy = true;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -37,18 +38,29 @@ export class SettingsService implements OnModuleInit {
 
     // Self-test: verify encryption round-trip works on this machine.
     // If the database was copied from another machine, the machine-derived
-    // key will differ and decryption of existing API keys will silently
-    // return ciphertext. Warn loudly so the user knows to re-enter keys.
-    const probe = '__patentforge_encryption_probe__';
-    const encrypted = encrypt(probe, this.salt);
-    const decrypted = decrypt(encrypted, this.salt);
-    if (decrypted !== probe) {
-      this.logger.error(
-        'ENCRYPTION SELF-TEST FAILED — encrypt/decrypt round-trip returned wrong value. ' +
-          'If you moved the database from another machine, re-enter your API keys in Settings.',
-      );
-    } else {
-      this.logger.log('Encryption self-test passed');
+    // key will differ and decrypt() will throw DecryptionError.
+    try {
+      const probe = '__patentforge_encryption_probe__';
+      const encrypted = encrypt(probe, this.salt);
+      const decrypted = decrypt(encrypted, this.salt);
+      if (decrypted !== probe) {
+        this.encryptionHealthy = false;
+        this.logger.error(
+          'ENCRYPTION SELF-TEST FAILED — round-trip returned wrong value. ' +
+            'Re-enter your API keys in Settings.',
+        );
+      } else {
+        this.logger.log('Encryption self-test passed');
+      }
+    } catch (err) {
+      this.encryptionHealthy = false;
+      if (err instanceof DecryptionError) {
+        this.logger.error(
+          'ENCRYPTION SELF-TEST FAILED — ' + err.message + ' Re-enter your API keys in Settings.',
+        );
+      } else {
+        this.logger.error('ENCRYPTION SELF-TEST FAILED — unexpected error: ' + String(err));
+      }
     }
   }
 
@@ -62,10 +74,25 @@ export class SettingsService implements OnModuleInit {
       update: {},
     });
 
+    let anthropicApiKey = '';
+    let usptoApiKey = '';
+    try {
+      anthropicApiKey = decrypt(raw.anthropicApiKey, this.salt);
+      usptoApiKey = decrypt(raw.usptoApiKey, this.salt);
+    } catch (err) {
+      if (err instanceof DecryptionError) {
+        this.encryptionHealthy = false;
+        this.logger.warn('Could not decrypt API keys — re-enter them in Settings.');
+      } else {
+        throw err;
+      }
+    }
+
     return {
       ...raw,
-      anthropicApiKey: decrypt(raw.anthropicApiKey, this.salt),
-      usptoApiKey: decrypt(raw.usptoApiKey, this.salt),
+      anthropicApiKey,
+      usptoApiKey,
+      encryptionHealthy: this.encryptionHealthy,
     };
   }
 
@@ -80,6 +107,7 @@ export class SettingsService implements OnModuleInit {
     if (dto.maxTokens !== undefined) data.maxTokens = dto.maxTokens;
     if (dto.interStageDelaySeconds !== undefined) data.interStageDelaySeconds = dto.interStageDelaySeconds;
     if (dto.exportPath !== undefined) data.exportPath = dto.exportPath;
+    if (dto.autoExport !== undefined) data.autoExport = dto.autoExport;
     if (dto.costCapUsd !== undefined) data.costCapUsd = dto.costCapUsd;
     if (dto.usptoApiKey !== undefined) data.usptoApiKey = encrypt(dto.usptoApiKey, this.salt);
 
@@ -89,10 +117,27 @@ export class SettingsService implements OnModuleInit {
       update: data,
     });
 
+    // After a successful update, encryption should be healthy (new keys just encrypted)
+    this.encryptionHealthy = true;
+
+    let anthropicApiKey = '';
+    let usptoApiKey = '';
+    try {
+      anthropicApiKey = decrypt(raw.anthropicApiKey, this.salt);
+      usptoApiKey = decrypt(raw.usptoApiKey, this.salt);
+    } catch (err) {
+      if (err instanceof DecryptionError) {
+        this.encryptionHealthy = false;
+      } else {
+        throw err;
+      }
+    }
+
     return {
       ...raw,
-      anthropicApiKey: decrypt(raw.anthropicApiKey, this.salt),
-      usptoApiKey: decrypt(raw.usptoApiKey, this.salt),
+      anthropicApiKey,
+      usptoApiKey,
+      encryptionHealthy: this.encryptionHealthy,
     };
   }
 

@@ -2,7 +2,7 @@
  * Tests for API key encryption/decryption at rest.
  */
 
-import { encrypt, decrypt, isEncrypted, generateSalt } from './encryption';
+import { encrypt, decrypt, isEncrypted, generateSalt, DecryptionError } from './encryption';
 
 const TEST_SALT = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
 
@@ -33,13 +33,11 @@ describe('encrypt/decrypt', () => {
     expect(decrypt(plaintext, TEST_SALT)).toBe(plaintext);
   });
 
-  it('cannot decrypt with a different salt', () => {
+  it('throws DecryptionError with a different salt', () => {
     const key = 'sk-ant-api03-secret';
     const encrypted = encrypt(key, TEST_SALT);
     const wrongSalt = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-    // Should return the ciphertext unchanged (decryption fails, falls through)
-    const result = decrypt(encrypted, wrongSalt);
-    expect(result).not.toBe(key);
+    expect(() => decrypt(encrypted, wrongSalt)).toThrow(DecryptionError);
   });
 
   it('detects encrypted values correctly', () => {
@@ -54,27 +52,22 @@ describe('encrypt/decrypt', () => {
     expect(decrypt(encrypt(key, TEST_SALT), TEST_SALT)).toBe(key);
   });
 
-  it('returns corrupted ciphertext unchanged on decryption failure (migration fallback)', () => {
+  it('throws DecryptionError for corrupted ciphertext', () => {
     const encrypted = encrypt('test-key', TEST_SALT);
     // Corrupt the ciphertext by flipping bits in the data portion
     const corrupted = encrypted.slice(0, -4) + 'ffff';
-    // Should not throw — returns the corrupted string as-is
-    const result = decrypt(corrupted, TEST_SALT);
-    expect(result).toBe(corrupted);
-    expect(result).not.toBe('test-key');
+    expect(() => decrypt(corrupted, TEST_SALT)).toThrow(DecryptionError);
   });
 
-  it('returns truncated hex string unchanged (migration fallback)', () => {
+  it('throws DecryptionError for truncated ciphertext that passes hex check', () => {
     const encrypted = encrypt('secret-key', TEST_SALT);
-    // Truncate to just IV + partial tag — valid hex but too short for real ciphertext
+    // Truncate to just IV + tag but missing/truncated data portion
     const truncated = encrypted.slice(0, 60);
-    // isEncrypted sees it as potentially encrypted (valid hex, sufficient length)
-    // but decrypt should fail gracefully and return it unchanged
     if (isEncrypted(truncated)) {
-      const result = decrypt(truncated, TEST_SALT);
-      expect(result).toBe(truncated);
+      // Looks encrypted (valid hex, sufficient length) but can't decrypt
+      expect(() => decrypt(truncated, TEST_SALT)).toThrow(DecryptionError);
     } else {
-      // If too short for isEncrypted, decrypt treats as plaintext passthrough
+      // Too short for isEncrypted — decrypt treats as plaintext passthrough
       expect(decrypt(truncated, TEST_SALT)).toBe(truncated);
     }
   });

@@ -5,13 +5,15 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 
-function mockContext(authHeader?: string): ExecutionContext {
+function mockContext(authHeader?: string, query?: Record<string, string>): ExecutionContext {
   return {
     switchToHttp: () => ({
       getRequest: () => ({
         headers: authHeader ? { authorization: authHeader } : {},
+        query: query ?? {},
       }),
     }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock for unit test
   } as any;
 }
 
@@ -55,5 +57,24 @@ describe('AuthGuard', () => {
     process.env.PATENTFORGE_TOKEN = 'my-secret-token';
     const guard = new AuthGuard();
     expect(() => guard.canActivate(mockContext('Basic my-secret-token'))).toThrow(UnauthorizedException);
+  });
+
+  it('allows requests with correct query param token (iframe/download fallback)', () => {
+    process.env.PATENTFORGE_TOKEN = 'my-secret-token';
+    const guard = new AuthGuard();
+    expect(guard.canActivate(mockContext(undefined, { token: 'my-secret-token' }))).toBe(true);
+  });
+
+  it('rejects requests with wrong query param token', () => {
+    process.env.PATENTFORGE_TOKEN = 'my-secret-token';
+    const guard = new AuthGuard();
+    expect(() => guard.canActivate(mockContext(undefined, { token: 'wrong-token' }))).toThrow(UnauthorizedException);
+  });
+
+  it('prefers Bearer header over query param', () => {
+    process.env.PATENTFORGE_TOKEN = 'my-secret-token';
+    const guard = new AuthGuard();
+    // Correct header + wrong query param → should pass (header wins)
+    expect(guard.canActivate(mockContext('Bearer my-secret-token', { token: 'wrong' }))).toBe(true);
   });
 });

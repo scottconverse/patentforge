@@ -40,15 +40,24 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers.authorization;
 
-    if (!authHeader) {
+    // Try Bearer header first (standard API auth)
+    if (authHeader) {
+      const [scheme, value] = authHeader.split(' ');
+      if (scheme === 'Bearer' && this.timingSafeEqual(value ?? '', this.token)) {
+        return true;
+      }
+    }
+
+    // Fall back to ?token= query param (for iframes and download links that
+    // cannot send custom headers). Same constant-time comparison.
+    const queryToken = request.query?.token as string | undefined;
+    if (queryToken && this.timingSafeEqual(queryToken, this.token)) {
+      return true;
+    }
+
+    if (!authHeader && !queryToken) {
       throw new UnauthorizedException('Authentication required. Set Authorization: Bearer <token> header.');
     }
-
-    const [scheme, value] = authHeader.split(' ');
-    if (scheme !== 'Bearer' || !this.timingSafeEqual(value ?? '', this.token)) {
-      throw new UnauthorizedException('Invalid authentication token.');
-    }
-
-    return true;
+    throw new UnauthorizedException('Invalid authentication token.');
   }
 }

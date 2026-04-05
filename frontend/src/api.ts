@@ -81,6 +81,16 @@ export const api = {
     },
     getReport: (projectId: string) =>
       req<{ report: string | null; html: string | null }>('GET', `/projects/${projectId}/feasibility/report`),
+    getReportHtml: async (projectId: string): Promise<string> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/feasibility/report/html`);
+      if (!res.ok) throw new Error(`Failed to load report: ${res.status}`);
+      return res.text();
+    },
+    getExportHtml: async (projectId: string): Promise<string> => {
+      const res = await fetch(`${BASE}/projects/${projectId}/feasibility/export/html`);
+      if (!res.ok) throw new Error(`Failed to load export: ${res.status}`);
+      return res.text();
+    },
     costEstimate: (projectId: string) =>
       req<{
         hasHistory: boolean;

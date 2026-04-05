@@ -1,4 +1,6 @@
 import { Controller, Get, Put, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { UseGuards } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 
@@ -23,6 +25,8 @@ export class SettingsController {
   }
 
   @Post('validate-api-key')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async validateApiKey(@Body() body: { apiKey: string }) {
     return this.settingsService.validateApiKey(body.apiKey);
   }

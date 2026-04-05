@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.8.2):**
+**Current status (v0.8.3):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -27,10 +27,26 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 592 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
+- 595 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
 - ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v0.8.3:**
+- **CI fix** — package-lock.json version mismatch (0.8.1 vs 0.8.2) that caused `npm ci` to fail in CI
+- **Bug fix: decrypt() silent failure** — `decrypt()` now throws `DecryptionError` instead of silently returning ciphertext when decryption fails; settings service shows a clear warning banner in the UI
+- **Bug fix: report auth** — ReportViewer iframe and HTML download now use fetch+srcdoc/blob instead of direct URLs, working with PATENTFORGE_TOKEN auth; AuthGuard also accepts `?token=` query param fallback
+- **Bug fix: orphaned nginx block** — removed `/feasibility/` proxy block from nginx.conf; SSE settings moved to `/api/` proxy
+- **Bug fix: stale projectLoadedRef** — view init ref resets when project ID changes; stale RUNNING runs show overview for direct re-run access
+- **Bug fix: concurrent run guard** — `isRunningRef` prevents overlapping SSE streams from rapid Resume/Cancel/Resume
+- **Security: API key rate limiting** — @nestjs/throttler added; validate-api-key endpoint limited to 5 requests per 60 seconds
+- **Code quality: lint cleanup** — all `any` types replaced with proper interfaces; unused variables fixed; application.service.ts cost cap now includes claimDraft costs
+- **Code quality: shared utilities** — extracted slugify() and disclaimer text to shared modules
+- **Docker: healthchecks** — all 7 services now have healthchecks; frontend depends on backend being healthy
+- **Docker: log rotation** — json-file driver with 10 MB max-size, 3-file rotation on all services
+- **Settings: auto-export opt-in** — new autoExport boolean (defaults to true); toggle in Settings UI
+- **CI: Node 24 migration** — FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 env var set preemptively
+- **Coverage thresholds bumped** — backend 44/38/32/43, frontend 38/38/32/38
 
 **What's new in v0.8.2:**
 - **Security hardening** — Helmet HTTP security headers on all backend responses, DOMPurify sanitization on all server-side markdown-to-HTML rendering

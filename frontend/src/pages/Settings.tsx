@@ -57,8 +57,8 @@ export default function Settings() {
       setLoading(true);
       const data = await api.settings.get();
       setSettings(data);
-    } catch (e: any) {
-      setError(e.message || 'Failed to load settings');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load settings');
     } finally {
       setLoading(false);
     }
@@ -111,6 +111,16 @@ export default function Settings() {
         <h1 className="text-2xl font-bold text-gray-100">Settings</h1>
         <p className="text-gray-400 text-sm mt-1">Configure API keys and analysis defaults</p>
       </div>
+
+      {settings.encryptionHealthy === false && (
+        <div className="mb-4 p-4 bg-amber-900/40 border border-amber-700 rounded-lg">
+          <p className="text-amber-200 font-semibold text-sm">Encryption key mismatch detected</p>
+          <p className="text-amber-300/80 text-sm mt-1">
+            Your API keys could not be decrypted. This usually happens when the database was moved
+            from another machine. Please re-enter your API keys below and save.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSave} autoComplete="off" className="space-y-6">
         {/* Hidden dummy input to prevent Chrome autofill */}
@@ -297,6 +307,18 @@ export default function Settings() {
         {/* Export & Cost */}
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Export & Cost</h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="autoExport"
+              checked={settings.autoExport !== false}
+              onChange={(e) => update('autoExport', e.target.checked)}
+              className="w-4 h-4 rounded bg-gray-800 border-gray-600 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="autoExport" className="text-sm text-gray-300">
+              Auto-export reports to Desktop after analysis completes
+            </label>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Output Folder</label>
             <input

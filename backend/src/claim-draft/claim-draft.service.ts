@@ -6,6 +6,29 @@ import { Document, Packer, Paragraph, HeadingLevel, TextRun, Header, Footer, Ali
 const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:3002';
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
 
+/** Shape of a single claim returned by the Python claim-drafter. */
+interface ClaimDrafterClaim {
+  claim_number: number;
+  claim_type: string;
+  scope_level?: string | null;
+  statutory_type?: string | null;
+  parent_claim_number?: number | null;
+  text: string;
+  examiner_notes?: string;
+}
+
+/** Response from the Python claim-drafter /draft/sync endpoint. */
+interface ClaimDrafterResponse {
+  status: string;
+  error_message?: string;
+  claims: ClaimDrafterClaim[];
+  specification_language?: string | null;
+  planner_strategy?: string | null;
+  examiner_feedback?: string | null;
+  revision_notes?: string | null;
+  total_estimated_cost_usd?: number | null;
+}
+
 /**
  * Request body sent to the Python claim-drafter service.
  * Must match the ClaimDraftRequest Pydantic model in services/claim-drafter/src/models.py.
@@ -163,8 +186,9 @@ export class ClaimDraftService implements OnModuleInit {
             max_tokens: settings.maxTokens,
           },
         });
-      } catch (err: any) {
-        console.error(`[ClaimDraft] Pipeline failed for draft ${draft.id}:`, err.message);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[ClaimDraft] Pipeline failed for draft ${draft.id}:`, msg);
       } finally {
         // Ensure draft is never left in RUNNING status
         const current = await this.prisma.claimDraft.findUnique({ where: { id: draft.id } });
@@ -265,7 +289,7 @@ export class ClaimDraftService implements OnModuleInit {
 
     // Use http.request for full timeout control — fetch has a ~5 min socket timeout
     // that can't be overridden, but AI claim drafting takes 5-8 minutes.
-    const result = await new Promise<any>((resolve, reject) => {
+    const result = await new Promise<ClaimDrafterResponse>((resolve, reject) => {
       const url = new URL(`${CLAIM_DRAFTER_URL}/draft/sync`);
 
       const data = JSON.stringify(requestBody);
@@ -278,7 +302,7 @@ export class ClaimDraftService implements OnModuleInit {
           headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
           timeout: 900_000, // 15 minutes — 3 AI agents with large context can take 10+ min
         },
-        (res: any) => {
+        (res) => {
           const chunks: Buffer[] = [];
           res.on('data', (c: Buffer) => chunks.push(c));
           res.on('end', () => {
@@ -434,13 +458,13 @@ export class ClaimDraftService implements OnModuleInit {
       throw new BadRequestException(`Claim regeneration failed: ${text}`);
     }
 
-    const result = await res.json();
+    const result: ClaimDrafterResponse = await res.json();
     if (result.status === 'ERROR' || !result.claims?.length) {
       throw new BadRequestException('Claim regeneration produced no results');
     }
 
     // Find the matching claim number in the result, or take the first one
-    const newClaim = result.claims.find((c: any) => c.claim_number === claimNumber) || result.claims[0];
+    const newClaim = result.claims.find((c) => c.claim_number === claimNumber) || result.claims[0];
 
     // Update claim text in DB
     return this.prisma.claim.update({

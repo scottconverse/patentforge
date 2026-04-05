@@ -12,6 +12,14 @@
 import * as crypto from 'crypto';
 import * as os from 'os';
 
+/** Thrown when decryption fails on data that IS encrypted (not plaintext migration). */
+export class DecryptionError extends Error {
+  constructor(message = 'Decryption failed — the encryption key has changed (e.g. database moved to a different machine).') {
+    super(message);
+    this.name = 'DecryptionError';
+  }
+}
+
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
@@ -69,8 +77,11 @@ export function decrypt(ciphertext: string, salt: string): string {
     decipher.setAuthTag(tag);
     return decipher.update(data) + decipher.final('utf-8');
   } catch {
-    // Decryption failed — likely plaintext from before encryption was enabled
-    return ciphertext;
+    // The value passed the hex/length check (so it IS encrypted), but decryption
+    // failed. This means the machine-derived key changed — e.g. the database was
+    // moved to a different machine. Throw a specific error so callers can handle
+    // this gracefully instead of silently returning ciphertext as the "API key."
+    throw new DecryptionError();
   }
 }
 

@@ -5,6 +5,30 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-04-05
+
+### Added
+- **Settings: auto-export opt-in** — new `autoExport` boolean (defaults to true) with toggle in Settings UI
+- **Docker: healthchecks** — all 7 services now have healthchecks; frontend depends on backend being healthy
+- **Docker: log rotation** — json-file driver with 10 MB max-size, 3-file rotation on all services
+- **CI: Node 24 migration** — `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` env var set preemptively
+- **Coverage thresholds bumped** — backend 44/38/32/43, frontend 38/38/32/38
+- **Code quality: shared utilities** — extracted `slugify()` and disclaimer text to shared modules (`frontend/src/utils/slugify.ts`, `frontend/src/utils/disclaimer.ts`, `backend/src/utils/`)
+
+### Changed
+- **Code quality: lint cleanup** — all `any` types replaced with proper interfaces (`ClaimDrafterResponse`, `AppGeneratorResponse`); unused variables fixed; bonus: `application.service.ts` cost cap now includes claimDraft costs
+
+### Fixed
+- **CI: package-lock.json version mismatch** — lockfile version was 0.8.1 while package.json was 0.8.2, causing `npm ci` to fail in CI
+- **decrypt() silent failure** — `decrypt()` now throws `DecryptionError` instead of silently returning ciphertext when decryption fails (e.g., database moved to a different machine); settings service catches this and shows a clear warning banner in the UI
+- **Report auth** — `ReportViewer` iframe and HTML download now use `fetch` + `srcdoc`/`blob` instead of direct URLs, working with `PATENTFORGE_TOKEN` auth; `AuthGuard` also accepts `?token=` query param fallback
+- **Orphaned nginx block** — removed `/feasibility/` proxy block from `nginx.conf`; SSE settings moved to `/api/` proxy
+- **Stale projectLoadedRef** — view init ref resets when project ID changes; stale RUNNING runs now show overview (not report) for direct re-run access
+- **Concurrent run guard** — `isRunningRef` prevents overlapping SSE streams from rapid Resume/Cancel/Resume
+
+### Security
+- **API key rate limiting** — `@nestjs/throttler` added; `validate-api-key` endpoint limited to 5 requests per 60 seconds
+
 ## [0.8.2] - 2026-04-05
 
 ### Added
