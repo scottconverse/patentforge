@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.8.0):**
+**Current status (v0.8.1):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -31,6 +31,10 @@ Hey everyone! PatentForge is now open source.
 - ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v0.8.1:**
+- **Back button fix during streaming** — clicking "← Back" from Prior Art, Claims, Compliance, or Application tabs while the feasibility pipeline is actively streaming now returns to the streaming view instead of jumping to the project overview. The `isPipelineStreaming` flag tracks active pipeline execution and guides sidebar navigation.
+- **Documentation consistency audit** — updated all version numbers across README.md, USER-MANUAL.md, ARCHITECTURE.md, and docs/index.html to reflect v0.8.1; added v0.8.1 to project roadmap; verified all diagrams are referenced in documentation
 
 **What's new in v0.8.0:**
 - **Code quality enforcement** — ESLint + Prettier across all TypeScript services, TypeScript strict mode (backend `noImplicitAny` + frontend `strictNullChecks`), coverage thresholds enforced in CI

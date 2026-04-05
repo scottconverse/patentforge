@@ -143,7 +143,7 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 ## Architecture
 
 ![PatentForge System Architecture](diagrams/architecture.png)
-*Figure 1: System Architecture (v0.8.0) — 6 services + system tray + 3 external APIs*
+*Figure 1: System Architecture (v0.8.1) — 6 services + system tray + 3 external APIs*
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -233,6 +233,7 @@ docker compose up --build
 - [x] **v0.7.0** — Windows installer, Mac/Linux beta, system tray, Node SEA, first-run wizard
 - [x] **v0.7.1** — Polish patch (18 fixes from external code review)
 - [x] **v0.8.0** — Code quality enforcement (ESLint + Prettier, TypeScript strict mode, coverage thresholds, supertest API integration tests), sidebar status badges, mobile-responsive sidebar accordion, pre-push git hook
+- [x] **v0.8.1** — Back button fix (return to streaming view during active pipeline), documentation consistency audit
 
 ## Contributing
 
