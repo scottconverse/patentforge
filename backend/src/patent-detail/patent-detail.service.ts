@@ -7,7 +7,7 @@ import { fetchEnrichedPatentODP } from './odp-enrichment';
 import { fetchClaimsFromODP } from './odp-claims';
 import { fetchPatentFamilyODP, PatentFamilyMember } from './odp-continuity';
 
-interface FormattedPatentDetail {
+export interface FormattedPatentDetail {
   patentNumber: string;
   title: string | null;
   abstract: string | null;
