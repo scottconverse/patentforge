@@ -2,7 +2,7 @@
  * E2E test helpers — create/delete projects via API for fast setup/teardown.
  */
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://localhost:3000/api';
 
 export async function createProject(title: string): Promise<string> {
   const res = await fetch(`${API_BASE}/projects`, {
