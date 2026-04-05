@@ -4,6 +4,23 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, Header, Footer, AlignmentType } from 'docx';
 
+/** A single compliance result from the Python compliance-checker. */
+interface ComplianceCheckerResult {
+  rule: string;
+  status: string;
+  claim_number?: number | null;
+  detail: string;
+  citation?: string | null;
+  suggestion?: string | null;
+}
+
+/** Response from the Python compliance-checker /check endpoint. */
+interface ComplianceCheckerResponse {
+  status: string;
+  results: ComplianceCheckerResult[];
+  total_estimated_cost_usd?: number | null;
+}
+
 const COMPLIANCE_CHECKER_URL = process.env.COMPLIANCE_CHECKER_URL || 'http://localhost:3004';
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
 
@@ -183,8 +200,9 @@ export class ComplianceService implements OnModuleInit {
             max_tokens: settings.maxTokens,
           },
         });
-      } catch (err: any) {
-        console.error(`[Compliance] Check failed for ${check.id}:`, err.message);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[Compliance] Check failed for ${check.id}:`, msg);
       } finally {
         // Ensure check is never left in RUNNING status
         const current = await this.prisma.complianceCheck.findUnique({ where: { id: check.id } });
@@ -212,7 +230,7 @@ export class ComplianceService implements OnModuleInit {
     }
 
     // Use http.request for full timeout control — fetch has a ~5 min socket timeout
-    const result = await new Promise<any>((resolve, reject) => {
+    const result = await new Promise<ComplianceCheckerResponse>((resolve, reject) => {
       const url = new URL(`${COMPLIANCE_CHECKER_URL}/check`);
 
       const data = JSON.stringify(requestBody);
@@ -225,7 +243,7 @@ export class ComplianceService implements OnModuleInit {
           headers: { ...headers, 'Content-Length': Buffer.byteLength(data) },
           timeout: 600_000,
         },
-        (res: any) => {
+        (res) => {
           const chunks: Buffer[] = [];
           res.on('data', (c: Buffer) => chunks.push(c));
           res.on('end', () => {
@@ -275,7 +293,7 @@ export class ComplianceService implements OnModuleInit {
     }
 
     // Update check status with cost
-    const hasFailure = result.results.some((r: any) => r.status === 'FAIL');
+    const hasFailure = result.results.some((r) => r.status === 'FAIL');
     await this.prisma.complianceCheck.update({
       where: { id: checkId },
       data: {

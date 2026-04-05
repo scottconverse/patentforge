@@ -68,8 +68,8 @@ export default function ReportViewer({
     try {
       const blob = await api.feasibility.exportToDocx(projectId);
       triggerDownload(blob, `${slug}-feasibility.docx`);
-    } catch (e: any) {
-      setDocxError(e.message || 'Word export failed');
+    } catch (e: unknown) {
+      setDocxError(e instanceof Error ? e.message : 'Word export failed');
     } finally {
       setDocxLoading(false);
     }

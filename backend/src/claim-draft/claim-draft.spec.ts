@@ -2,12 +2,13 @@
  * Tests for ClaimDraftService — ownership checks, validation, concurrency guards.
  */
 
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 import { ClaimDraftService } from './claim-draft.service';
 
 // Mock fetch globally so the fire-and-forget IIFE in startDraft rejects
 // immediately and predictably instead of hitting the network.
 const mockFetch = jest.fn().mockRejectedValue(new Error('mocked fetch rejection'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- global mock requires any cast
 global.fetch = mockFetch as any;
 
 const mockPrisma = {
@@ -43,6 +44,7 @@ describe('ClaimDraftService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mocks
     service = new ClaimDraftService(mockPrisma as any, mockSettings as any);
   });
 

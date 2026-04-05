@@ -8,6 +8,7 @@ import { ComplianceService } from './compliance.service';
 // Mock fetch globally so the fire-and-forget IIFE in startCheck rejects
 // immediately and predictably instead of hitting the network.
 const mockFetch = jest.fn().mockRejectedValue(new Error('mocked fetch rejection'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- global mock requires any cast
 global.fetch = mockFetch as any;
 
 const mockPrisma = {
@@ -46,6 +47,7 @@ describe('ComplianceService', () => {
     jest.clearAllMocks();
     // Reset updateMany default for onModuleInit
     mockPrisma.complianceCheck.updateMany.mockResolvedValue({ count: 0 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mocks
     service = new ComplianceService(mockPrisma as any, mockSettings as any);
   });
 
@@ -168,7 +170,9 @@ describe('ComplianceService', () => {
 
       const result = await service.getLatest('project-1');
       expect(result.status).toBe('COMPLETE');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accessing mock return shape
       expect((result as any).id).toBe('check-1');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((result as any).version).toBe(2);
       expect(result.results).toHaveLength(1);
       expect(mockPrisma.complianceCheck.findFirst).toHaveBeenCalledWith({

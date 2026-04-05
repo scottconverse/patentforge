@@ -9,7 +9,7 @@ import { makePlaceholderStages } from './useFeasibilityRun';
  *
  * Runs exactly once per project ID. Handles:
  * - Completed runs → overview
- * - Stale RUNNING runs → marks as ERROR, shows partial report
+ * - Stale RUNNING runs → marks as ERROR, shows overview with re-run access
  * - No invention → invention form
  * - Default → overview
  */
@@ -55,7 +55,7 @@ export function useViewInit({
       } else if (latestRunInit.status === 'RUNNING') {
         // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
         // No active abort controller means nothing is actually streaming. Mark it ERROR
-        // in the backend, load whatever partial stage output exists, and show report view.
+        // in the backend, load whatever partial stage output exists, and show overview.
         const partialStages = (latestRunInit.stages ?? []).map((s) =>
           s.status === 'RUNNING' || s.status === 'PENDING'
             ? {

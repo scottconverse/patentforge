@@ -146,6 +146,22 @@ fi
 
 echo ""
 
+# ── 6b. LOCKFILE INTEGRITY ───────────────────────────────────────────
+echo "── 6b. Lockfile Integrity (npm ci dry-run) ──"
+
+for pkg_dir in frontend backend services/feasibility; do
+    pkg_name=$(basename "$pkg_dir")
+    if [ -f "$pkg_dir/package-lock.json" ]; then
+        if (cd "$pkg_dir" && npm ci --dry-run 2>&1) >/dev/null 2>&1; then
+            pass "$pkg_name lockfile consistent with package.json"
+        else
+            fail "$pkg_name lockfile OUT OF SYNC — run: cd $pkg_dir && rm package-lock.json && npm install"
+        fi
+    fi
+done
+
+echo ""
+
 # ── 7. TEST SUITES ────────────────────────────────────────────────────
 echo "── 7. Test Count Verification ──"
 
