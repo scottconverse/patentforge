@@ -122,6 +122,7 @@ export interface UseFeasibilityRunReturn {
   setRunError: React.Dispatch<React.SetStateAction<string | null>>;
   cancelling: boolean;
   isRunning: boolean;
+  isPipelineStreaming: boolean;
   pendingRunRef: React.MutableRefObject<(() => Promise<void>) | null>;
   runIdRef: React.MutableRefObject<string | null>;
   abortRef: React.MutableRefObject<AbortController | null>;
@@ -163,6 +164,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
   const [isStreamComplete, setIsStreamComplete] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [isPipelineStreaming, setIsPipelineStreaming] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const runIdRef = useRef<string | null>(null);
@@ -283,6 +285,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
   ) {
     if (!projectId) return;
 
+    setIsPipelineStreaming(true);
     setRunError(null);
     setStreamText('');
     setIsStreamComplete(false);
@@ -613,6 +616,8 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
           s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'ERROR' as RunStatus } : s,
         ),
       );
+    } finally {
+      setIsPipelineStreaming(false);
     }
   }
 
@@ -646,6 +651,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     setRunError,
     cancelling,
     isRunning,
+    isPipelineStreaming,
     pendingRunRef,
     runIdRef,
     abortRef,

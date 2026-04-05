@@ -111,6 +111,7 @@ export default function ProjectDetail() {
     runError,
     setRunError,
     cancelling,
+    isPipelineStreaming,
     pendingRunRef,
     runIdRef,
     abortRef,
@@ -296,7 +297,7 @@ export default function ProjectDetail() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-100">Invention Disclosure</h2>
                 <button
-                  onClick={() => setViewMode('overview')}
+                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
                   className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   ← Back
@@ -438,7 +439,7 @@ export default function ProjectDetail() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-100">Prior Art Search</h2>
                 <button
-                  onClick={() => setViewMode('overview')}
+                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
                   className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   ← Back
@@ -459,7 +460,7 @@ export default function ProjectDetail() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-100">Claim Drafts</h2>
                 <button
-                  onClick={() => setViewMode('overview')}
+                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
                   className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   ← Back
@@ -479,7 +480,7 @@ export default function ProjectDetail() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-100">Compliance Check</h2>
                 <button
-                  onClick={() => setViewMode('overview')}
+                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
                   className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   ← Back
@@ -503,7 +504,7 @@ export default function ProjectDetail() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-100">Patent Application</h2>
                 <button
-                  onClick={() => setViewMode('overview')}
+                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
                   className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   ← Back

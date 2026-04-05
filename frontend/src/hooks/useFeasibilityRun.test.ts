@@ -155,6 +155,15 @@ describe('useFeasibilityRun', () => {
     expect(result.current.runError).toBeNull();
     expect(result.current.cancelling).toBe(false);
     expect(result.current.isRunning).toBe(false);
+    expect(result.current.isPipelineStreaming).toBe(false);
+  });
+
+  it('isPipelineStreaming is false when no run is active', () => {
+    // Verifies that the flag used by Back buttons to detect an active pipeline
+    // starts false and is only true while proceedWithRun is executing.
+    const params = makeDefaultParams();
+    const { result } = renderHook(() => useFeasibilityRun(params));
+    expect(result.current.isPipelineStreaming).toBe(false);
   });
 
   it('handleRunFeasibility without invention shows error and switches to invention-form', async () => {
