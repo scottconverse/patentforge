@@ -49,7 +49,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: cd frontend && npm ci
+        run: cd frontend && npm install
 
       - name: Lint
         run: cd frontend && npm run lint
@@ -122,7 +122,7 @@ jobs:
         run: cd services/feasibility && npm ci && npm run build
 
       - name: Install and build frontend
-        run: cd frontend && npm ci && npm run build
+        run: cd frontend && npm install && npm run build
 
       - name: Install claim-drafter dependencies (verify pip install works)
         run: cd services/claim-drafter && pip install .
@@ -150,7 +150,7 @@ jobs:
         run: |
           cd backend && npm ci && cd ..
           cd services/feasibility && npm ci && cd ../..
-          cd frontend && npm ci
+          cd frontend && npm install
 
       - name: Install Python service dependencies
         run: |
