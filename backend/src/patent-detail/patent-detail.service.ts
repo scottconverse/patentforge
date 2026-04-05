@@ -1,10 +1,25 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PatentDetail } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { fetchEnrichedPatent } from './patentsview-enrichment';
 import { fetchEnrichedPatentODP } from './odp-enrichment';
 import { fetchClaimsFromODP } from './odp-claims';
 import { fetchPatentFamilyODP, PatentFamilyMember } from './odp-continuity';
+
+interface FormattedPatentDetail {
+  patentNumber: string;
+  title: string | null;
+  abstract: string | null;
+  filingDate: string | null;
+  grantDate: string | null;
+  assignee: unknown[];
+  inventors: unknown[];
+  cpcClassifications: unknown[];
+  claimsText: string | null;
+  claimCount: number | null;
+  patentType: string | null;
+}
 
 const CACHE_TTL_DAYS = 30;
 
@@ -110,8 +125,8 @@ export class PatentDetailService {
   /**
    * Batch-fetch details for CSV export. Fetches missing ones from PatentsView.
    */
-  async enrichBatch(patentNumbers: string[]): Promise<Map<string, any>> {
-    const result = new Map<string, any>();
+  async enrichBatch(patentNumbers: string[]): Promise<Map<string, FormattedPatentDetail>> {
+    const result = new Map<string, FormattedPatentDetail>();
 
     // Load all cached
     const cached = await this.prisma.patentDetail.findMany({
@@ -178,7 +193,7 @@ export class PatentDetailService {
     return ageMs > CACHE_TTL_DAYS * 24 * 60 * 60 * 1000;
   }
 
-  private formatResponse(detail: any) {
+  private formatResponse(detail: PatentDetail): FormattedPatentDetail {
     return {
       patentNumber: detail.patentNumber,
       title: detail.title,
@@ -194,7 +209,7 @@ export class PatentDetailService {
     };
   }
 
-  private parseJsonArray(json: string | null): any[] {
+  private parseJsonArray(json: string | null): unknown[] {
     if (!json) return [];
     try {
       return JSON.parse(json);

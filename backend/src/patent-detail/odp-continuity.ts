@@ -16,6 +16,38 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Shape of an ODP continuity bag entry from the API */
+interface ODPContinuityBagEntry {
+  patentNumber?: string;
+  applicationNumberText?: string;
+  parentApplicationNumberText?: string;
+  childApplicationNumberText?: string;
+  continuityType?: string;
+  claimType?: string;
+  filingDate?: string;
+  grantDate?: string;
+  inventionTitle?: string;
+  applicationStatusDescriptionText?: string;
+  parentApplicationBag?: ODPContinuityBagEntry[];
+  childApplicationBag?: ODPContinuityBagEntry[];
+}
+
+/** Shape of the top-level ODP search result bag */
+interface ODPContinuityResultBag {
+  continuityBag?: ODPContinuityBagEntry[];
+  parentApplicationBag?: ODPContinuityBagEntry[];
+  childApplicationBag?: ODPContinuityBagEntry[];
+  applicationMetaData?: {
+    continuityBag?: ODPContinuityBagEntry[];
+    parentApplicationBag?: ODPContinuityBagEntry[];
+    childApplicationBag?: ODPContinuityBagEntry[];
+  };
+}
+
+interface ODPContinuitySearchResponse {
+  patentFileWrapperDataBag?: ODPContinuityResultBag[];
+}
+
 export interface PatentFamilyMember {
   patentNumber: string | null;
   applicationNumber: string | null;
@@ -56,7 +88,7 @@ export async function fetchPatentFamilyODP(
         'X-API-Key': apiKey,
       },
       body: JSON.stringify(body),
-      signal: controller.signal as any,
+      signal: controller.signal,
     });
 
     if (res.status === 429) {
@@ -74,7 +106,7 @@ export async function fetchPatentFamilyODP(
       return null;
     }
 
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as ODPContinuitySearchResponse;
     const bags = data.patentFileWrapperDataBag;
     if (!bags || bags.length === 0) {
       console.warn(`[ODP-Continuity] No results for patent ${patentNumber}`);
@@ -82,11 +114,11 @@ export async function fetchPatentFamilyODP(
     }
 
     return parseContinuityData(bags[0]);
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       console.warn(`[ODP-Continuity] Timeout for ${patentNumber}`);
     } else {
-      console.warn(`[ODP-Continuity] Error for ${patentNumber}:`, err.message);
+      console.warn(`[ODP-Continuity] Error for ${patentNumber}:`, err instanceof Error ? err.message : String(err));
     }
     return null;
   } finally {
@@ -94,7 +126,7 @@ export async function fetchPatentFamilyODP(
   }
 }
 
-function parseContinuityData(bag: any): PatentFamilyMember[] {
+function parseContinuityData(bag: ODPContinuityResultBag): PatentFamilyMember[] {
   const members: PatentFamilyMember[] = [];
   const seen = new Set<string>();
 
@@ -141,7 +173,7 @@ function parseContinuityData(bag: any): PatentFamilyMember[] {
   return members;
 }
 
-function parseContinuityEntry(entry: any, members: PatentFamilyMember[], seen: Set<string>): void {
+function parseContinuityEntry(entry: ODPContinuityBagEntry, members: PatentFamilyMember[], seen: Set<string>): void {
   // Each continuity entry may have parentApplicationBag or childApplicationBag
   if (Array.isArray(entry.parentApplicationBag)) {
     for (const parent of entry.parentApplicationBag) {

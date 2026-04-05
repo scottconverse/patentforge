@@ -18,8 +18,24 @@ export interface EnrichedPatent {
   patentType: string | null;
 }
 
+interface PatentsViewEnrichPatent {
+  patent_id?: string;
+  patent_title?: string;
+  patent_abstract?: string;
+  patent_date?: string;
+  patent_type?: string;
+  patent_num_claims?: number;
+  application?: { filing_date?: string }[] | { filing_date?: string };
+  assignees?: { assignee_organization?: string; assignee_individual_name_first?: string; assignee_individual_name_last?: string }[];
+  inventors?: { inventor_name_first?: string; inventor_name_last?: string }[];
+  cpc_current?: { cpc_group_id?: string; cpc_group_title?: string }[];
+  claims?: { claim_number?: number; claim_text?: string }[];
+}
+
 interface PatentsViewEnrichResponse {
-  patents: any[] | null;
+  patents: PatentsViewEnrichPatent[] | null;
+  error?: boolean;
+  message?: string;
 }
 
 const BASE_URL = 'https://search.patentsview.org/api/v1/patent/';
@@ -66,7 +82,7 @@ export async function fetchEnrichedPatent(patentNumber: string): Promise<Enriche
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: controller.signal as any,
+      signal: controller.signal,
     });
 
     if (!res.ok) {
@@ -74,7 +90,7 @@ export async function fetchEnrichedPatent(patentNumber: string): Promise<Enriche
       return null;
     }
 
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as PatentsViewEnrichResponse;
 
     // Detect PatentsView migration/shutdown response
     if (data.error === true && typeof data.message === 'string' && data.message.includes('migrating')) {
@@ -82,10 +98,9 @@ export async function fetchEnrichedPatent(patentNumber: string): Promise<Enriche
       return null;
     }
 
-    const typedData = data as PatentsViewEnrichResponse;
-    if (!typedData.patents || typedData.patents.length === 0) return null;
+    if (!data.patents || data.patents.length === 0) return null;
 
-    const p = typedData.patents[0];
+    const p = data.patents[0];
     return parseEnrichedPatent(patentNumber, p);
   } catch (err) {
     console.warn(`[PatentDetail] Failed to fetch ${patentNumber}:`, (err as Error).message);
@@ -95,7 +110,7 @@ export async function fetchEnrichedPatent(patentNumber: string): Promise<Enriche
   }
 }
 
-function parseEnrichedPatent(patentNumber: string, p: any): EnrichedPatent {
+function parseEnrichedPatent(patentNumber: string, p: PatentsViewEnrichPatent): EnrichedPatent {
   // Assignees
   const assignees: string[] = [];
   if (Array.isArray(p.assignees)) {
@@ -147,8 +162,8 @@ function parseEnrichedPatent(patentNumber: string, p: any): EnrichedPatent {
   let filingDate: string | null = null;
   if (Array.isArray(p.application) && p.application.length > 0) {
     filingDate = p.application[0].filing_date ?? null;
-  } else if (p.application?.filing_date) {
-    filingDate = p.application.filing_date;
+  } else if (p.application && !Array.isArray(p.application)) {
+    filingDate = p.application.filing_date ?? null;
   }
 
   return {

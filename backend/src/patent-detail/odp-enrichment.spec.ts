@@ -4,12 +4,14 @@
  */
 
 const mockFetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock global fetch
 (global as any).fetch = mockFetch;
 
 import { fetchEnrichedPatentODP } from './odp-enrichment';
 
 const FAKE_API_KEY = 'test-api-key-12345';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible mock overrides
 function makeODPBag(overrides: any = {}) {
   return {
     applicationNumberText: '18045436',
@@ -39,6 +41,7 @@ function makeODPBag(overrides: any = {}) {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible mock data
 function makeODPResponse(bags: any[]) {
   return {
     ok: true,

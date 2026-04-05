@@ -6,12 +6,14 @@
 
 // Mock global fetch before importing the module
 const mockFetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock global fetch
 (global as any).fetch = mockFetch;
 
 import { searchODPMulti } from './odp-client';
 
 const FAKE_API_KEY = 'test-api-key-12345';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible mock data
 function makeODPResponse(results: any[], count = results.length) {
   return {
     ok: true,

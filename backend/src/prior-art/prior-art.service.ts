@@ -208,7 +208,7 @@ Output format: ["query one", "query two", "query three"]`;
       });
 
       if (!res.ok) throw new Error(`Anthropic API ${res.status}`);
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as { content?: { text?: string }[] };
       const text = data.content?.[0]?.text ?? '[]';
       const jsonMatch = text.match(/\[.*\]/s);
       if (jsonMatch) {

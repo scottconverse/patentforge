@@ -39,10 +39,10 @@ async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsVie
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: controller.signal as any,
+      signal: controller.signal,
     });
     if (!res.ok) throw new Error(`PatentsView HTTP ${res.status}`);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as PatentsViewResponse & { error?: boolean; message?: string };
     // Detect PatentsView migration/shutdown response
     if (data.error === true && typeof data.message === 'string' && data.message.includes('migrating')) {
       throw new PatentsViewMigrationError(
@@ -50,7 +50,7 @@ async function queryPatentsView(queryStr: string, size = 15): Promise<PatentsVie
           'Prior art search is temporarily unavailable. This will be restored in a future update.',
       );
     }
-    return (data as PatentsViewResponse).patents ?? [];
+    return data.patents ?? [];
   } finally {
     clearTimeout(timer);
   }

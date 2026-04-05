@@ -11,7 +11,7 @@ import {
   Res,
   BadRequestException,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { FeasibilityService } from './feasibility.service';
 import { SettingsService } from '../settings/settings.service';
 
@@ -150,7 +150,7 @@ export class FeasibilityController {
    * service internal (not directly reachable from the browser).
    */
   @Post('stream')
-  async streamAnalysis(@Param('id') projectId: string, @Body() body: any, @Res() res: Response) {
+  async streamAnalysis(@Param('id') projectId: string, @Body() body: Record<string, unknown>, @Res() res: Response) {
     // Inject the API key server-side — never trust the frontend to send it
     const settings = await this.settingsService.getSettings();
     if (!settings.anthropicApiKey) {
@@ -158,10 +158,11 @@ export class FeasibilityController {
       return;
     }
 
+    const bodySettings = (body.settings && typeof body.settings === 'object') ? body.settings as Record<string, unknown> : {};
     const forwardBody = {
       ...body,
       settings: {
-        ...(body.settings || {}),
+        ...bodySettings,
         apiKey: settings.anthropicApiKey,
       },
     };
@@ -190,7 +191,7 @@ export class FeasibilityController {
       res.setHeader('Connection', 'keep-alive');
       res.flushHeaders();
 
-      const reader = (upstream.body as any).getReader();
+      const reader = (upstream.body as ReadableStream<Uint8Array>).getReader();
       const decoder = new TextDecoder();
 
       try {
@@ -199,8 +200,9 @@ export class FeasibilityController {
           if (done) break;
           res.write(decoder.decode(value, { stream: true }));
         }
-      } catch (err: any) {
-        console.error('[SSE] Stream error:', err?.message || err);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('[SSE] Stream error:', message);
         if (!res.writableEnded) {
           try {
             res.write(
@@ -213,8 +215,9 @@ export class FeasibilityController {
       } finally {
         res.end();
       }
-    } catch (err: any) {
-      res.status(502).json({ error: `Feasibility service unavailable: ${err.message}` });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(502).json({ error: `Feasibility service unavailable: ${message}` });
     }
   }
 

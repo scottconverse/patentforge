@@ -55,7 +55,9 @@ describe('Cost Cap Enforcement', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
     service = new FeasibilityService(mockPrisma as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mocks
     controller = new FeasibilityController(service, mockSettings as any, mockPriorArt as any);
   });
 
@@ -194,6 +196,7 @@ describe('Cost Cap Enforcement', () => {
       const result = await controller.patchStage('p1', 3, {
         status: 'COMPLETE',
         estimatedCostUsd: 0.5,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial DTO
       } as any);
 
       expect(result.costCapExceeded).toBe(true);
@@ -220,6 +223,7 @@ describe('Cost Cap Enforcement', () => {
       const result = await controller.patchStage('p1', 1, {
         status: 'COMPLETE',
         estimatedCostUsd: 0.5,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial DTO
       } as any);
 
       expect(result.costCapExceeded).toBe(false);
@@ -232,6 +236,7 @@ describe('Cost Cap Enforcement', () => {
 
       const result = await controller.patchStage('p1', 1, {
         status: 'RUNNING',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial DTO
       } as any);
 
       // No cost data → no settings lookup needed

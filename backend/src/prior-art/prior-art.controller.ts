@@ -31,7 +31,7 @@ export class PriorArtController {
     }
 
     // Try to enrich with cached patent details
-    const patentNumbers = search.results.map((r: any) => r.patentNumber);
+    const patentNumbers = search.results.map((r: { patentNumber: string }) => r.patentNumber);
     const enriched = await this.patentDetailService.enrichBatch(patentNumbers);
 
     // Build CSV
@@ -47,8 +47,22 @@ export class PriorArtController {
       'Abstract',
       'Source',
     ];
-    const rows = search.results.map((r: any) => {
-      const detail = enriched.get(r.patentNumber);
+    interface PriorArtRow {
+      patentNumber: string;
+      title: string;
+      relevanceScore: number;
+      abstract: string | null;
+      source: string | null;
+    }
+    interface PatentDetailRow {
+      filingDate?: string | null;
+      grantDate?: string | null;
+      assignee?: string | string[] | null;
+      inventors?: string | string[] | null;
+      cpcClassifications?: ({ code: string } | string)[] | null;
+    }
+    const rows = search.results.map((r: PriorArtRow) => {
+      const detail = enriched.get(r.patentNumber) as PatentDetailRow | undefined;
       return [
         r.patentNumber,
         csvEscape(r.title),
@@ -58,7 +72,7 @@ export class PriorArtController {
         detail?.inventors ? (Array.isArray(detail.inventors) ? detail.inventors.join('; ') : detail.inventors) : '',
         detail?.cpcClassifications
           ? Array.isArray(detail.cpcClassifications)
-            ? detail.cpcClassifications.map((c: any) => c.code || c).join('; ')
+            ? detail.cpcClassifications.map((c) => (typeof c === 'string' ? c : c.code)).join('; ')
             : ''
           : '',
         (r.relevanceScore * 100).toFixed(0) + '%',
@@ -84,7 +98,7 @@ export class PriorArtController {
 
     const emitter = this.sse.getOrCreate(projectId);
 
-    const onEvent = (event: any) => {
+    const onEvent = (event: { type: string; [key: string]: unknown }) => {
       res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
     };
 

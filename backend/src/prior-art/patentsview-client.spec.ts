@@ -1,6 +1,7 @@
 import { searchPatentsViewMulti, PatentsViewMigrationError } from './patentsview-client';
 
 const mockFetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock global fetch
 global.fetch = mockFetch as any;
 
 afterEach(() => {

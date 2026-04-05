@@ -5,6 +5,7 @@
 
 import { scoreRelevance } from './prior-art.service';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible test overrides
 function makePatent(overrides: Record<string, any> = {}) {
   return {
     patent_id: 'US12345678',

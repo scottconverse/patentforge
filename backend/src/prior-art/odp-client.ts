@@ -92,7 +92,7 @@ async function queryODP(queryText: string, apiKey: string, retryCount = 0): Prom
         'X-API-Key': apiKey,
       },
       body: JSON.stringify(body),
-      signal: controller.signal as any,
+      signal: controller.signal,
     });
 
     if (res.status === 429) {
@@ -120,11 +120,11 @@ async function queryODP(queryText: string, apiKey: string, retryCount = 0): Prom
 
     const data = (await res.json()) as ODPSearchResponse;
     return { results: data.patentFileWrapperDataBag ?? [], wasRateLimited: false };
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       console.warn(`[ODP] Timeout for query "${queryText}"`);
     } else {
-      console.warn(`[ODP] Error for query "${queryText}":`, err.message);
+      console.warn(`[ODP] Error for query "${queryText}":`, err instanceof Error ? err.message : String(err));
     }
     return { results: [], wasRateLimited: false };
   } finally {

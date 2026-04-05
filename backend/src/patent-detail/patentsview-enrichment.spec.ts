@@ -2,6 +2,7 @@ import { fetchEnrichedPatent } from './patentsview-enrichment';
 
 // Mock global fetch
 const mockFetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock global fetch
 global.fetch = mockFetch as any;
 
 afterEach(() => {

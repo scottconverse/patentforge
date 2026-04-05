@@ -16,6 +16,28 @@ const TIMEOUT_MS = 30_000;
 const RETRY_DELAY_ON_429_MS = 10_000;
 const MAX_RETRIES_ON_429 = 1;
 
+interface ODPEnrichmentBag {
+  applicationMetaData?: {
+    inventionTitle?: string;
+    patentNumber?: string;
+    grantDate?: string;
+    filingDate?: string;
+    effectiveFilingDate?: string;
+    cpcClassificationBag?: string[];
+    inventorBag?: { firstName?: string; lastName?: string; inventorNameText?: string }[];
+    applicantBag?: { applicantNameText?: string }[];
+    firstApplicantName?: string;
+    applicationTypeLabelName?: string;
+  };
+  assignmentBag?: {
+    assigneeBag?: { assigneeNameText?: string }[];
+  }[];
+}
+
+interface ODPEnrichmentSearchResponse {
+  patentFileWrapperDataBag?: ODPEnrichmentBag[];
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -51,7 +73,7 @@ export async function fetchEnrichedPatentODP(
         'X-API-Key': apiKey,
       },
       body: JSON.stringify(body),
-      signal: controller.signal as any,
+      signal: controller.signal,
     });
 
     if (res.status === 429) {
@@ -69,7 +91,7 @@ export async function fetchEnrichedPatentODP(
       return null;
     }
 
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as ODPEnrichmentSearchResponse;
     const bags = data.patentFileWrapperDataBag;
     if (!bags || bags.length === 0) {
       console.warn(`[ODP-Enrich] No results for patent ${patentNumber}`);
@@ -77,11 +99,11 @@ export async function fetchEnrichedPatentODP(
     }
 
     return parseODPResult(patentNumber, bags[0]);
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       console.warn(`[ODP-Enrich] Timeout for ${patentNumber}`);
     } else {
-      console.warn(`[ODP-Enrich] Error for ${patentNumber}:`, err.message);
+      console.warn(`[ODP-Enrich] Error for ${patentNumber}:`, err instanceof Error ? err.message : String(err));
     }
     return null;
   } finally {
@@ -89,7 +111,7 @@ export async function fetchEnrichedPatentODP(
   }
 }
 
-function parseODPResult(patentNumber: string, bag: any): EnrichedPatent {
+function parseODPResult(patentNumber: string, bag: ODPEnrichmentBag): EnrichedPatent {
   const meta = bag.applicationMetaData ?? {};
 
   // Inventors from inventorBag

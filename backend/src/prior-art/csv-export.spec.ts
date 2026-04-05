@@ -41,6 +41,7 @@ describe('csvEscape', () => {
 });
 
 describe('CSV row formatting', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper with loose types
   function buildCsvRow(result: any, detail: any): string {
     return [
       result.patentNumber,
@@ -51,6 +52,7 @@ describe('CSV row formatting', () => {
       detail?.inventors ? (Array.isArray(detail.inventors) ? detail.inventors.join('; ') : detail.inventors) : '',
       detail?.cpcClassifications
         ? Array.isArray(detail.cpcClassifications)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible CPC shape
           ? detail.cpcClassifications.map((c: any) => c.code || c).join('; ')
           : ''
         : '',

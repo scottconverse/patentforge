@@ -4,12 +4,14 @@
  */
 
 const mockFetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock global fetch
 (global as any).fetch = mockFetch;
 
-import { fetchPatentFamilyODP, PatentFamilyMember } from './odp-continuity';
+import { fetchPatentFamilyODP } from './odp-continuity';
 
 const FAKE_API_KEY = 'test-api-key-12345';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible mock overrides
 function makeContinuityBag(overrides: any = {}) {
   return {
     applicationNumberText: '18045436',
@@ -49,6 +51,7 @@ function makeContinuityBag(overrides: any = {}) {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible mock data
 function makeODPResponse(bags: any[]) {
   return {
     ok: true,

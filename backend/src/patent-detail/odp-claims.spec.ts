@@ -8,6 +8,7 @@
  */
 
 const mockFetch = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock global fetch
 (global as any).fetch = mockFetch;
 
 import { fetchClaimsFromODP, parseClaimsFromXml } from './odp-claims';
@@ -56,6 +57,7 @@ function mockSearchResponse(applicationNumber: string | null) {
 }
 
 // --- Helper: mock documents list response ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- flexible mock data
 function mockDocumentsResponse(docs: any[] = []) {
   return {
     ok: true,

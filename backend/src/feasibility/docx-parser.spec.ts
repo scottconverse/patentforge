@@ -10,16 +10,21 @@ import { parseInlineRuns, parseMarkdownToDocxParagraphs } from './feasibility.se
 import { Paragraph, Table } from 'docx';
 
 /** Extract the text string from a docx TextRun */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- docx internal structure
 function getText(run: any): string {
   // TextRun stores text at root[1] which is a Text object with root[1] = string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- docx internal
   const textNode = run.root.find((r: any) => r?.rootKey === 'w:t');
   return textNode?.root?.[1] ?? '';
 }
 
 /** Check if a TextRun has a specific formatting property */
-function hasProperty(run: any, key: string): boolean {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any -- reserved test helper, docx internal structure
+function _hasProperty(run: any, key: string): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- docx internal
   const props = run.root.find((r: any) => r?.rootKey === 'w:rPr');
   if (!props) return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- docx internal
   return props.root.some((p: any) => p?.rootKey === key);
 }
 

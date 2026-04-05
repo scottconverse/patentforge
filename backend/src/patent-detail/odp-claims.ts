@@ -15,7 +15,6 @@ const SEARCH_URL = 'https://api.uspto.gov/api/v1/patent/applications/search';
 const DOCUMENTS_URL_BASE = 'https://api.uspto.gov/api/v1/patent/applications';
 const TIMEOUT_MS = 30_000;
 const RETRY_DELAY_ON_429_MS = 5_000;
-const MAX_RETRIES_ON_429 = 1;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -101,7 +100,7 @@ async function lookupApplicationNumber(patentNumber: string, apiKey: string): Pr
 
   if (!result) return null;
 
-  const data = await result.json();
+  const data = (await result.json()) as { patentFileWrapperDataBag?: { applicationNumberText?: string }[] };
   const bags = data?.patentFileWrapperDataBag;
   if (!Array.isArray(bags) || bags.length === 0) return null;
 
@@ -131,14 +130,14 @@ async function fetchDocumentsList(applicationNumber: string, apiKey: string): Pr
 
   if (!result) return null;
 
-  const data = await result.json();
+  const data = (await result.json()) as { documentBag?: { documentCode?: string; officialDate?: string; downloadOptionBag?: { mimeTypeIdentifier?: string; downloadUrl?: string }[] }[] };
   const docs = data?.documentBag;
   if (!Array.isArray(docs)) return null;
 
   const mapped: DocumentInfo[] = [];
   for (const doc of docs) {
     const downloads = doc.downloadOptionBag ?? [];
-    const xmlDownload = downloads.find((d: any) => d.mimeTypeIdentifier === 'XML');
+    const xmlDownload = downloads.find((d: { mimeTypeIdentifier?: string; downloadUrl?: string }) => d.mimeTypeIdentifier === 'XML');
     if (xmlDownload?.downloadUrl) {
       mapped.push({
         documentCode: doc.documentCode ?? '',
@@ -199,14 +198,14 @@ async function downloadAndExtractXml(downloadUrl: string, apiKey: string): Promi
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      const tarRes = await fetch(redirectUrl, { signal: controller.signal as any });
+      const tarRes = await fetch(redirectUrl, { signal: controller.signal });
       if (!tarRes.ok) {
         console.warn(`[ODP-Claims] Redirect download failed: HTTP ${tarRes.status}`);
         return null;
       }
       tarBuffer = await tarRes.arrayBuffer();
-    } catch (err: any) {
-      console.warn(`[ODP-Claims] Redirect download error: ${err.message}`);
+    } catch (err: unknown) {
+      console.warn(`[ODP-Claims] Redirect download error: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     } finally {
       clearTimeout(timer);
@@ -332,7 +331,7 @@ async function odpFetch(url: string, options: RequestInit, apiKey: string, retri
   try {
     const res = await fetch(url, {
       ...options,
-      signal: controller.signal as any,
+      signal: controller.signal,
     });
 
     if (res.status === 429) {
@@ -352,11 +351,11 @@ async function odpFetch(url: string, options: RequestInit, apiKey: string, retri
     }
 
     return res;
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       console.warn(`[ODP-Claims] Timeout for ${url}`);
     } else {
-      console.warn(`[ODP-Claims] Error: ${err.message}`);
+      console.warn(`[ODP-Claims] Error: ${err instanceof Error ? err.message : String(err)}`);
     }
     return null;
   } finally {

@@ -898,12 +898,12 @@ ${bodyHtml}
       status: run.status,
       startedAt: run.startedAt,
       completedAt: run.completedAt,
-      totalCostUsd: run.stages.reduce((sum: number, s: any) => sum + (s.estimatedCostUsd ?? 0), 0),
+      totalCostUsd: run.stages.reduce((sum: number, s: { estimatedCostUsd?: number | null }) => sum + (s.estimatedCostUsd ?? 0), 0),
     }));
   }
 
   async updateRunStatus(runId: string, status: string, finalReport?: string) {
-    const data: any = { status };
+    const data: Prisma.FeasibilityRunUpdateInput = { status };
     if (finalReport !== undefined) data.finalReport = finalReport;
     if (status === 'COMPLETE' || status === 'ERROR' || status === 'CANCELLED') {
       data.completedAt = new Date();

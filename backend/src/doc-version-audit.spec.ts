@@ -28,7 +28,8 @@ function fileExists(relativePath: string): boolean {
  * Extract the "### Added" features from the current version's CHANGELOG section.
  * Returns the bold feature names (the text between ** **).
  */
-function extractCurrentVersionFeatures(): string[] {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- utility for future feature-doc tests
+function _extractCurrentVersionFeatures(): string[] {
   const changelog = readFile('CHANGELOG.md');
   const versionHeader = `## [${CURRENT_VERSION}]`;
   const startIdx = changelog.indexOf(versionHeader);

@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('FeasibilityService.rerunFromStage', () => {
   let service: FeasibilityService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
   let prisma: any;
 
   const mockStages = STAGE_NAMES.map((name, i) => ({
@@ -47,11 +48,13 @@ describe('FeasibilityService.rerunFromStage', () => {
 
   it('creates a new run with incremented version', async () => {
     prisma.feasibilityRun.findFirst.mockResolvedValue(mockLatestRun);
-    prisma.feasibilityRun.create.mockImplementation(async ({ data, include }: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
+    prisma.feasibilityRun.create.mockImplementation(async ({ data, include: _include }: any) => ({
       id: 'run-2',
       projectId: data.projectId,
       version: data.version,
       status: data.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock stage mapping
       stages: data.stages.create.map((s: any, i: number) => ({ id: `new-stage-${i}`, ...s })),
     }));
 
@@ -61,18 +64,22 @@ describe('FeasibilityService.rerunFromStage', () => {
 
   it('copies completed stages before fromStage', async () => {
     prisma.feasibilityRun.findFirst.mockResolvedValue(mockLatestRun);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
     prisma.feasibilityRun.create.mockImplementation(async ({ data }: any) => ({
       id: 'run-2',
       projectId: data.projectId,
       version: data.version,
       status: data.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock stage mapping
       stages: data.stages.create.map((s: any, i: number) => ({ id: `new-stage-${i}`, ...s })),
     }));
 
     const result = await service.rerunFromStage('proj-1', 3);
 
     // Stages 1 and 2 should be copied as COMPLETE
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test assertion cast
     const stage1 = result.stages.find((s: any) => s.stageNumber === 1)!;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test assertion cast
     const stage2 = result.stages.find((s: any) => s.stageNumber === 2)!;
     expect(stage1.status).toBe('COMPLETE');
     expect(stage1.outputText).toBe('Output for stage 1');
@@ -83,11 +90,13 @@ describe('FeasibilityService.rerunFromStage', () => {
 
   it('sets stages from fromStage onward to PENDING', async () => {
     prisma.feasibilityRun.findFirst.mockResolvedValue(mockLatestRun);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
     prisma.feasibilityRun.create.mockImplementation(async ({ data }: any) => ({
       id: 'run-2',
       projectId: data.projectId,
       version: data.version,
       status: data.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock stage mapping
       stages: data.stages.create.map((s: any, i: number) => ({ id: `new-stage-${i}`, ...s })),
     }));
 
@@ -95,6 +104,7 @@ describe('FeasibilityService.rerunFromStage', () => {
 
     // Stages 3-6 should be PENDING
     for (let i = 3; i <= 6; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test assertion cast
       const stage = result.stages.find((s: any) => s.stageNumber === i)!;
       expect(stage.status).toBe('PENDING');
       expect(stage.outputText).toBeUndefined();
@@ -103,11 +113,13 @@ describe('FeasibilityService.rerunFromStage', () => {
 
   it('creates exactly 6 stages', async () => {
     prisma.feasibilityRun.findFirst.mockResolvedValue(mockLatestRun);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
     prisma.feasibilityRun.create.mockImplementation(async ({ data }: any) => ({
       id: 'run-2',
       projectId: data.projectId,
       version: data.version,
       status: data.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock stage mapping
       stages: data.stages.create.map((s: any, i: number) => ({ id: `new-stage-${i}`, ...s })),
     }));
 
@@ -139,15 +151,18 @@ describe('FeasibilityService.rerunFromStage', () => {
 
   it('copies token counts and cost from prior stages', async () => {
     prisma.feasibilityRun.findFirst.mockResolvedValue(mockLatestRun);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
     prisma.feasibilityRun.create.mockImplementation(async ({ data }: any) => ({
       id: 'run-2',
       projectId: data.projectId,
       version: data.version,
       status: data.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock stage mapping
       stages: data.stages.create.map((s: any, i: number) => ({ id: `new-stage-${i}`, ...s })),
     }));
 
     const result = await service.rerunFromStage('proj-1', 4);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test assertion cast
     const stage1 = result.stages.find((s: any) => s.stageNumber === 1)!;
     expect(stage1.inputTokens).toBe(5000);
     expect(stage1.outputTokens).toBe(2000);
@@ -157,11 +172,13 @@ describe('FeasibilityService.rerunFromStage', () => {
 
   it('re-running from stage 1 sets all stages to PENDING', async () => {
     prisma.feasibilityRun.findFirst.mockResolvedValue(mockLatestRun);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
     prisma.feasibilityRun.create.mockImplementation(async ({ data }: any) => ({
       id: 'run-2',
       projectId: data.projectId,
       version: data.version,
       status: data.status,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock stage mapping
       stages: data.stages.create.map((s: any, i: number) => ({ id: `new-stage-${i}`, ...s })),
     }));
 
