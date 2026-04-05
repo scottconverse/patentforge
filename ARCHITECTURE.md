@@ -1,7 +1,7 @@
 # PatentForge — Architecture & Design Document
 
-**Version**: 0.8.0
-**Last Updated**: 2026-04-04
+**Version**: 0.8.1
+**Last Updated**: 2026-04-05
 **Status**: Active Development
 
 ---

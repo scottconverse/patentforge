@@ -41,9 +41,9 @@ The easiest way to get started is to download the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| **Windows** | [PatentForge-0.8.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.0-Setup.exe) | Inno Setup installer (~100 MB) |
-| **Mac (Beta)** | [PatentForge-0.8.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.0.dmg) | Drag to Applications (~100 MB) |
-| **Linux (Beta)** | [PatentForge-0.8.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.0.AppImage) | chmod +x and run (~120 MB) |
+| **Windows** | [PatentForge-0.8.1-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.1-Setup.exe) | Inno Setup installer (~100 MB) |
+| **Mac (Beta)** | [PatentForge-0.8.1.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.1.dmg) | Drag to Applications (~100 MB) |
+| **Linux (Beta)** | [PatentForge-0.8.1.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.1.AppImage) | chmod +x and run (~120 MB) |
 
 The installer bundles everything — no Node.js, Python, or git required. On first launch, the system tray icon appears and your browser opens to the setup wizard, which walks you through entering your Anthropic API key.
 
