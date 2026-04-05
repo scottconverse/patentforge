@@ -162,7 +162,7 @@ export class PatentDetailService {
     });
 
     if (cached && !this.isStale(cached.fetchedAt)) {
-      return this.parseJsonArray(cached.members);
+      return this.parseJsonArray<PatentFamilyMember>(cached.members);
     }
 
     // Fetch from ODP
@@ -174,7 +174,7 @@ export class PatentDetailService {
     const members = await fetchPatentFamilyODP(patentNumber, settings.usptoApiKey);
     if (members === null) {
       // Return stale cache if available
-      if (cached) return this.parseJsonArray(cached.members);
+      if (cached) return this.parseJsonArray<PatentFamilyMember>(cached.members);
       return [];
     }
 
@@ -209,7 +209,7 @@ export class PatentDetailService {
     };
   }
 
-  private parseJsonArray(json: string | null): unknown[] {
+  private parseJsonArray<T = unknown>(json: string | null): T[] {
     if (!json) return [];
     try {
       return JSON.parse(json);

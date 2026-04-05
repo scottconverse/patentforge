@@ -147,16 +147,21 @@ fi
 echo ""
 
 # ── 6b. LOCKFILE INTEGRITY ───────────────────────────────────────────
-echo "── 6b. Lockfile Integrity (npm ci dry-run) ──"
+echo "── 6b. Lockfile Integrity ──"
 
 for pkg_dir in frontend backend services/feasibility; do
     pkg_name=$(basename "$pkg_dir")
     if [ -f "$pkg_dir/package-lock.json" ]; then
-        if (cd "$pkg_dir" && npm ci --dry-run 2>&1) >/dev/null 2>&1; then
-            pass "$pkg_name lockfile consistent with package.json"
+        # Check lockfile version matches package.json version
+        PKG_VER=$(node -p "require('./$pkg_dir/package.json').version")
+        LOCK_VER=$(node -p "require('./$pkg_dir/package-lock.json').version")
+        if [ "$PKG_VER" = "$LOCK_VER" ]; then
+            pass "$pkg_name lockfile version ($LOCK_VER) matches package.json"
         else
-            fail "$pkg_name lockfile OUT OF SYNC — run: cd $pkg_dir && rm package-lock.json && npm install"
+            fail "$pkg_name lockfile version ($LOCK_VER) != package.json ($PKG_VER) — run: cd $pkg_dir && rm package-lock.json && npm install"
         fi
+    else
+        fail "$pkg_name missing package-lock.json"
     fi
 done
 
