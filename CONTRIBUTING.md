@@ -267,7 +267,7 @@ cd backend && npm run test:cov
 cd frontend && npm run test:cov
 ```
 
-Current baselines (updated 2026-04-04, v0.8.0):
+Current baselines (updated 2026-04-05, v0.8.2):
 - Backend: lines 44%, branches 39%, functions 33%, statements 45%
 - Frontend: lines 36%, branches 36%, functions 32%, statements 35%
 

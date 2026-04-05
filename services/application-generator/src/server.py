@@ -30,7 +30,11 @@ ANTHROPIC_API_KEY_ENV = os.environ.get("ANTHROPIC_API_KEY", "")
 
 
 def resolve_api_key(request_key: str) -> str:
-    return ANTHROPIC_API_KEY_ENV or request_key
+    # Prefer the explicitly-configured key from Settings (passed in the request body).
+    # Fall back to the ANTHROPIC_API_KEY environment variable only when no key was provided
+    # in the request. This prevents a stale or incorrect env var from silently overriding
+    # the key the user configured through the UI.
+    return request_key or ANTHROPIC_API_KEY_ENV
 
 
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import Alert from './Alert';
 import ClaimTree from './ClaimTree';
+import { markdownToHtml } from '../utils/markdown';
 
 interface ClaimsTabProps {
   projectId: string;
@@ -348,7 +349,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                           d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                         />
                       </svg>
-                      {indep.text}
+                      <div
+                        className="markdown-content"
+                        dangerouslySetInnerHTML={{ __html: markdownToHtml(indep.text) }}
+                      />
                     </div>
                     <div className="flex items-center gap-3 mt-2">
                       <button
@@ -446,7 +450,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                               d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                             />
                           </svg>
-                          {dep.text}
+                          <div
+                            className="markdown-content"
+                            dangerouslySetInnerHTML={{ __html: markdownToHtml(dep.text) }}
+                          />
                         </div>
                         <div className="flex items-center gap-3 mt-1">
                           <button
@@ -641,6 +648,7 @@ function CollapsibleSection({
   onToggle: () => void;
   content: string;
 }) {
+  const html = useMemo(() => markdownToHtml(content), [content]);
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
       <button
@@ -652,7 +660,10 @@ function CollapsibleSection({
       </button>
       {isOpen && (
         <div className="px-4 pb-4">
-          <pre className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap font-sans">{content}</pre>
+          <div
+            className="markdown-content text-xs text-gray-400 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ import StageProgress from './StageProgress';
 import { formatCost } from '../utils/format';
 
 // --- Inline StatusBadge ---
-function StatusBadge({ status, count }: { status?: string; count?: number }) {
+function StatusBadge({ status, count, active }: { status?: string; count?: number; active?: boolean }) {
   if (!status || status === 'NONE') return null;
   if (status === 'RUNNING') {
     return (
@@ -21,7 +21,13 @@ function StatusBadge({ status, count }: { status?: string; count?: number }) {
       <span className="flex items-center gap-1.5">
         <span className="w-2 h-2 bg-green-500 rounded-full" data-testid="badge-complete" />
         {count != null && count > 0 && (
-          <span className="text-xs bg-green-900 text-green-300 px-1.5 py-0.5 rounded-full">{count}</span>
+          <span
+            className={`text-xs px-1.5 py-0.5 rounded-full ${
+              active ? 'bg-white/25 text-white' : 'bg-green-900 text-green-300'
+            }`}
+          >
+            {count}
+          </span>
         )}
       </span>
     );
@@ -248,7 +254,11 @@ export default function ProjectSidebar({
             }`}
           >
             <span>Prior Art</span>
-            <StatusBadge status={priorArtSearch?.status} count={priorArtSearch?.results?.length} />
+            <StatusBadge
+              status={priorArtSearch?.status}
+              count={priorArtSearch?.results?.length}
+              active={viewMode === 'prior-art'}
+            />
           </button>
           <button
             onClick={() => onViewModeChange('claims')}
@@ -257,7 +267,11 @@ export default function ProjectSidebar({
             }`}
           >
             <span>Claims</span>
-            <StatusBadge status={claimDraftStatus?.status} count={claimDraftStatus?.claims?.length} />
+            <StatusBadge
+              status={claimDraftStatus?.status}
+              count={claimDraftStatus?.claims?.length}
+              active={viewMode === 'claims'}
+            />
           </button>
           <button
             onClick={() => onViewModeChange('compliance')}
@@ -266,7 +280,7 @@ export default function ProjectSidebar({
             }`}
           >
             <span>Compliance</span>
-            <StatusBadge status={complianceStatus?.status} />
+            <StatusBadge status={complianceStatus?.status} active={viewMode === 'compliance'} />
           </button>
           <button
             onClick={() => onViewModeChange('application')}
@@ -275,7 +289,7 @@ export default function ProjectSidebar({
             }`}
           >
             <span>Application</span>
-            <StatusBadge status={applicationStatus?.status} />
+            <StatusBadge status={applicationStatus?.status} active={viewMode === 'application'} />
           </button>
         </div>
       </div>

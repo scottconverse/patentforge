@@ -6,7 +6,7 @@ from pathlib import Path
 import anthropic
 
 from ..models import GraphState
-from ..cost import estimate_cost
+from ..cost import estimate_cost, format_api_error
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -58,7 +58,7 @@ Generate the Background of the Invention section."""
         state.total_output_tokens += output_tokens
         state.total_estimated_cost_usd += estimate_cost(model, input_tokens, output_tokens)
     except Exception as e:
-        state.error = f"Background agent failed: {e}"
+        state.error = f"Background agent failed: {format_api_error(e)}"
         return state
 
     state.background = text

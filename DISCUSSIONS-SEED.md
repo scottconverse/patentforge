@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.8.1):**
+**Current status (v0.8.2):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -27,10 +27,18 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 513 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
+- 592 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
 - ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v0.8.2:**
+- **Security hardening** — Helmet HTTP security headers on all backend responses, DOMPurify sanitization on all server-side markdown-to-HTML rendering
+- **Prisma schema unification** — eliminated dual-schema drift by deleting the separate Postgres schema file; Docker now derives from the canonical schema via `sed`, making drift structurally impossible
+- **Cost tracking across all services** — claim-drafter `estimatedCostUsd` now included in cumulative project cost calculations and cost cap enforcement
+- **ProjectDetail refactor** — extracted 6 focused components (ContentPanel, RunningView, ReportView, StageOutputViewer, useViewInit, useReportContent), reducing the main file from 616 to 385 lines
+- **CI expanded** — application-generator pytest suite added to GitHub Actions pipeline
+- **Jest ESM fix** — resolved `isomorphic-dompurify` ESM transformation chain failure that was hiding 49 backend tests
 
 **What's new in v0.8.1:**
 - **Back button fix during streaming** — clicking "← Back" from Prior Art, Claims, Compliance, or Application tabs while the feasibility pipeline is actively streaming now returns to the streaming view instead of jumping to the project overview. The `isPipelineStreaming` flag tracks active pipeline execution and guides sidebar navigation.

@@ -1,27 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
-import {
-  FeasibilityStage,
-  RunStatus,
-} from '../types';
+import { FeasibilityStage } from '../types';
 import { useProjectDetail, ViewMode } from '../hooks/useProjectDetail';
 import { useRunHistory } from '../hooks/useRunHistory';
-import { useFeasibilityRun, makePlaceholderStages } from '../hooks/useFeasibilityRun';
+import { useFeasibilityRun } from '../hooks/useFeasibilityRun';
+import { useViewInit } from '../hooks/useViewInit';
+import { useReportContent } from '../hooks/useReportContent';
 import InventionForm from './InventionForm';
-import ReportViewer from '../components/ReportViewer';
 import ProjectSidebar from '../components/ProjectSidebar';
-import StreamingOutput from '../components/StreamingOutput';
-import Toast from '../components/Toast';
-import CostConfirmModal from '../components/CostConfirmModal';
+import ContentPanel from '../components/ContentPanel';
+import RunningView from '../components/RunningView';
+import ReportView from '../components/ReportView';
+import StageOutputViewer from '../components/StageOutputViewer';
+import RunHistoryView from '../components/RunHistoryView';
+import ProjectOverview from '../components/ProjectOverview';
 import ClaimsTab from '../components/ClaimsTab';
 import ComplianceTab from '../components/ComplianceTab';
 import ApplicationTab from '../components/ApplicationTab';
 import PriorArtPanel from '../components/PriorArtPanel';
 import PatentDetailDrawer from '../components/PatentDetailDrawer';
-import ProjectOverview from '../components/ProjectOverview';
-import RunHistoryView from '../components/RunHistoryView';
-import { formatCost } from '../utils/format';
+import Toast from '../components/Toast';
+import CostConfirmModal from '../components/CostConfirmModal';
 import { statusColors } from '../utils/statusColors';
 
 export default function ProjectDetail() {
@@ -31,7 +31,7 @@ export default function ProjectDetail() {
   // UI mode
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
 
-  // ----- Project data hook -----
+  // Project data
   const {
     project,
     setProject,
@@ -47,7 +47,7 @@ export default function ProjectDetail() {
     applicationStatus,
   } = useProjectDetail(id, viewMode);
 
-  // Stage output viewer
+  // Selected stage for detail viewer
   const [selectedStage, setSelectedStage] = useState<FeasibilityStage | null>(null);
 
   // Toast notification
@@ -66,7 +66,10 @@ export default function ProjectDetail() {
     stageCount?: number;
   } | null>(null);
 
-  // Run history (Feature E)
+  // Patent detail drawer
+  const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
+
+  // Run history
   const {
     runHistory,
     selectedRunVersion,
@@ -77,30 +80,10 @@ export default function ProjectDetail() {
     handleLoadHistoricalRun,
   } = useRunHistory(id, setViewMode, setToast);
 
-  // Patent detail drawer
-  const [drawerPatent, setDrawerPatent] = useState<string | null>(null);
-
-  // Report content — loaded lazily via dedicated lightweight endpoint
-  const [fullReportContent, setFullReportContent] = useState<string | null>(null);
-  const [reportHtml, setReportHtml] = useState<string | null>(null);
-  useEffect(() => {
-    if (viewMode === 'report' && id && !historicalReport && !fullReportContent) {
-      api.feasibility
-        .getReport(id)
-        .then((data) => {
-          setFullReportContent(data.report || null);
-          setReportHtml(data.html || null);
-        })
-        .catch((_err) => {
-          // Report load failure is non-fatal — UI already shows "Loading report..." fallback
-        });
-    }
-  }, [viewMode, id, historicalReport, fullReportContent]);
-
-  // ----- Derived state -----
+  // Derived state
   const latestRun = getLatestRun(project);
 
-  // ----- Feasibility run hook -----
+  // Feasibility run orchestration
   const {
     stages,
     setStages,
@@ -144,54 +127,14 @@ export default function ProjectDetail() {
     };
   }, [abortRef]);
 
-  // View mode initialization — runs after project is loaded
-  const projectLoadedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!project || loading) return;
-    // Only run view init once per project id to avoid resetting view on re-fetches
-    // triggered by pipeline complete. Skip if already initialized for this project.
-    if (projectLoadedRef.current === project.id) return;
-    projectLoadedRef.current = project.id;
+  // View mode initialization (runs once per project load)
+  useViewInit({ project, loading, getLatestRun, setStages, setRunError, setViewMode, runIdRef });
 
-    const latestRunInit = getLatestRun(project);
-    if (latestRunInit) {
-      if (latestRunInit.status === 'COMPLETE' || latestRunInit.status === 'ERROR') {
-        setStages(latestRunInit.stages?.length ? latestRunInit.stages : makePlaceholderStages());
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: one-time view init on project load
-        setViewMode('overview');
-      } else if (latestRunInit.status === 'RUNNING') {
-        // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
-        // No active abort controller means nothing is actually streaming. Mark it ERROR
-        // in the backend, load whatever partial stage output exists, and show report view.
-        const partialStages = (latestRunInit.stages ?? []).map((s) =>
-          s.status === 'RUNNING' || s.status === 'PENDING'
-            ? {
-                ...s,
-                status: 'ERROR' as RunStatus,
-                errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.',
-              }
-            : s,
-        );
-        setStages(partialStages.length ? partialStages : makePlaceholderStages());
-        setRunError(
-          'Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.',
-        );
-        setViewMode('report');
-        // Patch backend so it doesn't stay RUNNING forever
-        api.feasibility
-          .patchRun(project.id, { status: 'ERROR', runId: runIdRef.current || undefined })
-          .catch(() => {/* non-fatal */});
-      } else {
-        setViewMode('overview');
-      }
-    } else if (!project.invention) {
-      setViewMode('invention-form');
-    } else {
-      setViewMode('overview');
-    }
-  }, [project, loading, getLatestRun, setStages, setRunError, setViewMode, runIdRef]);
+  // Lazy report content loading
+  const { reportContent, reportHtml } = useReportContent(viewMode, id, historicalReport);
 
-  // ----- Render -----
+  // ── Loading and error states ──
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-500">
@@ -216,7 +159,7 @@ export default function ProjectDetail() {
             Retry
           </button>
           <button onClick={() => navigate('/')} className="text-sm text-blue-400 hover:text-blue-300">
-            ← Back to Projects
+            &larr; Back to Projects
           </button>
         </div>
       </div>
@@ -226,8 +169,6 @@ export default function ProjectDetail() {
   if (!project) return null;
 
   const totalRunCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
-
-  const reportContent = historicalReport ?? fullReportContent;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -246,7 +187,7 @@ export default function ProjectDetail() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* ---- LEFT SIDEBAR ---- */}
+        {/* ── Sidebar ── */}
         <ProjectSidebar
           project={project}
           viewMode={viewMode}
@@ -289,20 +230,10 @@ export default function ProjectDetail() {
           }}
         />
 
-        {/* ---- MAIN CONTENT ---- */}
+        {/* ── Main content ── */}
         <main className="flex-1 min-w-0">
-          {/* Invention form */}
           {viewMode === 'invention-form' && (
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-100">Invention Disclosure</h2>
-                <button
-                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
-                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-                >
-                  ← Back
-                </button>
-              </div>
+            <ContentPanel title="Invention Disclosure" isPipelineStreaming={isPipelineStreaming} onBack={setViewMode}>
               <InventionForm
                 projectId={project.id}
                 initialData={project.invention}
@@ -315,10 +246,9 @@ export default function ProjectDetail() {
                   handleRunFeasibility(inv);
                 }}
               />
-            </div>
+            </ContentPanel>
           )}
 
-          {/* Overview */}
           {viewMode === 'overview' && (
             <ProjectOverview
               project={project}
@@ -329,101 +259,35 @@ export default function ProjectDetail() {
             />
           )}
 
-          {/* Running view */}
           {viewMode === 'running' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin"
-                    aria-label="Loading"
-                  />
-                  <h2 className="text-lg font-semibold text-gray-100">Running Feasibility Analysis</h2>
-                </div>
-                <button
-                  onClick={handleCancel}
-                  disabled={cancelling}
-                  className="px-4 py-2 bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white rounded text-sm font-medium transition-colors"
-                >
-                  {cancelling ? 'Cancelling...' : 'Cancel'}
-                </button>
-              </div>
-
-              {runError && (
-                <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">
-                  {runError}
-                  <button
-                    onClick={() => setViewMode('overview')}
-                    className="ml-3 text-red-400 underline hover:text-red-300"
-                  >
-                    Go back
-                  </button>
-                </div>
-              )}
-
-              {!runError && streamText && (
-                <StreamingOutput text={streamText} stageName={currentStageName} isComplete={isStreamComplete} />
-              )}
-
-              {!runError && !streamText && (
-                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 text-center text-gray-500 text-sm">
-                  {activeStageNum
-                    ? `Stage ${activeStageNum} — waiting for first token… (large inputs may take 30–60s)`
-                    : 'Starting analysis…'}
-                </div>
-              )}
-            </div>
+            <RunningView
+              runError={runError}
+              streamText={streamText}
+              currentStageName={currentStageName}
+              isStreamComplete={isStreamComplete}
+              activeStageNum={activeStageNum}
+              cancelling={cancelling}
+              onCancel={handleCancel}
+              onBack={() => setViewMode('overview')}
+            />
           )}
 
-          {/* Report view */}
           {viewMode === 'report' && (
-            <div className="space-y-4">
-              {runError && (
-                <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">{runError}</div>
-              )}
-              {selectedRunVersion && (
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                  <span>Viewing</span>
-                  <span className="px-2 py-0.5 bg-gray-800 rounded font-mono text-gray-300">v{selectedRunVersion}</span>
-                  <button
-                    onClick={() => {
-                      setSelectedRunVersion(null);
-                      setHistoricalReport(null);
-                    }}
-                    className="text-blue-400 hover:text-blue-300 ml-2 transition-colors"
-                  >
-                    View latest →
-                  </button>
-                </div>
-              )}
-              {reportContent ? (
-                <ReportViewer
-                  report={reportContent}
-                  preRenderedHtml={reportHtml ?? undefined}
-                  projectTitle={project.title}
-                  projectId={project.id}
-                />
-              ) : (
-                <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
-                  <div className="inline-flex items-center gap-3 text-gray-400">
-                    <div
-                      className="w-5 h-5 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin"
-                      aria-label="Loading"
-                    />
-                    Loading report...
-                  </div>
-                  <button
-                    onClick={() => setViewMode('overview')}
-                    className="mt-3 block mx-auto text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    Back to overview
-                  </button>
-                </div>
-              )}
-            </div>
+            <ReportView
+              reportContent={reportContent}
+              reportHtml={reportHtml}
+              projectTitle={project.title}
+              projectId={project.id}
+              runError={runError}
+              selectedRunVersion={selectedRunVersion}
+              onClearVersion={() => {
+                setSelectedRunVersion(null);
+                setHistoricalReport(null);
+              }}
+              onBack={() => setViewMode('overview')}
+            />
           )}
 
-          {/* History view (Feature E) */}
           {viewMode === 'history' && (
             <RunHistoryView
               runHistory={runHistory}
@@ -433,59 +297,29 @@ export default function ProjectDetail() {
             />
           )}
 
-          {/* Prior art view */}
           {viewMode === 'prior-art' && (
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-100">Prior Art Search</h2>
-                <button
-                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
-                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-                >
-                  ← Back
-                </button>
-              </div>
+            <ContentPanel title="Prior Art Search" isPipelineStreaming={isPipelineStreaming} onBack={setViewMode}>
               <PriorArtPanel
                 projectId={id!}
                 search={priorArtSearch}
                 onUpdate={setPriorArtSearch}
                 onPatentClick={(pn) => setDrawerPatent(pn)}
               />
-            </div>
+            </ContentPanel>
           )}
 
-          {/* Claims tab */}
           {viewMode === 'claims' && (
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-100">Claim Drafts</h2>
-                <button
-                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
-                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-                >
-                  ← Back
-                </button>
-              </div>
+            <ContentPanel title="Claim Drafts" isPipelineStreaming={isPipelineStreaming} onBack={setViewMode}>
               <ClaimsTab
                 projectId={id!}
                 hasFeasibility={!!latestRun && latestRun.status === 'COMPLETE'}
                 priorArtTitles={priorArtSearch?.results?.map((r) => ({ patentNumber: r.patentNumber, title: r.title }))}
               />
-            </div>
+            </ContentPanel>
           )}
 
-          {/* Compliance tab */}
           {viewMode === 'compliance' && (
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-100">Compliance Check</h2>
-                <button
-                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
-                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-                >
-                  ← Back
-                </button>
-              </div>
+            <ContentPanel title="Compliance Check" isPipelineStreaming={isPipelineStreaming} onBack={setViewMode}>
               <ComplianceTab
                 projectId={id!}
                 hasClaims={
@@ -495,21 +329,11 @@ export default function ProjectDetail() {
                   claimDraftStatus.claims.length > 0
                 }
               />
-            </div>
+            </ContentPanel>
           )}
 
-          {/* Application tab */}
           {viewMode === 'application' && (
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-100">Patent Application</h2>
-                <button
-                  onClick={() => setViewMode(isPipelineStreaming ? 'running' : 'overview')}
-                  className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
-                >
-                  ← Back
-                </button>
-              </div>
+            <ContentPanel title="Patent Application" isPipelineStreaming={isPipelineStreaming} onBack={setViewMode}>
               <ApplicationTab
                 projectId={id!}
                 hasClaims={
@@ -519,70 +343,15 @@ export default function ProjectDetail() {
                   claimDraftStatus.claims.length > 0
                 }
               />
-            </div>
+            </ContentPanel>
           )}
 
-          {/* Stage output viewer */}
           {viewMode === 'stage-output' && selectedStage && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-100">
-                    Stage {selectedStage.stageNumber}: {selectedStage.stageName}
-                  </h2>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                    {selectedStage.model && <span className="font-mono">{selectedStage.model}</span>}
-                    {selectedStage.webSearchUsed && <span className="text-blue-400">🔍 Web search used</span>}
-                    {selectedStage.inputTokens != null && (
-                      <span>
-                        {selectedStage.inputTokens.toLocaleString()} in / {selectedStage.outputTokens?.toLocaleString()}{' '}
-                        out tokens
-                      </span>
-                    )}
-                    {selectedStage.estimatedCostUsd != null && selectedStage.estimatedCostUsd > 0 && (
-                      <span className="text-amber-500">{formatCost(selectedStage.estimatedCostUsd)}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const slug = project.title
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-|-$/g, '');
-                      const blob = new Blob([selectedStage.outputText || ''], { type: 'text/markdown' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      const stageName = selectedStage.stageName
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-|-$/g, '');
-                      a.download = `${slug}-${selectedStage.stageNumber}-${stageName}.md`;
-                      a.click();
-                      setTimeout(() => URL.revokeObjectURL(url), 2000);
-                    }}
-                    className="text-sm px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
-                  >
-                    Download
-                  </button>
-                  <button
-                    onClick={() => setViewMode('report')}
-                    className="text-sm px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition-colors"
-                  >
-                    ← Back to Report
-                  </button>
-                </div>
-              </div>
-              <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
-                <div className="p-4 max-h-[600px] overflow-y-auto">
-                  <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono leading-relaxed">
-                    {selectedStage.outputText || 'No output.'}
-                  </pre>
-                </div>
-              </div>
-            </div>
+            <StageOutputViewer
+              stage={selectedStage}
+              projectTitle={project.title}
+              onBack={() => setViewMode('report')}
+            />
           )}
         </main>
       </div>
@@ -592,7 +361,7 @@ export default function ProjectDetail() {
         <Toast message={toast.message} detail={toast.detail} type={toast.type} onClose={() => setToast(null)} />
       )}
 
-      {/* Cost Confirmation Modal (Feature F) */}
+      {/* Cost Confirmation Modal */}
       {costModal && (
         <CostConfirmModal
           tokenCost={costModal.tokenCost}

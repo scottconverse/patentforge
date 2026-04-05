@@ -95,10 +95,15 @@ export class ClaimDraftService implements OnModuleInit {
         where: { projectId, estimatedCostUsd: { not: null } },
         select: { estimatedCostUsd: true },
       });
+      const prevDrafts = await this.prisma.claimDraft.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
       const spent =
         stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
         complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
-        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0) +
+        prevDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0);
       if (spent >= settings.costCapUsd) {
         throw new BadRequestException(
           `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
@@ -326,7 +331,7 @@ export class ClaimDraftService implements OnModuleInit {
       });
     }
 
-    // Update draft with metadata
+    // Update draft with metadata (including cost so cumulative cost tracking is complete)
     await this.prisma.claimDraft.update({
       where: { id: draftId },
       data: {
@@ -336,6 +341,7 @@ export class ClaimDraftService implements OnModuleInit {
         plannerStrategy: result.planner_strategy || null,
         examinerFeedback: result.examiner_feedback || null,
         revisionNotes: result.revision_notes || null,
+        estimatedCostUsd: result.total_estimated_cost_usd ?? null,
       },
     });
   }

@@ -109,6 +109,7 @@ model ClaimDraft {
   plannerStrategy  String?
   examinerFeedback String?
   revisionNotes    String?
+  estimatedCostUsd Float?
 }
 
 model Claim {

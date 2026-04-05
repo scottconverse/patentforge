@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import DOMPurify from 'isomorphic-dompurify';
 import { StageResult } from './models';
 
 /**
@@ -12,7 +13,7 @@ export function markdownToStyledHtml(markdown: string, title: string): string {
     breaks: false,
   });
 
-  const body = marked.parse(markdown) as string;
+  const body = DOMPurify.sanitize(marked.parse(markdown) as string);
 
   return `<!DOCTYPE html>
 <html lang="en">

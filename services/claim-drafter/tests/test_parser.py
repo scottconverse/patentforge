@@ -216,3 +216,88 @@ Revised claim 2 for clarity."""
         assert len(claims) == 1
         assert "[...text truncated]" not in claims[0].text
         assert claims[0].text.startswith("A method")
+
+    def test_strips_h3_heading_notes(self):
+        """Notes under ### headings (not ## ) must also be stripped."""
+        raw = """1. (Independent - Broad - Method) A method comprising: step a.
+
+2. (Dependent on 1) The method of claim 1, wherein step a uses a CPU.
+
+### Revision Notes
+
+Consider broadening claim 1 to cover distributed processing."""
+        claims = parse_claims(raw)
+        assert len(claims) == 2
+        for c in claims:
+            assert "Revision Notes" not in c.text
+            assert "Consider broadening" not in c.text
+
+    def test_strips_bold_section_headers(self):
+        """Notes starting with **Bold: should be stripped after the last claim."""
+        raw = """1. (Independent - Broad - Method) A method comprising: step a.
+
+2. (Dependent on 1) The method of claim 1, wherein step a uses a CPU.
+
+**Strategy Notes:**
+
+Consider prior art US1234567 when broadening claim 1."""
+        claims = parse_claims(raw)
+        assert len(claims) == 2
+        for c in claims:
+            assert "Strategy Notes" not in c.text
+            assert "Consider prior art" not in c.text
+
+    def test_filters_numbered_note_items_not_claim_language(self):
+        """Numbered items after the real claims that aren't claim language are filtered out."""
+        raw = """1. (Independent - Broad - Method) A method comprising: step a; and step b.
+
+2. (Dependent on 1) The method of claim 1, wherein step a uses a processor.
+
+31. Consider adding claims specific to the AI training component.
+
+32. Strategy note: Evidence for secondary considerations of non-obviousness."""
+        claims = parse_claims(raw)
+        assert len(claims) == 2
+        numbers = [c.claim_number for c in claims]
+        assert 31 not in numbers
+        assert 32 not in numbers
+
+    def test_valid_claim_text_passes_filter(self):
+        """Ensure real claim language is NOT filtered out by the validity check."""
+        raw = """1. (Independent - Broad - Method) A method comprising: step a.
+
+2. (Independent - Medium - System) A system comprising: a processor and a memory.
+
+3. (Independent - Narrow - CRM) A non-transitory computer-readable medium storing instructions."""
+        claims = parse_claims(raw)
+        assert len(claims) == 3
+
+    def test_unusual_claim_openers_not_filtered(self):
+        """Non-standard but valid claim openings must not be blocked (blocklist, not allowlist)."""
+        # "In a method..." and "According to..." are valid patent claim formats
+        # that an allowlist-based filter would have incorrectly dropped.
+        raw = """1. (Independent - Broad - Method) In a computer-implemented method, the steps comprising: performing step a.
+
+2. (Independent - Medium - System) According to one embodiment, a system comprising: a processor configured to run step a.
+
+3. (Dependent on 1) The method of claim 1, wherein step a uses a neural network."""
+        claims = parse_claims(raw)
+        # All three are valid claims — none should be dropped
+        assert len(claims) == 3
+
+    def test_blocklist_rejects_known_note_openers(self):
+        """Each word in the blocklist correctly identifies non-claim text."""
+        from src.parser import _is_valid_claim_text
+        non_claims = [
+            "Consider adding a claim for the compression step.",
+            "Note: this claim may face § 102 rejection.",
+            "Strategy: broaden claim 1.",
+            "Evidence suggests secondary considerations apply.",
+            "Revision: tighten claim 2 scope.",
+            "Summary of claim set.",
+            "Assessment of patentability.",
+            "Recommendation: file continuation.",
+            "Important: antecedent basis may be lacking.",
+        ]
+        for text in non_claims:
+            assert not _is_valid_claim_text(text), f"Should have been rejected: {text!r}"

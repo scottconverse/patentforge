@@ -113,7 +113,7 @@ def parse_claims(raw_text: str) -> list[Claim]:
         # Clean up the text
         text = re.sub(r'\s+', ' ', body).strip()
 
-        if text:
+        if text and _is_valid_claim_text(text):
             claims.append(Claim(
                 claim_number=num,
                 claim_type=claim_type,
@@ -122,6 +122,8 @@ def parse_claims(raw_text: str) -> list[Claim]:
                 parent_claim_number=parent_num,
                 text=text,
             ))
+        elif text:
+            logger.debug("Skipping non-claim item %d: %.80s…", num, text)
 
     # Fix duplicate numbering (e.g. Haiku outputting multiple "Claim 1" entries).
     # Renumber all claims sequentially 1..N, then fix parent references.
@@ -155,8 +157,12 @@ def parse_claims(raw_text: str) -> list[Claim]:
 def _strip_trailing_notes(raw_text: str) -> str:
     """
     Remove AI-appended sections (revision notes, summaries, assessments) that
-    appear after the last claim.  Looks for ``---`` or ``## `` lines that are
-    NOT claim headings and truncates from the first such marker onward.
+    appear after the last claim.
+
+    Stop markers (lines that trigger truncation):
+      - ``---``                     horizontal rule
+      - ``## `` through ``######``  markdown headings (excluding claim headings)
+      - ``**<Word>``                bold-formatted section headers (e.g. **Note:**, **Strategy**)
     """
     # Identify positions of all claim-like starts so we know where
     # "after the last claim" begins.
@@ -173,13 +179,40 @@ def _strip_trailing_notes(raw_text: str) -> str:
 
     after_last_claim = claim_starts[-1]
 
-    # Scan for stop markers after the last claim start
-    stop_pattern = re.compile(r'^(?:---|## )', re.MULTILINE)
+    # Expanded stop markers: ---, any markdown heading (##-######), or bold
+    # section-header lines (e.g. **Note:**, **Revision Notes**, **Strategy:**).
+    stop_pattern = re.compile(r'^(?:---|#{2,}\s|\*\*[A-Z])', re.MULTILINE)
     for m in stop_pattern.finditer(raw_text, after_last_claim):
         line_text = raw_text[m.start():].split('\n', 1)[0]
-        # Allow ``---`` and ``## `` that are NOT claim headings
+        # Skip lines that ARE claim headings (e.g. ### CLAIM 3)
         if re.match(r'^#{1,4}\s*CLAIM\s+\d+', line_text, re.IGNORECASE):
             continue
         return raw_text[:m.start()].rstrip()
 
     return raw_text
+
+
+# Blocklist of words/phrases that definitively open non-claim text.
+# Using a blocklist (rather than an allowlist of valid openers) ensures that
+# unusual but legitimate claim formats — e.g. "In a method...", "According to
+# one embodiment...", "What is claimed is..." — are never falsely rejected.
+# False negatives (letting through a note) are preferable to false positives
+# (dropping a real claim the user would have to re-draft).
+_NOT_CLAIM_OPENER = re.compile(
+    r'^(?:Consider|Note[:\s]|Strategy[:\s]|Evidence[:\s]|Revision[:\s]|Assessment[:\s]|'
+    r'Summary[:\s]|See\s|Review[:\s]|Suggestion[:\s]|Recommendation[:\s]|'
+    r'Important[:\s]|Please\s|Based\s+on|This\s+(?:claim|set)|These\s+claims|'
+    r'The\s+following|Draft\s+note|Key\s+revision|Claim\s+summary)',
+    re.IGNORECASE,
+)
+
+
+def _is_valid_claim_text(text: str) -> bool:
+    """Return True if *text* could be valid patent claim language.
+
+    Rejects text whose opening word(s) are clearly non-claim (notes, strategy
+    items, summaries).  Any text not matched by the blocklist is assumed to be
+    a claim — including unusual-but-valid openers such as "In a method...",
+    "According to one embodiment...", or "What is claimed is...".
+    """
+    return not bool(_NOT_CLAIM_OPENER.match(text.strip()))

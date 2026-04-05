@@ -168,8 +168,10 @@ JEST=$(extract_passed "$JEST_OUT")
 VITEST_OUT=$(cd frontend && npx vitest run 2>&1 | grep "Tests")
 VITEST=$(extract_passed "$VITEST_OUT")
 
-TOTAL=$((PY_APPGEN + PY_CLAIM + PY_COMP + JEST + VITEST))
-echo "  app-gen: $PY_APPGEN | claim-drafter: $PY_CLAIM | compliance: $PY_COMP | backend: $JEST | frontend: $VITEST"
+# Count Playwright E2E tests (can't run without server, count from source)
+E2E=$(grep -rc 'test(' frontend/e2e/*.spec.ts 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
+TOTAL=$((PY_APPGEN + PY_CLAIM + PY_COMP + JEST + VITEST + E2E))
+echo "  app-gen: $PY_APPGEN | claim-drafter: $PY_CLAIM | compliance: $PY_COMP | backend: $JEST | frontend: $VITEST | e2e: $E2E"
 echo "  Total: $TOTAL"
 
 if [ "$TOTAL" -gt 0 ]; then

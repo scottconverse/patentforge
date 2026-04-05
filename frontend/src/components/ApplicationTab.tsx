@@ -60,7 +60,8 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         if (a.status === 'COMPLETE' || a.status === 'ERROR') {
           setApplication(a);
           setGenerating(false);
-          setError(a.status === 'ERROR' ? a.errorMessage || 'Application generation failed. Try again.' : null);
+          // Clear any start-time error — generation errors are shown via application.errorMessage below
+          setError(null);
         }
       } catch {
         /* poll error — ignore to avoid spamming error state */

@@ -5,6 +5,34 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-04-05
+
+### Added
+- **Helmet security headers** — backend now sets security headers (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, etc.) via Helmet middleware for networked deployments; CSP intentionally disabled for frontend compatibility
+- **DOMPurify on all backend HTML generation** — all four `marked()` call sites in the backend and feasibility service are now sanitized through `isomorphic-dompurify`, closing the XSS surface on server-rendered HTML (report exports, DOCX generation)
+- **ClaimDraft cost tracking** — claim drafting pipeline costs are now saved to the database and included in cumulative project cost calculations and cost cap enforcement; previously the Python service returned cost data but the backend silently discarded it
+- **Application-generator CI job** — the application-generator service (64 tests) now runs in GitHub Actions CI alongside the other Python services; also added to the build verification gate
+- **`markdownToHtml` regression tests** — 11 unit tests proving the frontend markdown utility escapes `<script>` tags, inline event handlers, and raw HTML while preserving markdown-generated tags; safety claim now backed by tests, not just code reading
+- **Claim parser blocklist filter** — replaced narrow allowlist (`_VALID_CLAIM_START`) with a blocklist (`_NOT_CLAIM_OPENER`) that rejects known non-claim text (notes, strategies, summaries) while allowing unusual but valid patent claim formats like "In a method..." and "According to one embodiment..."
+
+### Changed
+- **ProjectDetail.tsx decomposition (phase 2)** — extracted 6 more units from the 616-line coordinator: `useViewInit` hook, `useReportContent` hook, `ContentPanel`, `RunningView`, `ReportView`, and `StageOutputViewer` components; coordinator reduced to 385 lines with pure orchestration logic
+- **Prisma strategy consolidation** — eliminated dual-schema drift by deleting the severely outdated `schema.postgres.prisma` (missing 3 models, dozens of fields) and 10 stale SQLite migration files; Docker now derives the PostgreSQL schema automatically from the canonical `schema.prisma` via `sed`; all environments (local, CI, Docker) consistently use `prisma db push`
+- **`npm ci` everywhere** — frontend CI jobs, backend Dockerfile, and frontend Dockerfile all switched from `npm install` to `npm ci` for deterministic, lockfile-based installs
+- **Backend build cleanup** — `npm run build` now runs `rimraf dist && nest build`, preventing stale compiled output from surviving source renames or deletions
+- **ts-jest upgraded to 29.4.9** — latest available patch; ESM parse failures from `isomorphic-dompurify` resolved via Jest `moduleNameMapper` mock (DOMPurify behavior tested in frontend unit tests); 49 previously-hidden backend tests now running and passing
+- **Claims badge contrast** — count pill on active (blue) sidebar tabs now uses `bg-white/25 text-white` instead of dark green, fixing the low-contrast readability issue
+- **Claim text rendering** — claim text, Planner Strategy, and Examiner Feedback sections in the Claims tab now render markdown via `markdownToHtml` instead of displaying raw markdown source
+- **Claim parser trailing notes** — `_strip_trailing_notes` stop pattern expanded to catch `###`+ headings and `**Bold` section headers that AI models append after claim text
+
+### Fixed
+- **Backend cost-cap tests** — 8 cost-cap tests that were masked by suite-level ESM parse failures are now running and updated to include ClaimDraft in cumulative cost mocks
+- **Non-claim content in claims 31–32** — items like "Consider adding claims..." and "Strategy note: Evidence for..." are now filtered out by the blocklist-based `_is_valid_claim_text` instead of being treated as valid claims
+
+### Security
+- **Helmet** — X-Content-Type-Options, X-Frame-Options, HSTS, and other security headers now set on all backend responses
+- **DOMPurify** — server-side HTML sanitization on all `marked()` outputs prevents XSS in exported reports and DOCX documents
+
 ## [0.8.1] - 2026-04-05
 
 ### Fixed

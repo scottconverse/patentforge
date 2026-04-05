@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { marked } from 'marked';
+import DOMPurify from 'isomorphic-dompurify';
 import {
   Document,
   Packer,
@@ -320,7 +321,7 @@ export class FeasibilityService {
     const { report } = await this.getReportText(projectId);
     if (!report) return '<html><body><p>No report available.</p></body></html>';
     const title = await this.getProjectTitle(projectId);
-    const body = marked(report) as string;
+    const body = DOMPurify.sanitize(marked(report) as string);
     return REPORT_HTML_TEMPLATE.replace('{{TITLE}}', title.replace(/</g, '&lt;')).replace('{{BODY}}', body);
   }
 
@@ -342,8 +343,9 @@ export class FeasibilityService {
     }
     if (!reportText) return { report: null, html: null };
 
-    // Pre-render HTML server-side so the browser doesn't have to parse markdown
-    const html = marked(reportText) as string;
+    // Pre-render HTML server-side so the browser doesn't have to parse markdown.
+    // DOMPurify strips any script tags or event handlers from AI-generated content.
+    const html = DOMPurify.sanitize(marked(reportText) as string);
     return { report: reportText, html };
   }
 
@@ -367,11 +369,16 @@ export class FeasibilityService {
       where: { projectId, estimatedCostUsd: { not: null } },
       select: { estimatedCostUsd: true },
     });
-    // Note: ClaimDraft does not have an estimatedCostUsd field in the schema.
+    // ClaimDraft costs are now stored after schema migration adding estimatedCostUsd.
+    const claimDrafts = await this.prisma.claimDraft.findMany({
+      where: { projectId, estimatedCostUsd: { not: null } },
+      select: { estimatedCostUsd: true },
+    });
     return (
       stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
       complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
-      applications.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0)
+      applications.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0) +
+      claimDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0)
     );
   }
 
@@ -713,8 +720,8 @@ export class FeasibilityService {
     const mdFile = path.join(folderPath, `${slug}-feasibility.md`);
     fs.writeFileSync(mdFile, run.finalReport, 'utf-8');
 
-    // Build self-contained HTML
-    const bodyHtml = marked(run.finalReport) as string;
+    // Build self-contained HTML — sanitize before writing to disk
+    const bodyHtml = DOMPurify.sanitize(marked(run.finalReport) as string);
     const html = this.buildHtmlDoc(bodyHtml, `${project.title} — Feasibility Report`);
     const htmlFile = path.join(folderPath, `${slug}-feasibility.html`);
     fs.writeFileSync(htmlFile, html, 'utf-8');

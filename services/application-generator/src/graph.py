@@ -23,9 +23,8 @@ async def format_ids(state: GraphState) -> dict:
     return {"step": "format_ids"}
 
 
-async def finalize(state: GraphState) -> dict:
-    """Scrub API key and clean markdown artifacts from agent output.
-    Returns full state as dict so LangGraph preserves all fields including cost."""
+async def finalize(state: GraphState) -> GraphState:
+    """Scrub API key and clean markdown artifacts from agent output."""
 
     def clean_section(text: str) -> str:
         if not text:
@@ -37,16 +36,14 @@ async def finalize(state: GraphState) -> dict:
             text = text[1:]
         return text
 
-    # Return full state as dict with cleaned fields — ensures cost fields aren't lost
-    result = state.model_dump()
-    result["api_key"] = ""
-    result["background"] = clean_section(state.background)
-    result["summary"] = clean_section(state.summary)
-    result["detailed_description"] = clean_section(state.detailed_description)
-    result["abstract"] = clean_section(state.abstract)
-    result["figure_descriptions"] = clean_section(state.figure_descriptions)
-    result["step"] = "finalize"
-    return result
+    state.api_key = ""
+    state.background = clean_section(state.background)
+    state.summary = clean_section(state.summary)
+    state.detailed_description = clean_section(state.detailed_description)
+    state.abstract = clean_section(state.abstract)
+    state.figure_descriptions = clean_section(state.figure_descriptions)
+    state.step = "finalize"
+    return state
 
 
 def build_graph() -> StateGraph:

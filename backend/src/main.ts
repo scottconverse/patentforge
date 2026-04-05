@@ -3,6 +3,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AuthGuard } from './auth.guard';
 
@@ -76,6 +77,15 @@ async function bootstrap() {
   validateEnvironment();
 
   const app = await NestFactory.create(AppModule);
+
+  // Security headers — applied before any other middleware.
+  // CSP is disabled because the frontend is served separately (or via ServeStatic)
+  // and needs to load its own scripts; tighten if serving the SPA from this server.
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    }),
+  );
 
   app.setGlobalPrefix('api');
 

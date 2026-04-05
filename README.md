@@ -41,9 +41,9 @@ The easiest way to get started is to download the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| **Windows** | [PatentForge-0.8.1-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.1-Setup.exe) | Inno Setup installer (~100 MB) |
-| **Mac (Beta)** | [PatentForge-0.8.1.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.1.dmg) | Drag to Applications (~100 MB) |
-| **Linux (Beta)** | [PatentForge-0.8.1.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.1.AppImage) | chmod +x and run (~120 MB) |
+| **Windows** | [PatentForge-0.8.2-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.2-Setup.exe) | Inno Setup installer (~100 MB) |
+| **Mac (Beta)** | [PatentForge-0.8.2.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.2.dmg) | Drag to Applications (~100 MB) |
+| **Linux (Beta)** | [PatentForge-0.8.2.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.2.AppImage) | chmod +x and run (~120 MB) |
 
 The installer bundles everything — no Node.js, Python, or git required. On first launch, the system tray icon appears and your browser opens to the setup wizard, which walks you through entering your Anthropic API key.
 
@@ -143,7 +143,7 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 ## Architecture
 
 ![PatentForge System Architecture](diagrams/architecture.png)
-*Figure 1: System Architecture (v0.8.1) — 6 services + system tray + 3 external APIs*
+*Figure 1: System Architecture (v0.8.2) — 6 services + system tray + 3 external APIs*
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -234,6 +234,7 @@ docker compose up --build
 - [x] **v0.7.1** — Polish patch (18 fixes from external code review)
 - [x] **v0.8.0** — Code quality enforcement (ESLint + Prettier, TypeScript strict mode, coverage thresholds, supertest API integration tests), sidebar status badges, mobile-responsive sidebar accordion, pre-push git hook
 - [x] **v0.8.1** — Back button fix (return to streaming view during active pipeline), documentation consistency audit
+- [x] **v0.8.2** — Security hardening (Helmet headers, DOMPurify sanitization), Prisma schema unification (eliminated dual-schema drift), cost tracking across all services, ProjectDetail refactor (extracted 6 components), CI expanded (application-generator tests), 592 automated tests
 
 ## Contributing
 

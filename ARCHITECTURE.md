@@ -1,6 +1,6 @@
 # PatentForge — Architecture & Design Document
 
-**Version**: 0.8.1
+**Version**: 0.8.2
 **Last Updated**: 2026-04-05
 **Status**: Active Development
 
@@ -62,7 +62,7 @@ PatentForge uses a **federated architecture**: a central backend orchestrates in
  │ FEASIBILITY SVC  │  │ PRIOR ART  │  │  │ COMPLIANCE    │  │ USPTO DATA │
  │                  │  │ SVC        │  │  │ SVC           │  │ SVC        │
  │ 6-stage patent   │  │            │  │  │               │  │            │
- │ feasibility      │  │ PQAI ML    │  │  │ MPEP/USC/CFR  │  │ USPTO-CLI  │
+ │ feasibility      │  │ USPTO ODP  │  │  │ MPEP/USC/CFR  │  │ USPTO-CLI  │
  │ analysis via     │  │ search     │  │  │ RAG with      │  │ + pyUSPTO  │
  │ Anthropic API    │  │ over 100M+ │  │  │ FAISS/BM25    │  │ wrapped    │
  │                  │  │ patents    │  │  │               │  │            │
@@ -103,7 +103,7 @@ Rules:
 ```
 src/adapters/
   ├── feasibility.adapter.ts    → calls feasibility service (port 3001)
-  ├── prior-art.adapter.ts      → calls PQAI (port 3002 or public API)
+  ├── prior-art.adapter.ts      → calls USPTO ODP (integrated in backend)
   ├── drafting.adapter.ts       → calls claim drafter (port 3003)
   ├── compliance.adapter.ts     → calls MPEP RAG checker (port 3004)
   └── uspto.adapter.ts          → calls USPTO wrapper (port 3005)
@@ -129,7 +129,7 @@ Every artifact is versioned per project:
 Project #42
   ├── feasibility/v1/  (stages 1-6, final report)
   ├── feasibility/v2/  (re-run after inventor added details)
-  ├── prior_art/v1/    (PQAI results, snippets, claim mappings)
+  ├── prior_art/v1/    (USPTO ODP results, snippets, claim mappings)
   ├── drafts/v1/       (initial claims from multi-agent drafter)
   ├── drafts/v2/       (revised after compliance feedback)
   ├── compliance/v1/   (112a/112b/MPEP results against drafts/v1)
@@ -235,7 +235,7 @@ model PriorArtResult {
   relevanceScore  Float
   snippet         String?
   claimMapping    String?
-  source          String         @default("PQAI")
+  source          String         @default("ODP")
 }
 
 model ClaimDraft {
@@ -319,8 +319,7 @@ model AppSettings {
   researchModel         String @default("")
   maxTokens             Int    @default(32000)
   interStageDelaySeconds Int   @default(5)
-  pqaiApiToken          String @default("")
-  pqaiMode              String @default("api")
+  usptoOdpApiKey        String @default("")
 }
 
 enum ProjectStatus {
@@ -416,47 +415,27 @@ Response: SSE stream
 
 ### 3.2 Prior Art Service
 
-**Source**: [PQAI](https://github.com/pqaidevteam/pqai) (MIT license) by Georgia IP Alliance + AT&T
+**Source**: [USPTO Open Data Portal](https://developer.uspto.gov/) (public API, free with API key)
 
-**What it does**: ML-powered semantic patent search trained on historical patent examiner decisions. Accepts plain-language invention descriptions and returns ranked prior art with relevance snippets.
+**What it does**: Keyword-based patent search via the USPTO Open Data Portal (ODP) API, with stop-word filtering, title-weighted relevance scoring, and lazy-loaded patent claims text from the USPTO Documents API.
 
-**PQAI Pipeline (9 stages)**:
-1. Query preprocessing — strips keywords, extracts date/country filters
-2. Index selection — BOW classifier predicts CPC subclasses, routes to top-3 indexes
-3. Vectorization — SentenceTransformer produces dense embeddings
-4. Relevance feedback — optional Rocchio-style adjustment
-5. Vector search — FAISS (OPQ16_64,HNSW32) or Annoy, partitioned by CPC subclass
-6. Post-retrieval filtering — country codes, date ranges, family deduplication
-7. Reranking — MatchPyramid or SIF+cosine similarity
-8. Snippet extraction — extracts passages explaining relevance
-9. Result assembly — dedup, paginate, attach snippets/mappings
+**Search pipeline**:
+1. Query construction — extracts key terms from the invention's technical restatement, strips common stop words
+2. ODP search — queries `api.patentsview.org` and USPTO ODP endpoints for matching patents
+3. Relevance scoring — title-weighted scoring with configurable thresholds
+4. Result enrichment — lazy-loads actual patent claims text, continuity data, and CPC classifications from USPTO Documents API on demand
+5. ODP usage tracking — per-project API call counting stored in `OdpApiUsage` model
 
-**Integration modes**:
+**Integration**:
+- Integrated directly into the NestJS backend (no separate service)
+- Requires a free USPTO ODP API key (set in Settings UI)
+- `backend/src/prior-art/` — search service, ODP client, PatentsView client
+- `backend/src/patent-detail/` — enrichment services (claims, continuity, CPC data)
 
-| Mode | Pros | Cons |
-|------|------|------|
-| **PQAI Public API** (`api.projectpq.ai`) | Zero setup, free for academic | Rate limits, US patents only, dependency on external service |
-| **Self-hosted PQAI** (6 Docker containers) | Full control, no rate limits | Requires USPTO bulk data load, MongoDB, vector index builds |
-
-**PQAI repos** (all MIT):
-- [pqaidevteam/pqai](https://github.com/pqaidevteam/pqai) — orchestrator (478 commits)
-- [pqaidevteam/pqai-encoder](https://github.com/pqaidevteam/pqai-encoder) — SentenceTransformer vectorization
-- [pqaidevteam/pqai-db](https://github.com/pqaidevteam/pqai-db) — MongoDB patent data store
-- [pqaidevteam/pqai-reranker](https://github.com/pqaidevteam/pqai-reranker) — MatchPyramid reranking
-- [pqaidevteam/pqai-snippet-extractor](https://github.com/pqaidevteam/pqai-snippet-extractor) — relevance snippet generation
-
-**Adapter API** (central backend calls this):
+**API** (internal backend routes):
 ```
-POST /search
-{
-  "query": "string (technical restatement from feasibility Stage 1)",
-  "filters": {
-    "dateRange": { "from": "2015-01-01", "to": "2026-03-30" },
-    "countries": ["US"],
-    "type": "patent"
-  },
-  "limit": 20
-}
+GET /api/projects/:id/prior-art/search?q=...&limit=20
+POST /api/projects/:id/prior-art/search
 
 Response:
 {
@@ -467,9 +446,7 @@ Response:
       "abstract": "...",
       "relevanceScore": 0.94,
       "snippet": "...",
-      "cpcCodes": ["G06F16/00"],
-      "filingDate": "2019-03-15",
-      "claimMapping": "Claims 1, 3 overlap with claims 2, 7 of query"
+      "source": "ODP"
     }
   ]
 }
@@ -497,7 +474,7 @@ Response:
 
 **Inputs** (from upstream stages):
 - Technical restatement (feasibility Stage 1)
-- Prior art results with relevance scores (PQAI)
+- Prior art results with relevance scores (USPTO ODP)
 - Patentability analysis with §102/§103 findings (feasibility Stage 3)
 - Deep dive analysis (feasibility Stage 4)
 - IP strategy with recommended claim directions (feasibility Stage 5)
@@ -734,7 +711,7 @@ When the pipeline completes, the final report renders as styled markdown with a 
 [View Report] [Export .docx] [Export .pdf] [Re-run Pipeline] [→ Prior Art Search]
 ```
 
-**Stage 2: Prior Art Search (PQAI)**
+**Stage 2: Prior Art Search (USPTO ODP)**
 
 Two-panel: search controls on left, ranked results on right.
 
@@ -757,7 +734,7 @@ Two-panel: search controls on left, ranked results on right.
 │                      │     Score: 0.82          │
 │  [Search Again]      │     ...                  │
 │                      │                          │
-│  Source: PQAI ML     │  [→ Draft Claims]        │
+│  Source: USPTO ODP   │  [→ Draft Claims]        │
 └──────────────────────┴──────────────────────────┘
 ```
 
@@ -780,7 +757,7 @@ Interactive claim editor with agent-generated suggestions.
 │  │  ├─ Claim 7      │    (b) processing...     │
 │  │  └─ Claim 8      │    (c) outputting...     │
 │  └─ Claim 9 (ind.)  │                          │
-│                      │  ⚠ PQAI match: Claims   │
+│                      │  ⚠ ODP match: Claims    │
 │  Scope:              │  1(a), 1(b) overlap with │
 │  ● Broad   ● Med    │  US10,234,567 claim 2.   │
 │  ● Narrow            │  Consider narrowing.     │
@@ -790,7 +767,7 @@ Interactive claim editor with agent-generated suggestions.
 └──────────────────────┴──────────────────────────┘
 ```
 
-Users can edit AI-generated claims directly. Prior art overlap warnings appear inline based on PQAI claim mappings.
+Users can edit AI-generated claims directly. Prior art overlap warnings appear inline based on prior art claim mappings.
 
 **Stage 4: Compliance Check**
 
@@ -890,7 +867,7 @@ Intake (11 fields)
     │
     ├──▶ Feasibility Stage 1 output (technical restatement)
     │        │
-    │        ├──▶ PQAI query (prior art search)
+    │        ├──▶ USPTO ODP query (prior art search)
     │        │        │
     │        │        └──▶ Claim drafter input (draft around known art)
     │        │
@@ -950,8 +927,7 @@ services:
     build: ./services/prior-art
     ports: ["3002:3002"]
     environment:
-      PQAI_API_TOKEN: ${PQAI_API_TOKEN}
-      PQAI_MODE: api  # or "self-hosted"
+      USPTO_ODP_API_KEY: ${USPTO_ODP_API_KEY}
 
   drafting:
     build: ./services/drafting
@@ -1020,9 +996,7 @@ Additional services are added one at a time as they're built.
 |-----------|-----------|---------|-------|--------|
 | Central Backend | [AutoBE](https://github.com/wrtnio/autobe) | MIT | — | Active |
 | Feasibility Pipeline | scottconverse/patent-analyzer-app (private) | Proprietary | — | Active |
-| Prior Art ML Search | [pqaidevteam/pqai](https://github.com/pqaidevteam/pqai) | MIT | 115 | Active |
-| Prior Art Encoder | [pqaidevteam/pqai-encoder](https://github.com/pqaidevteam/pqai-encoder) | MIT | — | Active |
-| Prior Art Reranker | [pqaidevteam/pqai-reranker](https://github.com/pqaidevteam/pqai-reranker) | MIT | — | Active |
+| Prior Art Search | [USPTO Open Data Portal](https://developer.uspto.gov/) | Public API | — | Active |
 | Claim Drafting Patterns | [QiYao-Wang/AutoPatent](https://github.com/QiYao-Wang/AutoPatent) | MIT | 188 | Active |
 | Drafting Orchestration | [yycyyv/M-Cube](https://github.com/yycyyv/M-Cube) | MIT | 117 | Active |
 | Compliance RAG | [RobThePCGuy/Claude-Patent-Creator](https://github.com/RobThePCGuy/Claude-Patent-Creator) | MIT | 51 | Active |
@@ -1041,7 +1015,7 @@ All source components are MIT-licensed (commercially safe) or public government 
 | Phase | Services | What Ships | User Gets |
 |-------|----------|-----------|-----------|
 | **v0.1** | Backend + Feasibility + Frontend | Web patent feasibility analyzer | Cross-platform replacement for WPF app |
-| **v0.2** | + Prior Art Service (PQAI API mode) | ML prior art search | Structured search alongside LLM analysis |
+| **v0.2** | + Prior Art Search (USPTO ODP) | Patent prior art search | Structured search alongside LLM analysis |
 | **v0.3** | + USPTO Data Service | Patent data enrichment | Real patent lookups, prosecution history |
 | **v0.4** | + Claim Drafting Service | AI claim generation | Claims informed by prior art + analysis |
 | **v0.5** | + Compliance Service | Legal compliance checks | 112a/112b/MPEP validation |

@@ -116,6 +116,20 @@ describe('StatusBadge', () => {
     const { container } = render(<StatusBadge status="NONE" />);
     expect(container.innerHTML).toBe('');
   });
+
+  it('uses white count pill when active (on blue button background)', () => {
+    render(<StatusBadge status="COMPLETE" count={12} active={true} />);
+    const pill = screen.getByText('12');
+    expect(pill.className).toContain('text-white');
+    expect(pill.className).not.toContain('text-green-300');
+  });
+
+  it('uses green count pill when not active (default dark button background)', () => {
+    render(<StatusBadge status="COMPLETE" count={12} active={false} />);
+    const pill = screen.getByText('12');
+    expect(pill.className).toContain('text-green-300');
+    expect(pill.className).not.toContain('text-white');
+  });
 });
 
 describe('ProjectSidebar with status badges', () => {
