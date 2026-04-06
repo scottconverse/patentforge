@@ -1,11 +1,13 @@
 import { test, expect, screenshot, checkViewport } from './fixtures';
-import { createProject, deleteProject } from './helpers';
+import { createProject, deleteProject, updateSettings } from './helpers';
 
 test.describe('Invention Form', () => {
   let projectId: string;
 
   test.beforeEach(async () => {
     projectId = await createProject('E2E Invention Form Test');
+    // Ensure an API key is set so the FirstRunWizard does not block navigation
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
   });
 
   test.afterEach(async () => {
@@ -14,6 +16,12 @@ test.describe('Invention Form', () => {
 
   test('shows invention form with required fields', async ({ page, consoleErrors }) => {
     await page.goto(`/projects/${projectId}`);
+    await page.waitForLoadState('networkidle');
+
+    // New project shows "No Invention Details Yet" — click to open the form
+    const fillButton = page.locator('button:has-text("Fill in Invention Details")');
+    await fillButton.waitFor({ state: 'visible', timeout: 10_000 });
+    await fillButton.click();
 
     await expect(page.locator('label:has-text("Title")')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('label:has-text("Description")')).toBeVisible();
@@ -23,6 +31,13 @@ test.describe('Invention Form', () => {
 
   test('can fill and save invention form fields', async ({ page, consoleErrors }) => {
     await page.goto(`/projects/${projectId}`);
+    await page.waitForLoadState('networkidle');
+
+    // New project shows overview — click to open the form
+    const fillButton = page.locator('button:has-text("Fill in Invention Details")');
+    if (await fillButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await fillButton.click();
+    }
     await expect(page.locator('label:has-text("Title")')).toBeVisible({ timeout: 10_000 });
 
     const titleInput = page.locator('input[type="text"]').first();
@@ -39,7 +54,7 @@ test.describe('Invention Form', () => {
     await screenshot(page, 'invention-form-saved');
 
     // Verify via API that the invention was persisted
-    const res = await page.request.get(`http://localhost:3000/projects/${projectId}/invention`);
+    const res = await page.request.get(`http://localhost:3000/api/projects/${projectId}/invention`);
     const invention = await res.json();
     expect(invention.title).toBe('Self-Healing Concrete Monitor');
     expect(invention.description).toContain('IoT sensor network');
@@ -47,6 +62,13 @@ test.describe('Invention Form', () => {
 
   test('responsive: invention form at mobile viewport', async ({ page, consoleErrors }) => {
     await page.goto(`/projects/${projectId}`);
+    await page.waitForLoadState('networkidle');
+
+    // New project shows overview — click to open the form
+    const fillButton = page.locator('button:has-text("Fill in Invention Details")');
+    if (await fillButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await fillButton.click();
+    }
     await expect(page.locator('label:has-text("Title")')).toBeVisible({ timeout: 10_000 });
     await checkViewport(page, 'invention-form-mobile', 375, 812);
 

@@ -1,6 +1,12 @@
 import { test, expect, screenshot, checkViewport } from './fixtures';
+import { updateSettings } from './helpers';
 
 test.describe('Navigation', () => {
+  // Ensure an API key is set so the FirstRunWizard does not block navigation
+  test.beforeAll(async () => {
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+  });
+
   test('home page loads with clean console', async ({ page, consoleErrors }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/PatentForge/i);

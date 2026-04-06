@@ -229,7 +229,7 @@ test.describe('Feasibility Pipeline', () => {
 
     // Verify report view is rendered (heading + export buttons + iframe)
     await expect(page.locator('text=Feasibility Report')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('a:has-text("Download HTML")')).toBeVisible();
+    await expect(page.locator('button:has-text("Download HTML")')).toBeVisible();
     await expect(page.locator('button:has-text("Download Word")')).toBeVisible();
 
     // Report content is in an iframe — verify the iframe loaded
@@ -295,9 +295,7 @@ test.describe('Feasibility Pipeline', () => {
   });
 
   test('blocks run when no API key configured', async ({ page, consoleErrors }) => {
-    // Clear the API key
-    await updateSettings({ anthropicApiKey: '' });
-
+    // Navigate first while the key is still set (avoids FirstRunWizard blocking)
     await page.goto(`/projects/${projectId}`);
     await page.waitForLoadState('networkidle');
 
@@ -311,10 +309,16 @@ test.describe('Feasibility Pipeline', () => {
     await page.locator('input[placeholder="Name your invention"]').fill('No Key Test');
     await page.locator('textarea[placeholder*="detailed description"]').fill('A test invention.');
 
+    // Clear the API key AFTER the page has loaded (so wizard doesn't block)
+    await updateSettings({ anthropicApiKey: '' });
+
     await page.click('button:has-text("Save & Run Feasibility")');
 
     // Should show error about missing API key
     await expect(page.locator('text=No API key configured')).toBeVisible({ timeout: 10_000 });
+
+    // Restore key for subsequent tests
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
 
     await screenshot(page, 'feasibility-no-api-key');
   });

@@ -13,7 +13,7 @@
 import { test, expect, screenshot } from './fixtures';
 import { createProject, deleteProject, updateSettings } from './helpers';
 
-const API = 'http://localhost:3000';
+const API = 'http://localhost:3000/api';
 
 test.describe('Cost Cap Enforcement', () => {
   let projectId: string;

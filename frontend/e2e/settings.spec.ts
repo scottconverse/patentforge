@@ -2,6 +2,11 @@ import { test, expect, screenshot, checkViewport } from './fixtures';
 import { getSettings, updateSettings } from './helpers';
 
 test.describe('Settings Page', () => {
+  // Ensure an API key is set so the FirstRunWizard does not block navigation
+  test.beforeAll(async () => {
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+  });
+
   test.afterAll(async () => {
     await updateSettings({
       anthropicApiKey: '',
@@ -41,8 +46,8 @@ test.describe('Settings Page', () => {
 
     // Verify the save completed by checking the UI showed confirmation
     // (Separate GET is racy with concurrent test workers sharing the singleton settings row)
-    // Clean up immediately
-    await updateSettings({ anthropicApiKey: '' });
+    // Restore a valid key so subsequent tests don't trigger the FirstRunWizard
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
   });
 
   test('model dropdown reflects saved selection', async ({ page, consoleErrors }) => {

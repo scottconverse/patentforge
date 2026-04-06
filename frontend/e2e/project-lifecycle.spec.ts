@@ -1,8 +1,13 @@
 import { test, expect, screenshot } from './fixtures';
-import { createProject, deleteProject } from './helpers';
+import { createProject, deleteProject, updateSettings } from './helpers';
 
 test.describe('Project Lifecycle', () => {
   let projectId: string | null = null;
+
+  // Ensure an API key is set so the FirstRunWizard does not block navigation
+  test.beforeAll(async () => {
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
+  });
 
   test.afterEach(async () => {
     if (projectId) {
@@ -28,7 +33,7 @@ test.describe('Project Lifecycle', () => {
     await screenshot(page, 'project-created');
 
     // Verify project exists via API
-    const res = await page.request.get('http://localhost:3000/projects');
+    const res = await page.request.get('http://localhost:3000/api/projects');
     const projects = await res.json();
     const found = projects.find((p: any) => p.title === 'E2E Test Widget Analyzer');
     expect(found).toBeTruthy();

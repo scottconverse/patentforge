@@ -9,7 +9,7 @@
  */
 
 import { test, expect, screenshot } from './fixtures';
-import { createProject, deleteProject } from './helpers';
+import { createProject, deleteProject, updateSettings } from './helpers';
 import type { Page, Route } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
@@ -217,6 +217,8 @@ test.describe('Compliance Checking', () => {
 
   test.beforeEach(async () => {
     projectId = await createProject('E2E Compliance Test');
+    // Ensure an API key is set so the FirstRunWizard does not block navigation
+    await updateSettings({ anthropicApiKey: 'test-key-for-e2e' });
   });
 
   test.afterEach(async () => {
