@@ -171,9 +171,14 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
   const runIdRef = useRef<string | null>(null);
   const pendingRunRef = useRef<(() => Promise<void>) | null>(null);
 
-  // Compute displayStages — same logic as parent, used by handleResume
+  // Compute displayStages — used by sidebar, resume, and re-run.
+  // Prefer the `stages` state when it has real (non-placeholder) data, because
+  // useViewInit populates it with full outputText for COMPLETE/ERROR runs, making
+  // stage cards clickable. Fall back to latestRun.stages (no outputText) or
+  // placeholders only while stages haven't been populated yet.
+  const stagesAreReal = stages.length > 0 && stages[0].feasibilityRunId !== '';
   const displayStages =
-    viewMode === 'running' || viewMode === 'report'
+    viewMode === 'running' || viewMode === 'report' || stagesAreReal
       ? stages
       : latestRun?.stages?.length
         ? latestRun.stages
