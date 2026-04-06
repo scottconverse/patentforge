@@ -578,8 +578,12 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
               // re-initialization for the same project ID.
               setViewMode('overview');
               return;
-            } else if (eventType === 'pipeline_error') {
-              setRunError(data.error || 'Pipeline failed');
+            } else if (eventType === 'error' || eventType === 'pipeline_error') {
+              // The feasibility service sends 'error' events for stage-level Anthropic
+              // failures (billing, auth, rate limit). 'pipeline_error' is the legacy name.
+              pipelineCompleted = true; // Prevent the generic "connection lost" fallback
+              const errorMsg = data.message || data.error || 'Pipeline failed';
+              setRunError(`Stage ${data.stage || '?'} error: ${errorMsg}`);
               setStages((prev) =>
                 prev.map((s) => (s.status === 'RUNNING' ? { ...s, status: 'ERROR' as RunStatus } : s)),
               );

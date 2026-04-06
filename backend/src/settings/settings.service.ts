@@ -169,6 +169,22 @@ export class SettingsService implements OnModuleInit {
       } else if (response.status === 403) {
         return { valid: false, error: 'API key does not have permission. Check your Anthropic account.' };
       } else {
+        // Parse the Anthropic error body for actionable messages (billing, rate limit, etc.)
+        try {
+          const body = await response.json() as { error?: { message?: string } };
+          const msg = body?.error?.message ?? '';
+          if (msg.includes('credit balance')) {
+            return { valid: false, error: 'API key is valid but your Anthropic account has no credits. Add credits at console.anthropic.com.' };
+          }
+          if (msg.includes('rate limit') || response.status === 429) {
+            return { valid: false, error: 'Rate limited by Anthropic. Wait a moment and try again.' };
+          }
+          if (msg) {
+            return { valid: false, error: `Anthropic error: ${msg}` };
+          }
+        } catch {
+          // Response body wasn't JSON — fall through to generic
+        }
         return { valid: false, error: `Unexpected error (${response.status}). Try again later.` };
       }
     } catch {

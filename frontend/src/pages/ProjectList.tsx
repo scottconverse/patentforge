@@ -100,7 +100,11 @@ export default function ProjectList() {
 
       {/* New project form */}
       {showNewForm && (
-        <form onSubmit={handleCreate} className="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg">
+        <form
+          onSubmit={handleCreate}
+          onKeyDown={(e) => { if (e.key === 'Escape') { setShowNewForm(false); setNewTitle(''); } }}
+          className="mb-6 p-4 bg-gray-900 border border-gray-700 rounded-lg"
+        >
           <label className="block text-sm font-medium text-gray-300 mb-2">Project Title</label>
           <div className="flex gap-3">
             <input
