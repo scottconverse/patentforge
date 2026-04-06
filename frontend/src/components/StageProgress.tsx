@@ -70,7 +70,7 @@ export default function StageProgress({
           <div
             key={stage.stageNumber}
             onClick={() => isClickable && onStageClick?.(stage)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            className={`flex items-start gap-3 px-3 py-2 rounded-lg transition-colors ${
               isActive ? 'bg-blue-950 border border-blue-800' : 'bg-gray-900 border border-gray-800'
             } ${isClickable ? 'cursor-pointer hover:border-blue-700 hover:bg-blue-950/40' : ''}`}
           >

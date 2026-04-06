@@ -50,7 +50,13 @@ export function useViewInit({
     const latestRunInit = getLatestRun(project);
     if (latestRunInit) {
       if (latestRunInit.status === 'COMPLETE' || latestRunInit.status === 'ERROR') {
-        setStages(latestRunInit.stages?.length ? latestRunInit.stages : makePlaceholderStages());
+        // The project GET response excludes outputText from stages (performance).
+        // Load full stage data so stage cards are clickable (isClickable requires outputText).
+        api.feasibility.get(project.id).then((fullRun) => {
+          setStages(fullRun?.stages?.length ? fullRun.stages : (latestRunInit.stages?.length ? latestRunInit.stages : makePlaceholderStages()));
+        }).catch(() => {
+          setStages(latestRunInit.stages?.length ? latestRunInit.stages : makePlaceholderStages());
+        });
         setViewMode('overview');
       } else if (latestRunInit.status === 'RUNNING') {
         // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
