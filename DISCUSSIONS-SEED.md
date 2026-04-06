@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.8.3):**
+**Current status (v0.8.4):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -32,7 +32,7 @@ Hey everyone! PatentForge is now open source.
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
-**What's new in v0.8.3:**
+**What's new in v0.8.4:**
 - **CI fix** — package-lock.json version mismatch (0.8.1 vs 0.8.2) that caused `npm ci` to fail in CI
 - **Bug fix: decrypt() silent failure** — `decrypt()` now throws `DecryptionError` instead of silently returning ciphertext when decryption fails; settings service shows a clear warning banner in the UI
 - **Bug fix: report auth** — ReportViewer iframe and HTML download now use fetch+srcdoc/blob instead of direct URLs, working with PATENTFORGE_TOKEN auth; AuthGuard also accepts `?token=` query param fallback

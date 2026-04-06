@@ -1,4 +1,4 @@
-# PatentForge User Manual — v0.8.3
+# PatentForge User Manual — v0.8.4
 
 A step-by-step guide for using PatentForge to research and prepare for a patent consultation.
 
@@ -31,15 +31,15 @@ The simplest way to install PatentForge is to download the installer for your pl
 
 | Platform | Download | Size |
 |----------|----------|------|
-| **Windows** | [PatentForge-0.8.3-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.3-Setup.exe) | ~100 MB |
-| **Mac (Beta)** | [PatentForge-0.8.3.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.3.dmg) | ~100 MB |
-| **Linux (Beta)** | [PatentForge-0.8.3.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.3.AppImage) | ~120 MB |
+| **Windows** | [PatentForge-0.8.4-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.4-Setup.exe) | ~100 MB |
+| **Mac (Beta)** | [PatentForge-0.8.4.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.4.dmg) | ~100 MB |
+| **Linux (Beta)** | [PatentForge-0.8.4.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.8.4.AppImage) | ~120 MB |
 
 **Windows:** Double-click the `.exe` installer. Follow the prompts — accept the license, choose an install location (the default is fine), and click Install. When finished, PatentForge launches automatically.
 
 **Mac (Beta):** Open the `.dmg` file. Drag the PatentForge icon into your Applications folder. Double-click PatentForge in Applications to launch. You may need to right-click and choose "Open" the first time, since the app is not notarized.
 
-**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-0.8.3.AppImage`) and run it. On some systems you may need to install FUSE first.
+**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-0.8.4.AppImage`) and run it. On some systems you may need to install FUSE first.
 
 Mac and Linux installers are beta — please report issues on [GitHub Issues](https://github.com/scottconverse/patentforge/issues).
 

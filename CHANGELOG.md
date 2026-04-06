@@ -5,6 +5,12 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-04-06
+
+### Fixed
+- **Windows installer: cross-platform build script** — `services/feasibility` build script replaced Unix `cp` command with cross-platform Node.js inline file copy; fresh installs on Windows no longer fail at the prompt-copying step
+- **Windows installer: PATHEXT enforcement** — `PatentForge.ps1` now explicitly sets `PATHEXT` before invoking npm, preventing `.cmd` extension resolution failures in stripped Windows shell environments
+
 ## [0.8.3] - 2026-04-05
 
 ### Added
