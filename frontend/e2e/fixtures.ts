@@ -57,6 +57,8 @@ export const test = base.extend<{
         if (text.includes('was not wrapped in act(')) return; // React testing noise
         if (text.includes('Download the React DevTools')) return;
         if (text.includes('esbuild') && text.includes('deprecated')) return; // Vite deprecation
+        if (text.includes('Blocked script execution')) return; // Chromium sandbox iframe warning
+        if (text.includes('about:srcdoc')) return; // iframe srcdoc sandbox noise
         errors.push({ type, text, url: page.url() });
       }
     });

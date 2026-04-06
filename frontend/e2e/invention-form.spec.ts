@@ -18,9 +18,10 @@ test.describe('Invention Form', () => {
     await page.goto(`/projects/${projectId}`);
     await page.waitForLoadState('networkidle');
 
-    // New project shows "No Invention Details Yet" — click to open the form
+    // New project shows "No Invention Details Yet" — click to open the form.
+    // Wait longer in CI where React hydration + settings fetch can be slow.
     const fillButton = page.locator('button:has-text("Fill in Invention Details")');
-    await fillButton.waitFor({ state: 'visible', timeout: 10_000 });
+    await fillButton.waitFor({ state: 'visible', timeout: 30_000 });
     await fillButton.click();
 
     await expect(page.locator('label:has-text("Title")')).toBeVisible({ timeout: 10_000 });
