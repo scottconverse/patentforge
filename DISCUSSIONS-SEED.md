@@ -33,6 +33,10 @@ Hey everyone! PatentForge is now open source.
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
 **What's new in v0.8.4:**
+- **Bug fix: Windows installer — cross-platform build script** — `services/feasibility` build script now uses a Node.js inline copy instead of Unix `cp`; fresh installs on Windows no longer fail at the prompt-copying step
+- **Bug fix: Windows installer — PATHEXT enforcement** — `PatentForge.ps1` now explicitly sets `PATHEXT` before invoking npm, preventing `.cmd` extension resolution failures in stripped Windows shell environments
+
+**What's new in v0.8.3:**
 - **CI fix** — package-lock.json version mismatch (0.8.1 vs 0.8.2) that caused `npm ci` to fail in CI
 - **Bug fix: decrypt() silent failure** — `decrypt()` now throws `DecryptionError` instead of silently returning ciphertext when decryption fails; settings service shows a clear warning banner in the UI
 - **Bug fix: report auth** — ReportViewer iframe and HTML download now use fetch+srcdoc/blob instead of direct URLs, working with PATENTFORGE_TOKEN auth; AuthGuard also accepts `?token=` query param fallback
