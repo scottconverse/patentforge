@@ -24,7 +24,7 @@ All 20 are **transitive dependencies of the NestJS framework** and its bundled t
 | `file-type` detection | `@nestjs/common` | Read-only detection; no untrusted file upload path exists in PatentForge |
 | `tmp` / `external-editor` | `inquirer` (CLI prompt lib) | Dev-tooling only; not shipped |
 
-**Why not fixed:** Resolving these requires either (a) upgrading NestJS to v11, which is a breaking API migration not yet scheduled, or (b) waiting for the NestJS maintainers to release patched v10.x builds. We track this in [GitHub Issue #TBD — add link when filed].
+**Why not fixed:** Resolving these requires either (a) upgrading NestJS to v11, which is a breaking API migration not yet scheduled, or (b) waiting for the NestJS maintainers to release patched v10.x builds. We track this in [GitHub Issue #18](https://github.com/scottconverse/patentforge/issues/18).
 
 **Risk to users:** PatentForge runs as a **local application** with no public internet exposure. The backend binds to `localhost` only. Attack vectors that depend on a publicly reachable server (SSRF, remote ReDoS at scale, build-time injection) do not apply to this deployment model.
 
