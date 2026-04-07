@@ -73,4 +73,30 @@ describe('useElapsedTimer', () => {
 
     expect(result.current.elapsed).toBe(0);
   });
+
+  it('counts correctly after a cancel-and-restart cycle', () => {
+    const { result, rerender } = renderHook(
+      ({ running }) => useElapsedTimer(running),
+      { initialProps: { running: true } },
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(result.current.elapsed).toBe(3);
+
+    // Simulate cancel
+    rerender({ running: false });
+    expect(result.current.elapsed).toBe(3);
+
+    // Simulate restart
+    rerender({ running: true });
+    expect(result.current.elapsed).toBe(0);
+
+    // Advance 2 seconds — should tick exactly twice, not be stuck at 0
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(result.current.elapsed).toBe(2);
+  });
 });

@@ -10,23 +10,23 @@ export function useElapsedTimer(running: boolean): { elapsed: number; formatted:
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (running) {
-      setElapsed(0);
-      intervalRef.current = setInterval(() => {
-        setElapsed((prev) => prev + 1);
-      }, 1000);
-    } else {
+    if (!running) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      return;
     }
 
+    setElapsed(0);
+    const id = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+    }, 1000);
+    intervalRef.current = id;
+
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      clearInterval(id);
+      intervalRef.current = null;
     };
   }, [running]);
 
