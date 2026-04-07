@@ -46,8 +46,8 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const [viewMode, setViewMode] = useState<'list' | 'tree'>('list');
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
-  // Pagination: show claims in batches to avoid freezing the browser
-  const [visibleCount, setVisibleCount] = useState(5);
+  // Claims start collapsed — expand on click to avoid rendering all markdown at once
+  const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadDraft();
@@ -286,19 +286,28 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         />
       )}
 
-      {/* Claims list — paginated to avoid freezing browser with large claim sets */}
+      {/* Claims list — collapsed by default to avoid freezing browser with large claim sets */}
       {viewMode === 'list' && (
         <>
           {independentClaims.length > 0 && (
             <p className="text-xs text-gray-500">
-              Showing {Math.min(visibleCount, independentClaims.length)} of {independentClaims.length} independent claims
-              ({dependentClaims.length} dependent claims total)
+              {independentClaims.length} independent claims, {dependentClaims.length} dependent claims.
+              Click a claim to expand.
             </p>
           )}
-          {independentClaims.slice(0, visibleCount).map((indep) => (
+          {independentClaims.map((indep) => (
             <div key={indep.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-              {/* Independent claim header */}
-              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-3">
+              {/* Independent claim header — click to expand/collapse */}
+              <button
+                onClick={() => setExpandedClaims((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(indep.claimNumber)) next.delete(indep.claimNumber);
+                  else next.add(indep.claimNumber);
+                  return next;
+                })}
+                className="w-full px-4 py-3 border-b border-gray-800 flex items-center gap-3 hover:bg-gray-800/50 transition-colors"
+              >
+                <span className={`transform transition-transform text-gray-500 text-xs ${expandedClaims.has(indep.claimNumber) ? 'rotate-90' : ''}`}>&#9654;</span>
                 <span className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded font-semibold">
                   Claim {indep.claimNumber}
                 </span>
@@ -310,10 +319,13 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                     {indep.statutoryType}
                   </span>
                 )}
-              </div>
+                <span className="ml-auto text-xs text-gray-600">
+                  {dependentClaims.filter((d) => d.parentClaimNumber === indep.claimNumber).length} dependent
+                </span>
+              </button>
 
-              {/* Claim text */}
-              <div className="p-4">
+              {/* Claim body + dependent claims — only rendered when expanded */}
+              {expandedClaims.has(indep.claimNumber) && <><div className="p-4">
                 {editingClaim === indep.id ? (
                   <div>
                     <textarea
@@ -406,7 +418,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                 )}
               </div>
 
-              {/* Dependent claims */}
+              {/* Dependent claims — only when expanded */}
               {dependentClaims
                 .filter((d) => d.parentClaimNumber === indep.claimNumber)
                 .map((dep) => (
@@ -507,16 +519,10 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                     )}
                   </div>
                 ))}
+              {/* Close expanded conditional */}
+              </>}
             </div>
           ))}
-          {visibleCount < independentClaims.length && (
-            <button
-              onClick={() => setVisibleCount((prev) => prev + 5)}
-              className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-700"
-            >
-              Show More Claims ({independentClaims.length - visibleCount} remaining)
-            </button>
-          )}
         </>
       )}
 

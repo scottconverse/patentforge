@@ -58,6 +58,9 @@ describe('ClaimsTab', () => {
     const { api } = await import('../api');
     (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
     render(<ClaimsTab projectId="proj-1" hasFeasibility={true} priorArtTitles={[]} />);
+    // Claims start collapsed — expand claim 1
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A neural network method/)).toBeTruthy();
     });
@@ -74,6 +77,9 @@ describe('ClaimsTab', () => {
         priorArtTitles={[{ patentNumber: 'US12345', title: 'Neural Network Processing System' }]}
       />,
     );
+    // Claims start collapsed — expand claim 1
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A neural network method/)).toBeTruthy();
     });
@@ -83,8 +89,6 @@ describe('ClaimsTab', () => {
 
   it('findOverlaps ignores stop words — method in claim and title produces no warning', async () => {
     const { api } = await import('../api');
-    // Claim text has "method" and "comprising" — both stop words
-    // Prior art title has "Method" and "Using" — both stop words; "the" is < 4 chars
     const draftStopOnly = {
       ...mockDraft,
       claims: [
@@ -108,10 +112,11 @@ describe('ClaimsTab', () => {
         priorArtTitles={[{ patentNumber: 'US88888', title: 'Method Using the Apparatus' }]}
       />,
     );
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A method comprising using a device/)).toBeTruthy();
     });
-    // "method" and "using" are stop words, "apparatus" is a stop word, "the" is < 4 chars
     expect(screen.queryByText('Potential prior art overlap')).toBeNull();
   });
 
@@ -140,17 +145,20 @@ describe('ClaimsTab', () => {
         priorArtTitles={[{ patentNumber: 'US99999', title: 'Method System Device Apparatus' }]}
       />,
     );
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A method for processing data/)).toBeTruthy();
     });
-    // All title words are stop words: method, system, device, apparatus
     expect(screen.queryByText('Potential prior art overlap')).toBeNull();
   });
 
-  it('Regenerate button visible on each claim', async () => {
+  it('Regenerate button visible on each claim when expanded', async () => {
     const { api } = await import('../api');
     (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
     render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A neural network method/)).toBeTruthy();
     });
@@ -164,16 +172,16 @@ describe('ClaimsTab', () => {
     (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
     (api.claimDraft.regenerateClaim as any).mockResolvedValue({});
     render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A neural network method/)).toBeTruthy();
     });
-    // Click the first Regenerate button (claim 1)
     const regenerateButtons = screen.getAllByText('Regenerate');
     fireEvent.click(regenerateButtons[0]);
     await waitFor(() => {
       expect(api.claimDraft.regenerateClaim).toHaveBeenCalledWith('proj-1', 1);
     });
-    // After regenerate completes, loadDraft is called again (getLatest called twice: initial + reload)
     expect((api.claimDraft.getLatest as any).mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -182,6 +190,8 @@ describe('ClaimsTab', () => {
     (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
     (api.claimDraft.regenerateClaim as any).mockRejectedValue(new Error('Server error'));
     render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
     await waitFor(() => {
       expect(screen.getByText(/A neural network method/)).toBeTruthy();
     });
