@@ -1,0 +1,38 @@
+import { useState, useEffect, useRef } from 'react';
+
+/**
+ * Tracks elapsed seconds while `running` is true.
+ * Resets to 0 each time `running` transitions from false → true.
+ * Returns elapsed seconds and a formatted string (e.g., "2m 05s").
+ */
+export function useElapsedTimer(running: boolean): { elapsed: number; formatted: string } {
+  const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (running) {
+      setElapsed(0);
+      intervalRef.current = setInterval(() => {
+        setElapsed((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [running]);
+
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const formatted = mins > 0 ? `${mins}m ${secs.toString().padStart(2, '0')}s` : `${secs}s`;
+
+  return { elapsed, formatted };
+}

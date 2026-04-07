@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { slugify } from '../utils/slugify';
+import { useElapsedTimer } from '../hooks/useElapsedTimer';
 import Alert from './Alert';
 
 interface ApplicationTabProps {
@@ -45,6 +46,9 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
   const [mdLoading, setMdLoading] = useState(false);
+  const { formatted: elapsedFormatted } = useElapsedTimer(
+    generating || application?.status === 'RUNNING',
+  );
 
   useEffect(() => {
     loadApplication();
@@ -186,7 +190,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
           />
           <span className="text-gray-300">Generating patent application...</span>
         </div>
-        <p className="text-xs text-gray-500 mt-3">This may take several minutes. Building all application sections.</p>
+        <p className="text-xs text-gray-500 mt-3">
+          Application generation typically takes 2–4 minutes. Your patent application document is being assembled.
+        </p>
+        <p className="text-xs text-gray-600 mt-2 font-mono">{elapsedFormatted} elapsed</p>
       </div>
     );
   }
