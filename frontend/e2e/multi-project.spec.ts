@@ -110,6 +110,8 @@ test.describe('Multiple Projects — CRUD and Cascade', () => {
 
     await page.goto('/');
     await page.waitForSelector('h1:has-text("Projects")', { timeout: 5_000 });
+    // Wait for at least one card to appear before counting (list data may load after header)
+    await page.waitForSelector('h3:has-text("Duplicate Name Test")', { timeout: 5_000 });
     await screenshot(page, 'multi-project-duplicate-names');
 
     // Verify both appear (as separate entries, identified by their unique IDs in data attributes or cards)
