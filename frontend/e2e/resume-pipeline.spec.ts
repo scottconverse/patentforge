@@ -66,8 +66,10 @@ function buildMockSSECancelled(): string {
     name: 'Technical Intake & Restatement',
   })}\n\n`;
   body += `event: token\ndata: ${JSON.stringify({ type: 'token', text: 'Starting analysis...' })}\n\n`;
-  // Note: stream ends without pipeline_complete — frontend treats this as interrupted.
-  // The cancel button action (not the stream) sets status to CANCELLED.
+  // Emit explicit cancellation event so the frontend transitions to true CANCELLED state.
+  // The frontend handles eventType === 'cancelled' by marking RUNNING/PENDING stages as
+  // CANCELLED and setting runError to 'Analysis was cancelled.' (useFeasibilityRun.ts).
+  body += `event: cancelled\ndata: ${JSON.stringify({ type: 'cancelled' })}\n\n`;
 
   return body;
 }
@@ -230,44 +232,29 @@ test.describe('Resume Pipeline', () => {
     // ProjectSidebar shows Resume when: has invention, not running, and displayStages has
     // at least one COMPLETE stage AND at least one ERROR or PENDING stage.
     const resumeButton = page.locator('button:has-text("Resume")');
-    const resumeVisible = await resumeButton.isVisible({ timeout: 5_000 }).catch(() => false);
+    await expect(resumeButton).toBeVisible({ timeout: 5_000 });
+    await screenshot(page, 'resume-button-visible');
 
-    if (resumeVisible) {
-      // Resume button is present — verify it works
-      await expect(resumeButton).toBeVisible();
-      await screenshot(page, 'resume-button-visible');
+    // Set up fresh mocks for the resumed run (full success)
+    await setupMocks(page, buildMockSSEResponse());
 
-      // Set up fresh mocks for the resumed run (full success)
-      await setupMocks(page, buildMockSSEResponse());
+    // Click Resume
+    await resumeButton.click();
 
-      // Click Resume
-      await resumeButton.click();
+    // Cost modal should appear for the new run
+    await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
+    await screenshot(page, 'resume-cost-modal');
 
-      // Cost modal should appear for the new run
-      await expect(page.locator('text=Confirm Analysis Run')).toBeVisible({ timeout: 10_000 });
-      await screenshot(page, 'resume-cost-modal');
+    // Start the resumed analysis
+    await page.click('button:has-text("Start Analysis")');
 
-      // Start the resumed analysis
-      await page.click('button:has-text("Start Analysis")');
+    // Verify new streaming session starts — stage names should appear
+    await expect(page.locator('text=Technical Intake & Restatement')).toBeVisible({ timeout: 15_000 });
+    await screenshot(page, 'resume-streaming-started');
 
-      // Verify new streaming session starts — stage names should appear
-      await expect(page.locator('text=Technical Intake & Restatement')).toBeVisible({ timeout: 15_000 });
-      await screenshot(page, 'resume-streaming-started');
-
-      // Wait for pipeline to complete
-      await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
-      await screenshot(page, 'resume-pipeline-complete');
-    } else {
-      // Resume button is NOT visible after error state.
-      // This can happen if the backend CANCELLED the run status on error instead of ERROR.
-      // Document: expected fallback — Run Feasibility button should still be present.
-      // Note: Resume only appears when displayStages has ERROR/PENDING stages alongside
-      // COMPLETE stages. If the backend marks the entire run as ERROR and stages reset,
-      // Resume may not appear. The "Run from Start" button should be available instead.
-      const runButton = page.locator('button:has-text("Run Feasibility"), button:has-text("Run from Start")');
-      await expect(runButton.first()).toBeVisible({ timeout: 5_000 });
-      await screenshot(page, 'resume-fallback-run-button-visible');
-    }
+    // Wait for pipeline to complete
+    await expect(page.locator('text=Feasibility analysis complete')).toBeVisible({ timeout: 30_000 });
+    await screenshot(page, 'resume-pipeline-complete');
   });
 
   test('Cancel run — Resume button is NOT shown after cancellation (Run Feasibility shown instead)', async ({
