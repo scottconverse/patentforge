@@ -46,6 +46,8 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const [viewMode, setViewMode] = useState<'list' | 'tree'>('list');
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
+  // Pagination: show claims in batches to avoid freezing the browser
+  const [visibleCount, setVisibleCount] = useState(5);
 
   useEffect(() => {
     loadDraft();
@@ -62,7 +64,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         if (d.status === 'COMPLETE' || d.status === 'ERROR') {
           setDraft(d);
           setGenerating(false);
-          setError(d.status === 'ERROR' ? 'Claim generation failed. Try again.' : null);
+          setError(d.status === 'ERROR' ? `Claim generation failed${(d as any).errorMessage ? ': ' + (d as any).errorMessage : '. Try again.'}` : null);
         }
       } catch {
         /* poll error — ignore to avoid spamming error state */
@@ -192,6 +194,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
     return (
       <div className="text-center py-12">
         <p className="text-red-400 mb-3">Claim generation failed.</p>
+        {(draft as any).errorMessage && (
+          <p className="text-red-400/70 text-xs mb-4 max-w-md mx-auto">{(draft as any).errorMessage}</p>
+        )}
         <button
           onClick={handleGenerate}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
@@ -281,10 +286,16 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         />
       )}
 
-      {/* Claims list */}
+      {/* Claims list — paginated to avoid freezing browser with large claim sets */}
       {viewMode === 'list' && (
         <>
-          {independentClaims.map((indep) => (
+          {independentClaims.length > 0 && (
+            <p className="text-xs text-gray-500">
+              Showing {Math.min(visibleCount, independentClaims.length)} of {independentClaims.length} independent claims
+              ({dependentClaims.length} dependent claims total)
+            </p>
+          )}
+          {independentClaims.slice(0, visibleCount).map((indep) => (
             <div key={indep.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
               {/* Independent claim header */}
               <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-3">
@@ -498,6 +509,14 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                 ))}
             </div>
           ))}
+          {visibleCount < independentClaims.length && (
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 5)}
+              className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-700"
+            >
+              Show More Claims ({independentClaims.length - visibleCount} remaining)
+            </button>
+          )}
         </>
       )}
 

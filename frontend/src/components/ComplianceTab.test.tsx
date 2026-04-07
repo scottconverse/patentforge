@@ -90,6 +90,8 @@ describe('ComplianceTab', () => {
     await waitFor(() => {
       expect(screen.getByText('All checks passed')).toBeTruthy();
     });
+    // Sections start collapsed — expand to see result details
+    fireEvent.click(screen.getByText('112(a) Written Description'));
     expect(screen.getByText('Supported by specification')).toBeTruthy();
     expect(screen.getByText('MPEP 2163')).toBeTruthy();
     expect(screen.getByText('Re-check Claims')).toBeTruthy();
@@ -126,6 +128,8 @@ describe('ComplianceTab', () => {
       expect(screen.getByText(/RESEARCH OUTPUT — NOT LEGAL ADVICE/i)).toBeTruthy();
     });
     expect(screen.getByText(/1 issue found/i)).toBeTruthy();
+    // Sections start collapsed — expand the definiteness section to see results
+    fireEvent.click(screen.getByText('112(b) Definiteness'));
     expect(screen.getByText('Missing antecedent basis')).toBeTruthy();
     expect(screen.getByText('MPEP 2173.05(e)')).toBeTruthy();
     expect(screen.getByText('Add antecedent basis for "the device"')).toBeTruthy();

@@ -40,7 +40,8 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   const [error, setError] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(RULE_ORDER));
+  // Start collapsed — rendering all 100+ results at once freezes the browser
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
 
@@ -59,7 +60,7 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
         if (c.status === 'COMPLETE' || c.status === 'ERROR') {
           setCheck(c);
           setRunning(false);
-          setError(c.status === 'ERROR' ? 'Compliance check failed. Try again.' : null);
+          setError(c.status === 'ERROR' ? `Compliance check failed${(c as any).errorMessage ? ': ' + (c as any).errorMessage : '. Try again.'}` : null);
         }
       } catch {
         /* poll error — ignore to avoid spamming error state */
