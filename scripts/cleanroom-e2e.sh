@@ -254,7 +254,7 @@ log "  Frontend dev server starting (PID ${PIDS[-1]})..."
 # Wait for backend to be ready
 log "  Waiting for backend (port 3000)..."
 for i in $(seq 1 30); do
-  if curl -s http://localhost:3000/projects > /dev/null 2>&1; then
+  if curl -s http://localhost:3000/api/projects > /dev/null 2>&1; then
     pass "Backend is up on port 3000"
     break
   fi
@@ -294,7 +294,7 @@ done
 log "  Running API smoke tests..."
 
 # Test: GET /projects (empty list)
-RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/projects)
+RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/projects)
 if [ "$RESP" = "200" ]; then
   pass "GET /projects → 200"
 else
@@ -302,7 +302,7 @@ else
 fi
 
 # Test: POST /projects
-PROJECT_JSON=$(curl -s -X POST http://localhost:3000/projects \
+PROJECT_JSON=$(curl -s -X POST http://localhost:3000/api/projects \
   -H "Content-Type: application/json" \
   -d '{"title":"E2E Test Project"}')
 PROJECT_ID=$(echo "$PROJECT_JSON" | sed -n 's/.*"id"\s*:\s*"\([^"]*\)".*/\1/p' | head -1)
@@ -316,7 +316,7 @@ fi
 
 if [ -n "$PROJECT_ID" ]; then
   # Test: GET /projects/:id
-  RESP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/projects/$PROJECT_ID")
+  RESP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/api/projects/$PROJECT_ID")
   if [ "$RESP" = "200" ]; then
     pass "GET /projects/:id → 200"
   else
@@ -325,7 +325,7 @@ if [ -n "$PROJECT_ID" ]; then
 
   # Test: PUT /projects/:id/invention
   RESP=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
-    "http://localhost:3000/projects/$PROJECT_ID/invention" \
+    "http://localhost:3000/api/projects/$PROJECT_ID/invention" \
     -H "Content-Type: application/json" \
     -d '{"title":"E2E Invention","description":"Testing the full pipeline"}')
   if [ "$RESP" = "200" ] || [ "$RESP" = "201" ]; then
@@ -335,7 +335,7 @@ if [ -n "$PROJECT_ID" ]; then
   fi
 
   # Test: GET /settings
-  RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/settings)
+  RESP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/settings)
   if [ "$RESP" = "200" ]; then
     pass "GET /settings → 200"
   else
@@ -343,7 +343,7 @@ if [ -n "$PROJECT_ID" ]; then
   fi
 
   # Test: GET /projects/:id/prior-art
-  RESP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/projects/$PROJECT_ID/prior-art")
+  RESP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/api/projects/$PROJECT_ID/prior-art")
   if [ "$RESP" = "200" ]; then
     pass "GET /prior-art → 200"
   else
@@ -351,7 +351,7 @@ if [ -n "$PROJECT_ID" ]; then
   fi
 
   # Test: DELETE /projects/:id
-  RESP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:3000/projects/$PROJECT_ID")
+  RESP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:3000/api/projects/$PROJECT_ID")
   if [ "$RESP" = "200" ] || [ "$RESP" = "204" ]; then
     pass "DELETE /projects/:id → $RESP"
   else
@@ -359,7 +359,7 @@ if [ -n "$PROJECT_ID" ]; then
   fi
 
   # Verify deletion
-  RESP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/projects/$PROJECT_ID")
+  RESP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/api/projects/$PROJECT_ID")
   if [ "$RESP" = "404" ] || [ "$RESP" = "500" ]; then
     pass "Deleted project returns 404"
   else
