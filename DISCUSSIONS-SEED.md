@@ -42,7 +42,7 @@ Hey everyone! PatentForge is now open source.
 - **Fix: project status** — breadcrumb badge updates immediately after pipeline completes, no page refresh needed
 - **UX: elapsed timer** — Claims and Compliance generation now show elapsed time instead of a static spinner
 - **UX: total project cost** — sidebar now shows combined cost across all services (feasibility + claims + compliance + application)
-- **UX: settings save toast** — floating notification confirms save instead of an easily-missed inline banner
+- **UX: settings save confirmation** — inline banner appears after save and scrolls into view so you can always see it
 - **UX: focus rings** — keyboard navigation shows prominent blue focus rings for accessibility
 - Plus 4 additional medium-severity fixes (see CHANGELOG for full details)
 
