@@ -14,8 +14,15 @@ import type { Page, Route } from '@playwright/test';
 // ---------------------------------------------------------------------------
 
 /**
- * Build a slow SSE response that sends stages and tokens gradually,
- * allowing time for cancellation to be triggered mid-stream.
+ * Build a mock SSE response that simulates an interrupted stream.
+ *
+ * NOTE: Playwright's route.fulfill delivers the entire response body synchronously.
+ * This means the SSE stream ends immediately from the browser's perspective — there
+ * is no actual mid-stream pause. This mock simulates an *interrupted* stream
+ * (stage 1 complete, stage 2 tokens but no stage_complete, no pipeline_complete)
+ * which causes the frontend to reach an interrupted/cancellable state. The cancel
+ * button click tests the UI's response to a stream interruption + cancel action,
+ * not a true mid-pipeline cancel. See feasibility-pipeline.spec.ts for similar note.
  */
 function buildSlowMockSSEResponse(): string {
   let body = '';
@@ -192,6 +199,8 @@ test.describe('Cancel Mid-Pipeline', () => {
     // Find and click the Cancel button
     const cancelButton = page.locator('button:has-text("Cancel")');
     await expect(cancelButton).toBeVisible({ timeout: 5_000 });
+    // Note: stream already ended (mock delivers synchronously); clicking cancel
+    // exercises the UI cancel path on an interrupted run state.
     await cancelButton.click();
 
     // After cancellation, verify run status transitions to CANCELLED
@@ -215,7 +224,7 @@ test.describe('Cancel Mid-Pipeline', () => {
     await screenshot(page, 'cancel-new-run-modal');
 
     // Clean up by closing the modal (click Cancel or close button, not Start)
-    const closeButton = page.locator('button:has-text("Cancel")').first();
+    const closeButton = page.locator('[role="dialog"] button:has-text("Cancel"), [role="dialog"] button:has-text("Close"), [role="dialog"] button:has-text("Dismiss")').first();
     await closeButton.click();
     await expect(page.locator('text=Confirm Analysis Run')).not.toBeVisible({ timeout: 5_000 });
   });
@@ -263,6 +272,11 @@ test.describe('Cancel Mid-Pipeline', () => {
     // Cancel the run
     const cancelButton = page.locator('button:has-text("Cancel")');
     await cancelButton.click();
+
+    // Wait for cancellation to complete before checking button state
+    await expect(page.locator('text=analysis was cancelled')).toBeVisible({ timeout: 15_000 }).catch(() => {
+      // cancellation message may use different text — check for CANCELLED status indicator
+    });
 
     // After cancellation, the Cancel button should disappear
     await expect(page.locator('button:has-text("Cancel")')).not.toBeVisible({ timeout: 10_000 });
