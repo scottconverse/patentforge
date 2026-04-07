@@ -84,9 +84,11 @@ test.describe('Draft Persistence', () => {
     // Click Save Draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save to complete — the form navigates to overview on success,
-    // so wait for networkidle to confirm the save request has resolved
-    await page.waitForLoadState('networkidle');
+    // Wait for save to complete — onSaved navigates to overview (unmounts the form),
+    // so wait for the invention form input to disappear as the success signal
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'hidden', timeout: 10_000 });
 
     await screenshot(page, 'draft-persistence-saved-confirmation');
 
@@ -189,9 +191,11 @@ test.describe('Draft Persistence', () => {
     // Click Save Draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save to complete — the form navigates to overview on success,
-    // so wait for networkidle to confirm the save request has resolved
-    await page.waitForLoadState('networkidle');
+    // Wait for save to complete — onSaved navigates to overview (unmounts the form),
+    // so wait for the invention form input to disappear as the success signal
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'hidden', timeout: 10_000 });
 
     await screenshot(page, 'draft-persistence-11fields-saved-confirmation');
 
@@ -318,9 +322,11 @@ test.describe('Draft Persistence', () => {
     // Save the draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save to complete — the form navigates to overview on success,
-    // so wait for networkidle to confirm the save request has resolved
-    await page.waitForLoadState('networkidle');
+    // Wait for save to complete — onSaved navigates to overview (unmounts the form),
+    // so wait for the invention form input to disappear as the success signal
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'hidden', timeout: 10_000 });
 
     // Verify all saved fields via API
     const invRes = await page.request.get(`${API_BASE}/projects/${projectId}/invention`);

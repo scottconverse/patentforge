@@ -197,9 +197,11 @@ test.describe('Edit After Feasibility', () => {
     // Step 4: Click Save Draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save to complete — the form navigates to overview on success,
-    // so wait for networkidle to confirm the save request has resolved
-    await page.waitForLoadState('networkidle');
+    // Wait for save to complete — onSaved navigates to overview (unmounts the form),
+    // so wait for the invention form input to disappear as the success signal
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'hidden', timeout: 10_000 });
 
     await screenshot(page, 'edit-after-feasibility-saved');
 
@@ -223,8 +225,9 @@ test.describe('Edit After Feasibility', () => {
     const latestRun = await latestRunRes.json();
     expect(latestRun.status).toBe('COMPLETE');
 
-    // View Report button should still appear (feasibility results intact)
-    const viewReport = page.locator('button:has-text("View Report")');
+    // View Report button should still appear (feasibility results intact).
+    // There may be two — one in the sidebar and one in the main report area.
+    const viewReport = page.locator('button:has-text("View Report")').first();
     await expect(viewReport).toBeVisible({ timeout: 5_000 });
 
     // Step 8: Assert no unexpected error banners
@@ -279,9 +282,11 @@ test.describe('Edit After Feasibility', () => {
     await page.locator('input[placeholder="Name your invention"]').fill('Updated Invention Title — E2E');
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save to complete — the form navigates to overview on success,
-    // so wait for networkidle to confirm the save request has resolved
-    await page.waitForLoadState('networkidle');
+    // Wait for save to complete — onSaved navigates to overview (unmounts the form),
+    // so wait for the invention form input to disappear as the success signal
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'hidden', timeout: 10_000 });
 
     // Verify title update via API
     const invRes = await page.request.get(`${API_BASE}/projects/${projectId}/invention`);
