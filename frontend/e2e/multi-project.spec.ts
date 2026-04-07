@@ -74,7 +74,7 @@ test.describe('Multiple Projects — CRUD and Cascade', () => {
     const alphaOpenBtn = alphaCard.locator('..').locator('..').locator('..').locator('button:has-text("Open")');
     await alphaOpenBtn.first().click();
     await page.waitForURL(new RegExp(`/projects/${idAlpha}`), { timeout: 5_000 });
-    await page.waitForSelector('text=Invention', { timeout: 5_000 });
+    await page.waitForSelector('text=Invention Intake', { timeout: 5_000 });
     await screenshot(page, 'multi-project-alpha-detail');
 
     // Verify no error banners (red backgrounds) on the page
@@ -93,7 +93,7 @@ test.describe('Multiple Projects — CRUD and Cascade', () => {
       .locator('button:has-text("Open")');
     await gammaOpenBtn.first().click();
     await page.waitForURL(new RegExp(`/projects/${idGamma}`), { timeout: 5_000 });
-    await page.waitForSelector('text=Invention', { timeout: 5_000 });
+    await page.waitForSelector('text=Invention Intake', { timeout: 5_000 });
     await screenshot(page, 'multi-project-gamma-detail');
 
     // Verify no error banners
@@ -150,6 +150,6 @@ test.describe('Multiple Projects — CRUD and Cascade', () => {
       .locator('button:has-text("Open")');
     await twoOpenBtn.first().click();
     await page.waitForURL(new RegExp(`/projects/${id2}`), { timeout: 5_000 });
-    await expect(page.locator('text=Invention')).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('text=Invention Intake')).toBeVisible({ timeout: 5_000 });
   });
 });
