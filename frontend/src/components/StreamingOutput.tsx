@@ -37,9 +37,9 @@ export default function StreamingOutput({ text, stageName, isComplete }: Streami
       </div>
       <div className="p-4 max-h-[500px] overflow-y-auto overflow-x-hidden">
         {isComplete ? (
-          <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderedHtml }} />
+          <div className="markdown-content break-words" dangerouslySetInnerHTML={{ __html: renderedHtml }} />
         ) : (
-          <pre className="text-gray-300 text-sm whitespace-pre-wrap font-mono leading-relaxed">
+          <pre className="text-gray-300 text-sm whitespace-pre-wrap break-words font-mono leading-relaxed">
             {text}
             <span className="inline-block w-2 h-4 bg-blue-400 animate-pulse ml-0.5 align-middle" />
           </pre>
