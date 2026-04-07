@@ -5,6 +5,23 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-04-07
+
+### Fixed
+- **Application sections empty** — Application tab's 9-section structured navigation now works end-to-end. The `astream` loop in the application-generator service was replacing accumulated state with each node's partial output instead of merging it, causing all generated section content (background, summary, detailed description, abstract, figure descriptions) to be lost. Fixed by using `state_dict.update(node_state)` to accumulate fields across nodes.
+- **Application generation progress** — Added elapsed timer and guidance copy ("Application generation typically takes 2–4 minutes. You can navigate away — it will continue in the background.") to the Application tab spinner, consistent with Claims and Compliance tabs. Extracted shared `useElapsedTimer` hook to avoid duplication.
+- **Streaming horizontal scrollbar** — Long patent URLs in prior art research output (Stage 2) caused horizontal overflow and a scrollbar in the streaming panel. Fixed by adding `overflow-x-hidden` and `break-words` to the streaming content container.
+
+### Added
+- **E2E: multiple projects** — Playwright test covering create 3 projects, verify list, delete one, verify cascade, navigate into remaining projects.
+- **E2E: cancel mid-pipeline** — Playwright test for cancelling at Stage 2, verifying clean cancelled state and "Run from Start" button appears.
+- **E2E: resume from failed stage** — Playwright test verifying Resume button appears after a `stage_error` event, and does not appear after a `cancelled` event.
+- **E2E: edit invention after feasibility** — Playwright test for editing description and title on a project with a completed mocked pipeline.
+- **E2E: draft persistence** — Playwright test saving all 11 invention fields via UI, reloading, and verifying all fields restored from the backend.
+- **E2E: download/export buttons** — Playwright test skeleton for all 6 export buttons (Feasibility HTML/Word, Claims Word, Compliance Word, Application HTML/Word); skips gracefully when no completed project exists.
+- **`useElapsedTimer` hook** — Shared React hook (`frontend/src/hooks/useElapsedTimer.ts`) returning `{ elapsed, formatted }` with start/stop controlled by a boolean prop.
+- 628 automated tests (237 Jest + 153 Vitest + 183 pytest + 55 Playwright E2E)
+
 ## [0.8.5] - 2026-04-07
 
 ### Fixed

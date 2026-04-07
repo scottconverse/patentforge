@@ -6,7 +6,7 @@ If you discover a security vulnerability in PatentForge, please report it by ope
 
 ---
 
-## Known npm Vulnerabilities — Current Stance (v0.8.5)
+## Known npm Vulnerabilities — Current Stance (v0.9.0)
 
 PatentForge's `npm audit` reports vulnerabilities in both `frontend/` and `backend/`. These are documented here for transparency. None are actionable without breaking changes or waiting on upstream fixes.
 
