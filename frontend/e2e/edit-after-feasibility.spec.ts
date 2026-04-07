@@ -197,8 +197,9 @@ test.describe('Edit After Feasibility', () => {
     // Step 4: Click Save Draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save confirmation (success alert)
-    await expect(page.locator('text=Draft saved successfully')).toBeVisible({ timeout: 10_000 });
+    // Wait for save to complete — the form navigates to overview on success,
+    // so wait for networkidle to confirm the save request has resolved
+    await page.waitForLoadState('networkidle');
 
     await screenshot(page, 'edit-after-feasibility-saved');
 
@@ -277,7 +278,10 @@ test.describe('Edit After Feasibility', () => {
 
     await page.locator('input[placeholder="Name your invention"]').fill('Updated Invention Title — E2E');
     await page.click('button:has-text("Save Draft")');
-    await expect(page.locator('text=Draft saved successfully')).toBeVisible({ timeout: 10_000 });
+
+    // Wait for save to complete — the form navigates to overview on success,
+    // so wait for networkidle to confirm the save request has resolved
+    await page.waitForLoadState('networkidle');
 
     // Verify title update via API
     const invRes = await page.request.get(`${API_BASE}/projects/${projectId}/invention`);

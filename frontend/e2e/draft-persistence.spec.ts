@@ -84,8 +84,9 @@ test.describe('Draft Persistence', () => {
     // Click Save Draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save confirmation
-    await expect(page.locator('text=Draft saved successfully')).toBeVisible({ timeout: 10_000 });
+    // Wait for save to complete — the form navigates to overview on success,
+    // so wait for networkidle to confirm the save request has resolved
+    await page.waitForLoadState('networkidle');
 
     await screenshot(page, 'draft-persistence-saved-confirmation');
 
@@ -188,8 +189,9 @@ test.describe('Draft Persistence', () => {
     // Click Save Draft
     await page.click('button:has-text("Save Draft")');
 
-    // Wait for save confirmation
-    await expect(page.locator('text=Draft saved successfully')).toBeVisible({ timeout: 10_000 });
+    // Wait for save to complete — the form navigates to overview on success,
+    // so wait for networkidle to confirm the save request has resolved
+    await page.waitForLoadState('networkidle');
 
     await screenshot(page, 'draft-persistence-11fields-saved-confirmation');
 
@@ -315,7 +317,10 @@ test.describe('Draft Persistence', () => {
 
     // Save the draft
     await page.click('button:has-text("Save Draft")');
-    await expect(page.locator('text=Draft saved successfully')).toBeVisible({ timeout: 10_000 });
+
+    // Wait for save to complete — the form navigates to overview on success,
+    // so wait for networkidle to confirm the save request has resolved
+    await page.waitForLoadState('networkidle');
 
     // Verify all saved fields via API
     const invRes = await page.request.get(`${API_BASE}/projects/${projectId}/invention`);

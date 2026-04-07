@@ -196,8 +196,8 @@ test.describe('Cancel Mid-Pipeline', () => {
     await expect(page.locator('text=Prior Art Research')).toBeVisible({ timeout: 10_000 });
     await screenshot(page, 'cancel-stage-2-streaming');
 
-    // Find and click the Cancel button
-    const cancelButton = page.locator('button:has-text("Cancel")');
+    // Find and click the Cancel Analysis button
+    const cancelButton = page.locator('button:has-text("Cancel Analysis")');
     await expect(cancelButton).toBeVisible({ timeout: 5_000 });
     // Note: stream already ended (mock delivers synchronously); clicking cancel
     // exercises the UI cancel path on an interrupted run state.
@@ -242,7 +242,7 @@ test.describe('Cancel Mid-Pipeline', () => {
     await expect(page.locator('text=Prior Art Research')).toBeVisible({ timeout: 10_000 });
 
     // Cancel the run
-    const cancelButton = page.locator('button:has-text("Cancel")');
+    const cancelButton = page.locator('button:has-text("Cancel Analysis")');
     await expect(cancelButton).toBeVisible({ timeout: 5_000 });
     await cancelButton.click();
 
@@ -270,7 +270,7 @@ test.describe('Cancel Mid-Pipeline', () => {
     await expect(page.locator('text=Prior Art Research')).toBeVisible({ timeout: 10_000 });
 
     // Cancel the run
-    const cancelButton = page.locator('button:has-text("Cancel")');
+    const cancelButton = page.locator('button:has-text("Cancel Analysis")');
     await cancelButton.click();
 
     // Wait for cancellation to complete before checking button state
@@ -278,8 +278,8 @@ test.describe('Cancel Mid-Pipeline', () => {
       // cancellation message may use different text — check for CANCELLED status indicator
     });
 
-    // After cancellation, the Cancel button should disappear
-    await expect(page.locator('button:has-text("Cancel")')).not.toBeVisible({ timeout: 10_000 });
+    // After cancellation, the Cancel Analysis button should disappear
+    await expect(page.locator('button:has-text("Cancel Analysis")')).not.toBeVisible({ timeout: 10_000 });
 
     // Run button should reappear
     const runButton = page.locator('button:has-text("Run Feasibility")');
