@@ -359,6 +359,18 @@ export class ApplicationService implements OnModuleInit {
     }
 
     // Save all section fields + metadata
+    console.log('[Application] Generator response sections:', {
+      title: result.title?.length ?? 'null',
+      background: result.background?.length ?? 'null',
+      summary: result.summary?.length ?? 'null',
+      detailed_description: result.detailed_description?.length ?? 'null',
+      abstract: result.abstract?.length ?? 'null',
+      claims: result.claims?.length ?? 'null',
+      figure_descriptions: result.figure_descriptions?.length ?? 'null',
+      cross_references: result.cross_references?.length ?? 'null',
+      ids_table: result.ids_table?.length ?? 'null',
+    });
+
     await this.prisma.patentApplication.update({
       where: { id: appId },
       data: {

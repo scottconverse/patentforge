@@ -110,9 +110,10 @@ async def run_application_pipeline(
     async for step_output in application_pipeline.astream(state_dict):
         for node_name, node_state in step_output.items():
             if isinstance(node_state, dict):
-                state_dict = node_state
+                state_dict.update(node_state)
             else:
-                state_dict = node_state.model_dump() if hasattr(node_state, "model_dump") else dict(node_state)
+                node_dict = node_state.model_dump() if hasattr(node_state, "model_dump") else dict(node_state)
+                state_dict.update(node_dict)
             if on_step:
                 on_step(node_name, state_dict.get("step", ""))
             if state_dict.get("error"):
