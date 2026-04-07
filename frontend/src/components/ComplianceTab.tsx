@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import Alert from './Alert';
 
@@ -44,6 +44,9 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
+  // Elapsed time counter for long-running compliance checks
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     loadCheck();
@@ -71,6 +74,18 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
       clearInterval(interval);
     };
   }, [running, projectId]);
+
+  // Elapsed timer for progress indication during long checks
+  useEffect(() => {
+    if (running || check?.status === 'RUNNING') {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [running, check?.status]);
 
   async function loadCheck() {
     try {
@@ -151,6 +166,8 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
 
   // State 2: Running (must come before !check — running can be true while check is null)
   if (running || check?.status === 'RUNNING') {
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
@@ -160,7 +177,10 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
           />
           <span className="text-gray-300">Running compliance checks...</span>
         </div>
-        <p className="text-xs text-gray-500 mt-3">This may take 1-3 minutes. Checking claims against patent rules.</p>
+        <p className="text-xs text-gray-500 mt-3">This may take 3-7 minutes. Checking claims against patent rules.</p>
+        <p className="text-xs text-gray-600 mt-2 font-mono">
+          {mins > 0 ? `${mins}m ${secs.toString().padStart(2, '0')}s` : `${secs}s`} elapsed
+        </p>
       </div>
     );
   }

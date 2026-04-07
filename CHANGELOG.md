@@ -5,6 +5,26 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-04-07
+
+### Fixed
+- **CRITICAL: Installer auth — Python services reject backend requests** — `PatentForge.ps1` used `cmd.exe set VAR=value &&` which includes a trailing space in the env var value; all three Python services (claim-drafter, compliance-checker, application-generator) compared `"patentforge-internal "` ≠ `"patentforge-internal"` and returned 403 on every request. Claims, Compliance, and Application were completely non-functional from a fresh install. Fixed by removing the space before `&&`.
+- **Stage data lost on view transition** — after a feasibility pipeline completed or errored, navigating from the running view back to the overview caused all stage cards to lose their completion indicators (green checks, times, costs, "view" links). Root cause: `displayStages` used `latestRun.stages` (which excludes `outputText`) for overview mode because `stagesAreReal` required a `feasibilityRunId` that was never set during streaming. Fixed by tagging stages with the run ID at pipeline start.
+- **Stage cards not clickable after completion** — completed stages showed "Re-run" but no "view" link on the overview page, preventing users from reviewing individual stage output. Resolved by the same `stagesAreReal` fix above — stages now carry `outputText` through view transitions.
+- **Claims tab freezes Chrome (37 claims)** — all 37 claims rendered simultaneously with `markdownToHtml()` + `dangerouslySetInnerHTML` on mount, crashing the browser. Fixed with collapse-by-default accordion — claim headers render immediately, full text and markdown conversion only happen when a user clicks to expand a specific claim.
+- **Compliance tab freezes Chrome (154 results)** — all 4 rule sections started expanded (`new Set(RULE_ORDER)`), rendering 154 results at once. Fixed by starting all sections collapsed (`new Set()`).
+- **Raw JSON in pipeline error banner** — when the Anthropic API returned an error (rate limit, auth failure), the UI displayed the raw JSON response `{"type":"error","error":{"type":"invalid_request_error",...}}` instead of a human-readable message. Fixed by parsing the JSON to extract the `error.message` field.
+- **Project status stale after pipeline errors** — the breadcrumb badge stayed "INTAKE" after a pipeline completed or errored until the user manually refreshed the page. Fixed by calling `loadProject()` in all three error paths (pipeline_error event, connection lost, catch block).
+- **"Pipeline interrupted" on stages that never ran** — when a pipeline failed at stage 4, stages 5 and 6 (which never started) showed "Pipeline interrupted — service was restarted or browser was closed." Fixed to show "Not started — pipeline stopped before reaching this stage" for PENDING stages vs the interrupt message for stages that were actually RUNNING.
+- **No validation message for empty project title** — clicking Create with an empty title did nothing (button was `disabled` when empty, preventing form submission). Fixed by allowing the button to submit so the inline validation message "Project title is required." can appear.
+- **Claims error shows no detail** — "Claim generation failed." with no information about why. Now surfaces `errorMessage` from the backend response.
+- **Compliance error shows no detail** — same pattern as claims; now surfaces `errorMessage` from the backend response.
+- **Backend root `/` returns raw 404** — hitting `http://localhost:3000/` returned `{"message":"Cannot GET /","error":"Not Found","statusCode":404}`. Added a root handler that returns API version, status, and endpoint directory.
+
+### Changed
+- **Claims tab UX** — independent claims now display as an expandable accordion with claim number, type, scope level, and dependent claim count visible in the collapsed header. Click to expand shows full claim text, edit capability, regenerate button, and prior art overlap warnings.
+- **Compliance tab UX** — rule category sections now start collapsed with pass/fail indicator dots and result counts visible in the header. Users expand individual sections to see detailed results.
+
 ## [0.8.4] - 2026-04-06
 
 ### Fixed

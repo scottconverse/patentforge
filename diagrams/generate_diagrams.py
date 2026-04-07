@@ -1,5 +1,5 @@
 """
-PatentForge v0.8.4 — Architecture Diagram Generator
+PatentForge v0.8.5 — Architecture Diagram Generator
 Generates 5 PNG diagrams reflecting the 6-service system architecture.
 """
 import matplotlib
@@ -62,7 +62,7 @@ def gen_architecture():
     ax.axis('off')
 
     # Title
-    ax.text(0.7, 0.96, 'PatentForge — System Architecture (v0.8.4)',
+    ax.text(0.7, 0.96, 'PatentForge — System Architecture (v0.8.5)',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     # ── Row 1: Frontend ──
@@ -134,7 +134,7 @@ def gen_data_flow():
     ax.set_xlim(0, 1.6); ax.set_ylim(0, 1)
     ax.axis('off')
 
-    ax.text(0.8, 0.96, 'PatentForge — Full Pipeline Data Flow (v0.8.4)',
+    ax.text(0.8, 0.96, 'PatentForge — Full Pipeline Data Flow (v0.8.5)',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     # ── Column 1: Invention Input ──
@@ -238,7 +238,7 @@ def gen_user_journey():
     ax.set_xlim(0, 1.8); ax.set_ylim(0, 0.5)
     ax.axis('off')
 
-    ax.text(0.9, 0.47, 'PatentForge — User Journey (v0.8.4)',
+    ax.text(0.9, 0.47, 'PatentForge — User Journey (v0.8.5)',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     steps = [
@@ -285,7 +285,7 @@ def gen_database_schema():
     ax.set_xlim(0, 1.8); ax.set_ylim(0, 1.1)
     ax.axis('off')
 
-    ax.text(0.9, 1.07, 'PatentForge — Database Schema (v0.8.4) — 14 Tables',
+    ax.text(0.9, 1.07, 'PatentForge — Database Schema (v0.8.5) — 14 Tables',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     def entity_box(x, y, w, h, name, fields, color=ACCENT):
@@ -438,7 +438,7 @@ def gen_docker_topology():
     ax.set_xlim(0, 1.4); ax.set_ylim(0, 1)
     ax.axis('off')
 
-    ax.text(0.7, 0.96, 'PatentForge — Docker Deployment Topology (v0.8.4)',
+    ax.text(0.7, 0.96, 'PatentForge — Docker Deployment Topology (v0.8.5)',
             ha='center', va='center', color=TEXT, fontsize=16, fontweight='bold')
 
     # Docker Compose Network boundary
@@ -492,7 +492,7 @@ def gen_docker_topology():
     arrow(ax, 0.7, 0.72, 1.12, 0.27, PURPLE, style='->', lw=1)
 
     # Note
-    ax.text(0.05, 0.12, 'v0.8.4: frontend + backend + feasibility + claim-drafter + app-generator + compliance + postgres',
+    ax.text(0.05, 0.12, 'v0.8.5: frontend + backend + feasibility + claim-drafter + app-generator + compliance + postgres',
             color=MUTED, fontsize=7.5, fontstyle='italic')
 
     fig.savefig(os.path.join(OUTPUT_DIR, 'docker-topology.png'), dpi=200, bbox_inches='tight',
@@ -502,7 +502,7 @@ def gen_docker_topology():
 
 
 if __name__ == '__main__':
-    print('Generating PatentForge v0.8.4 diagrams...')
+    print('Generating PatentForge v0.8.5 diagrams...')
     gen_architecture()
     gen_data_flow()
     gen_user_journey()

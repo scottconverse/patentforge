@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { api } from '../api';
 import Alert from './Alert';
 import ClaimTree from './ClaimTree';
@@ -48,6 +48,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const [docxError, setDocxError] = useState<string | null>(null);
   // Claims start collapsed — expand on click to avoid rendering all markdown at once
   const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
+  // Elapsed time counter for long-running operations
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     loadDraft();
@@ -75,6 +78,18 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
       clearInterval(interval);
     };
   }, [generating, projectId]);
+
+  // Elapsed timer for progress indication during long generation
+  useEffect(() => {
+    if (generating || draft?.status === 'RUNNING') {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [generating, draft?.status]);
 
   async function loadDraft() {
     try {
@@ -154,6 +169,8 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
 
   // State: Generating (must come before !draft check — generating can be true while draft is null)
   if (generating || draft?.status === 'RUNNING') {
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
@@ -165,6 +182,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
         </div>
         <p className="text-xs text-gray-500 mt-3">
           This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims.
+        </p>
+        <p className="text-xs text-gray-600 mt-2 font-mono">
+          {mins > 0 ? `${mins}m ${secs.toString().padStart(2, '0')}s` : `${secs}s`} elapsed
         </p>
       </div>
     );

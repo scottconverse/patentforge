@@ -94,7 +94,7 @@ async function bootstrap() {
   app.getHttpAdapter().get('/', (_req, res) => {
     res.json({
       service: 'PatentForge API',
-      version: '0.8.4',
+      version: require('../package.json').version,
       status: 'running',
       docs: 'All endpoints are prefixed with /api/. See /api/health for a health check.',
       endpoints: {
