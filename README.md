@@ -237,6 +237,10 @@ docker compose up --build
 - [x] **v0.8.2** — Security hardening (Helmet headers, DOMPurify sanitization), Prisma schema unification (eliminated dual-schema drift), cost tracking across all services, ProjectDetail refactor (extracted 6 components), CI expanded (application-generator tests), 592 automated tests
 - [x] **v0.8.5** — CI fix (package-lock.json version mismatch), decrypt() silent failure fix, report auth fix, Docker healthchecks and log rotation, API key rate limiting, lint cleanup (all `any` types replaced), shared utility extraction, auto-export opt-in setting, Node 24 CI migration, 599 automated tests
 
+## Security
+
+To report a vulnerability, open a GitHub issue with the **security** label. See [SECURITY.md](SECURITY.md) for the known npm vulnerability stance and remediation roadmap.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and guidelines.

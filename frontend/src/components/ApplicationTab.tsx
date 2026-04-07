@@ -222,6 +222,12 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   function renderSections() {
     if (!application) return null;
 
+    // Count sections that have actual content
+    const populatedSections = SECTION_KEYS.filter(
+      (k) => application[k] && (application[k] as string).trim().length > 0,
+    );
+    const sectionsEmpty = populatedSections.length === 0;
+
     const sectionText = application[activeSection] || '';
 
     return (
@@ -253,6 +259,22 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
         </div>
 
         {docxError && <Alert variant="error">Word export failed: {docxError}</Alert>}
+
+        {/* Empty-sections warning — generation completed but no content was saved */}
+        {sectionsEmpty && (
+          <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+            <p className="text-red-300 text-sm font-semibold">Application generated but all sections are empty</p>
+            <p className="text-red-400/70 text-sm mt-2">
+              Generation completed without producing content. This can happen if the request timed out, the AI
+              service returned an unexpected response, or the generation was interrupted before content was saved.
+            </p>
+            <p className="text-red-400/70 text-sm mt-2">
+              <strong className="text-red-300">To fix this:</strong> Click <strong>Regenerate</strong> above to run
+              application generation again. If it fails again, check your API key in Settings and ensure all
+              upstream steps (Feasibility, Claims) have completed successfully.
+            </p>
+          </div>
+        )}
 
         {/* UPL disclaimer banner */}
         <div className="bg-amber-900/20 border border-amber-800 rounded-lg p-3 text-center">

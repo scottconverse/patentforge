@@ -82,6 +82,29 @@ describe('ApplicationTab', () => {
     expect(screen.getByText('Try Again')).toBeTruthy();
   });
 
+  it('shows empty-sections warning when complete but all sections are null', async () => {
+    const { api } = await import('../api');
+    (api.application.getLatest as any).mockResolvedValue({
+      status: 'COMPLETE',
+      title: null,
+      background: null,
+      summary: null,
+      detailedDescription: null,
+      claims: null,
+      abstract: null,
+      figureDescriptions: null,
+      crossReferences: null,
+      idsTable: null,
+    });
+    render(<ApplicationTab projectId="test" hasClaims={true} />);
+    await waitFor(() => {
+      expect(screen.getByText(/Application generated but all sections are empty/i)).toBeTruthy();
+    });
+    // Regenerate button should be present in the toolbar
+    const regenerateButtons = screen.getAllByText(/Regenerate/i);
+    expect(regenerateButtons.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('shows cost when available', async () => {
     const { api } = await import('../api');
     (api.application.getLatest as any).mockResolvedValue({

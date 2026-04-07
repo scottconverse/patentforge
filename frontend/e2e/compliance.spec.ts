@@ -319,6 +319,13 @@ test.describe('Compliance Checking', () => {
     // The results view shows the UPL disclaimer banner
     await expect(page.locator('text=RESEARCH OUTPUT')).toBeVisible({ timeout: 20_000 });
 
+    // Expand all compliance sections (they start collapsed by default to prevent browser freeze)
+    const sectionHeaders = page.locator('button:has(span:has-text("▶"))');
+    const headerCount = await sectionHeaders.count();
+    for (let i = 0; i < headerCount; i++) {
+      await sectionHeaders.nth(i).click();
+    }
+
     // Verify traffic-light results are rendered
     // FAIL result should be visible
     await expect(page.locator('text=Claim 2 uses the indefinite term')).toBeVisible();
