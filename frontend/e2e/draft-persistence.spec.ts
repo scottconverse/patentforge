@@ -193,6 +193,22 @@ test.describe('Draft Persistence', () => {
 
     await screenshot(page, 'draft-persistence-11fields-saved-confirmation');
 
+    // Verify via API that all 11 fields were persisted before reloading
+    const invRes = await page.request.get(`${API_BASE}/projects/${projectId}/invention`);
+    expect(invRes.ok()).toBeTruthy();
+    const invention = await invRes.json();
+    expect(invention.title).toBe(FULL_INVENTION_DATA.title);
+    expect(invention.description).toBe(FULL_INVENTION_DATA.description);
+    expect(invention.problemSolved).toBe(FULL_INVENTION_DATA.problemSolved);
+    expect(invention.howItWorks).toBe(FULL_INVENTION_DATA.howItWorks);
+    expect(invention.aiComponents).toBe(FULL_INVENTION_DATA.aiComponents);
+    expect(invention.threeDPrintComponents).toBe(FULL_INVENTION_DATA.threeDPrintComponents);
+    expect(invention.whatIsNovel).toBe(FULL_INVENTION_DATA.whatIsNovel);
+    expect(invention.currentAlternatives).toBe(FULL_INVENTION_DATA.currentAlternatives);
+    expect(invention.whatIsBuilt).toBe(FULL_INVENTION_DATA.whatIsBuilt);
+    expect(invention.whatToProtect).toBe(FULL_INVENTION_DATA.whatToProtect);
+    expect(invention.additionalNotes).toBe(FULL_INVENTION_DATA.additionalNotes);
+
     // Reload the page
     await page.reload();
     await page.waitForLoadState('networkidle');
