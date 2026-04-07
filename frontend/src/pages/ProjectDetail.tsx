@@ -168,7 +168,11 @@ export default function ProjectDetail() {
 
   if (!project) return null;
 
-  const totalRunCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+  const feasibilityCost = displayStages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0);
+  const totalRunCost = feasibilityCost
+    + ((claimDraftStatus as any)?.estimatedCostUsd ?? 0)
+    + ((complianceStatus as any)?.estimatedCostUsd ?? 0)
+    + ((applicationStatus as any)?.estimatedCostUsd ?? 0);
 
   return (
     <div className="max-w-7xl mx-auto">

@@ -35,7 +35,7 @@ export default function StreamingOutput({ text, stageName, isComplete }: Streami
         <span className={`text-sm font-medium ${isComplete ? 'text-gray-300' : 'text-blue-300'}`}>{stageName}</span>
         {!isComplete && <span className="text-xs text-gray-500 ml-auto">streaming...</span>}
       </div>
-      <div className="p-4 max-h-[500px] overflow-y-auto">
+      <div className="p-4 max-h-[500px] overflow-y-auto overflow-x-hidden">
         {isComplete ? (
           <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderedHtml }} />
         ) : (

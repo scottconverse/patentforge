@@ -33,6 +33,20 @@ Hey everyone! PatentForge is now open source.
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
 
 **What's new in v0.8.5:**
+- **Critical fix: installer auth** — Python services (claim-drafter, compliance-checker, application-generator) rejected all backend requests due to a trailing space in the INTERNAL_SERVICE_SECRET env var. Claims, Compliance, and Application were completely non-functional from a fresh install.
+- **Fix: stage data persistence** — stage completion indicators (green checks, times, costs, "view" links) no longer disappear when navigating away from the running view
+- **Fix: stage output viewable** — completed stage cards are now clickable to view individual stage analysis text
+- **Fix: Claims tab performance** — 37+ claims no longer freeze the browser; claims render as expandable accordion
+- **Fix: Compliance tab performance** — 154+ results no longer freeze the browser; rule sections start collapsed
+- **Fix: error messages** — pipeline errors now show human-readable messages instead of raw JSON
+- **Fix: project status** — breadcrumb badge updates immediately after pipeline completes, no page refresh needed
+- **UX: elapsed timer** — Claims and Compliance generation now show elapsed time instead of a static spinner
+- **UX: total project cost** — sidebar now shows combined cost across all services (feasibility + claims + compliance + application)
+- **UX: settings save toast** — floating notification confirms save instead of an easily-missed inline banner
+- **UX: focus rings** — keyboard navigation shows prominent blue focus rings for accessibility
+- Plus 4 additional medium-severity fixes (see CHANGELOG for full details)
+
+**What's new in v0.8.4:**
 - **Bug fix: Windows installer — cross-platform build script** — `services/feasibility` build script now uses a Node.js inline copy instead of Unix `cp`; fresh installs on Windows no longer fail at the prompt-copying step
 - **Bug fix: Windows installer — PATHEXT enforcement** — `PatentForge.ps1` now explicitly sets `PATHEXT` before invoking npm, preventing `.cmd` extension resolution failures in stripped Windows shell environments
 
