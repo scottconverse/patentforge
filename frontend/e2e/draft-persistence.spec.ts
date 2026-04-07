@@ -129,6 +129,143 @@ test.describe('Draft Persistence', () => {
     await screenshot(page, 'draft-persistence-fields-restored');
   });
 
+  test('save all 11 invention fields via UI, reload, verify all fields restored', async ({
+    page,
+    consoleErrors,
+  }) => {
+    // Navigate to the project and open the form
+    await page.goto(`/projects/${projectId}`);
+    await page.waitForLoadState('networkidle');
+
+    const fillButton = page.locator('button:has-text("Fill in Invention Details")');
+    if (await fillButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await fillButton.click();
+    }
+
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'visible', timeout: 10_000 });
+
+    await screenshot(page, 'draft-persistence-11fields-form-empty');
+
+    // Fill required fields
+    await page.locator('input[placeholder="Name your invention"]').fill(FULL_INVENTION_DATA.title);
+    await page
+      .locator('textarea[placeholder*="detailed description"]')
+      .fill(FULL_INVENTION_DATA.description);
+
+    // Fill all 9 optional fields (all visible — no collapsible sections)
+    await page
+      .locator('textarea[placeholder*="What problem does this invention solve"]')
+      .fill(FULL_INVENTION_DATA.problemSolved);
+    await page
+      .locator('textarea[placeholder*="Describe the mechanism or process"]')
+      .fill(FULL_INVENTION_DATA.howItWorks);
+    await page
+      .locator('textarea[placeholder*="Describe any AI or machine learning components"]')
+      .fill(FULL_INVENTION_DATA.aiComponents);
+    await page
+      .locator('textarea[placeholder*="Describe any physical or 3D printed components"]')
+      .fill(FULL_INVENTION_DATA.threeDPrintComponents);
+    await page
+      .locator('textarea[placeholder*="What makes this invention unique or innovative"]')
+      .fill(FULL_INVENTION_DATA.whatIsNovel);
+    await page
+      .locator('textarea[placeholder*="Describe existing solutions or prior art"]')
+      .fill(FULL_INVENTION_DATA.currentAlternatives);
+    await page
+      .locator('textarea[placeholder*="Describe any prototypes, proofs-of-concept"]')
+      .fill(FULL_INVENTION_DATA.whatIsBuilt);
+    await page
+      .locator('textarea[placeholder*="Describe the specific aspects you want patent protection"]')
+      .fill(FULL_INVENTION_DATA.whatToProtect);
+    await page
+      .locator('textarea[placeholder*="Any other relevant information"]')
+      .fill(FULL_INVENTION_DATA.additionalNotes);
+
+    await screenshot(page, 'draft-persistence-11fields-form-filled');
+
+    // Click Save Draft
+    await page.click('button:has-text("Save Draft")');
+
+    // Wait for save confirmation
+    await expect(page.locator('text=Draft saved successfully')).toBeVisible({ timeout: 10_000 });
+
+    await screenshot(page, 'draft-persistence-11fields-saved-confirmation');
+
+    // Reload the page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Navigate back to the invention form via the sidebar
+    await page
+      .locator('button:has-text("Invention Intake"), aside button:has-text("Intake")')
+      .first()
+      .click();
+
+    await page
+      .locator('input[placeholder="Name your invention"]')
+      .waitFor({ state: 'visible', timeout: 10_000 });
+
+    // Verify all 11 field values are restored in the UI form
+    const titleValue = await page
+      .locator('input[placeholder="Name your invention"]')
+      .inputValue();
+    expect(titleValue).toBe(FULL_INVENTION_DATA.title);
+
+    const descriptionValue = await page
+      .locator('textarea[placeholder*="detailed description"]')
+      .inputValue();
+    expect(descriptionValue).toBe(FULL_INVENTION_DATA.description);
+
+    const problemSolvedValue = await page
+      .locator('textarea[placeholder*="What problem does this invention solve"]')
+      .inputValue();
+    expect(problemSolvedValue).toBe(FULL_INVENTION_DATA.problemSolved);
+
+    const howItWorksValue = await page
+      .locator('textarea[placeholder*="Describe the mechanism or process"]')
+      .inputValue();
+    expect(howItWorksValue).toBe(FULL_INVENTION_DATA.howItWorks);
+
+    const aiComponentsValue = await page
+      .locator('textarea[placeholder*="Describe any AI or machine learning components"]')
+      .inputValue();
+    expect(aiComponentsValue).toBe(FULL_INVENTION_DATA.aiComponents);
+
+    const threeDPrintValue = await page
+      .locator('textarea[placeholder*="Describe any physical or 3D printed components"]')
+      .inputValue();
+    expect(threeDPrintValue).toBe(FULL_INVENTION_DATA.threeDPrintComponents);
+
+    const whatIsNovelValue = await page
+      .locator('textarea[placeholder*="What makes this invention unique or innovative"]')
+      .inputValue();
+    expect(whatIsNovelValue).toBe(FULL_INVENTION_DATA.whatIsNovel);
+
+    const currentAlternativesValue = await page
+      .locator('textarea[placeholder*="Describe existing solutions or prior art"]')
+      .inputValue();
+    expect(currentAlternativesValue).toBe(FULL_INVENTION_DATA.currentAlternatives);
+
+    const whatIsBuiltValue = await page
+      .locator('textarea[placeholder*="Describe any prototypes, proofs-of-concept"]')
+      .inputValue();
+    expect(whatIsBuiltValue).toBe(FULL_INVENTION_DATA.whatIsBuilt);
+
+    const whatToProtectValue = await page
+      .locator('textarea[placeholder*="Describe the specific aspects you want patent protection"]')
+      .inputValue();
+    expect(whatToProtectValue).toBe(FULL_INVENTION_DATA.whatToProtect);
+
+    const additionalNotesValue = await page
+      .locator('textarea[placeholder*="Any other relevant information"]')
+      .inputValue();
+    expect(additionalNotesValue).toBe(FULL_INVENTION_DATA.additionalNotes);
+
+    await screenshot(page, 'draft-persistence-11fields-all-restored');
+  });
+
   test('save draft with optional fields, reload, verify optional fields persist', async ({
     page,
     consoleErrors,
