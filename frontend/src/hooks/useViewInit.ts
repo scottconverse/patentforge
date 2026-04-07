@@ -62,15 +62,23 @@ export function useViewInit({
         // Stale RUNNING run — the pipeline died (browser closed, service crashed, etc.)
         // No active abort controller means nothing is actually streaming. Mark it ERROR
         // in the backend, load whatever partial stage output exists, and show overview.
-        const partialStages = (latestRunInit.stages ?? []).map((s) =>
-          s.status === 'RUNNING' || s.status === 'PENDING'
-            ? {
-                ...s,
-                status: 'ERROR' as RunStatus,
-                errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.',
-              }
-            : s,
-        );
+        const partialStages = (latestRunInit.stages ?? []).map((s) => {
+          if (s.status === 'RUNNING') {
+            return {
+              ...s,
+              status: 'ERROR' as RunStatus,
+              errorMessage: 'Pipeline interrupted — service was restarted or browser was closed.',
+            };
+          }
+          if (s.status === 'PENDING') {
+            return {
+              ...s,
+              status: 'ERROR' as RunStatus,
+              errorMessage: s.startedAt ? 'Pipeline interrupted before completion.' : 'Not started — pipeline stopped before reaching this stage.',
+            };
+          }
+          return s;
+        });
         setStages(partialStages.length ? partialStages : makePlaceholderStages());
         setRunError(
           'Pipeline was interrupted (service restarted or browser closed). Partial results shown below. Click "Re-run" to try again.',

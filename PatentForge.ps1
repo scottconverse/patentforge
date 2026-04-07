@@ -183,7 +183,7 @@ if ($pythonOk) {
         Write-Host "  Starting $($svc.Name) (port $($svc.Port))..."
         $svcDir = Join-Path $root "services\$($svc.Dir)"
         Start-Process -FilePath "cmd.exe" `
-            -ArgumentList "/c set INTERNAL_SERVICE_SECRET=patentforge-internal && `"$python`" -m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
+            -ArgumentList "/c set INTERNAL_SERVICE_SECRET=patentforge-internal&& `"$python`" -m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
             -WorkingDirectory $svcDir `
             -WindowStyle Minimized
     }

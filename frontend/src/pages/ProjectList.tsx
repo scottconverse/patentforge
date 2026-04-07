@@ -112,13 +112,12 @@ export default function ProjectList() {
               value={newTitle}
               onChange={(e) => { setNewTitle(e.target.value); setTitleError(null); }}
               placeholder="e.g. AI-Powered Patent Claim Analyzer"
-              required
               autoFocus
               className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm"
             />
             <button
               type="submit"
-              disabled={creating || !newTitle.trim()}
+              disabled={creating}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
             >
               {creating ? 'Creating...' : 'Create'}

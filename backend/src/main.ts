@@ -89,6 +89,22 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  // Root handler — sits outside the /api/ prefix so users hitting /
+  // get useful info instead of a raw 404 JSON error.
+  app.getHttpAdapter().get('/', (_req, res) => {
+    res.json({
+      service: 'PatentForge API',
+      version: '0.8.4',
+      status: 'running',
+      docs: 'All endpoints are prefixed with /api/. See /api/health for a health check.',
+      endpoints: {
+        health: '/api/health',
+        projects: '/api/projects',
+        settings: '/api/settings',
+      },
+    });
+  });
+
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080')
     .split(',')
     .map((o) => o.trim())

@@ -359,6 +359,10 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
         }
       }
 
+      // Tag all stages with the run ID so displayStages knows they're real
+      // (not placeholders) and uses them even after viewMode transitions.
+      setStages((prev) => prev.map((s) => ({ ...s, feasibilityRunId: runId })));
+
       // Wait up to 45s for prior art to complete before starting pipeline
       async function waitForPriorArt(pid: string, maxWaitMs: number): Promise<string | null> {
         const start = Date.now();
@@ -587,11 +591,22 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
               // The feasibility service sends 'error' events for stage-level Anthropic
               // failures (billing, auth, rate limit). 'pipeline_error' is the legacy name.
               pipelineCompleted = true; // Prevent the generic "connection lost" fallback
-              const errorMsg = data.message || data.error || 'Pipeline failed';
+              const rawMsg = data.message || data.error || 'Pipeline failed';
+              // Parse Anthropic JSON error into human-readable message (P3-2 fix)
+              let errorMsg = rawMsg;
+              try {
+                const parsed = typeof rawMsg === 'string' && rawMsg.includes('"message"')
+                  ? JSON.parse(rawMsg.startsWith('{') ? rawMsg : rawMsg.slice(rawMsg.indexOf('{')))
+                  : null;
+                if (parsed?.error?.message) errorMsg = parsed.error.message;
+                else if (parsed?.message) errorMsg = parsed.message;
+              } catch { /* use raw message */ }
               setRunError(`Stage ${data.stage || '?'} error: ${errorMsg}`);
               setStages((prev) =>
                 prev.map((s) => (s.status === 'RUNNING' ? { ...s, status: 'ERROR' as RunStatus } : s)),
               );
+              // Re-fetch project so overview has current status (P3-5 fix)
+              loadProject().catch(() => {/* non-fatal */});
             } else if (eventType === 'cancelled') {
               setStages((prev) =>
                 prev.map((s) =>
@@ -617,6 +632,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
             s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'ERROR' as RunStatus } : s,
           ),
         );
+        loadProject().catch(() => {/* non-fatal */});
       }
     } catch (e: any) {
       if (e.name === 'AbortError') {
@@ -629,6 +645,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
           s.status === 'RUNNING' || s.status === 'PENDING' ? { ...s, status: 'ERROR' as RunStatus } : s,
         ),
       );
+      loadProject().catch(() => {/* non-fatal */});
     } finally {
       isRunningRef.current = false;
       setIsPipelineStreaming(false);
