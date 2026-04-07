@@ -235,7 +235,7 @@ docker compose up --build
 - [x] **v0.8.0** — Code quality enforcement (ESLint + Prettier, TypeScript strict mode, coverage thresholds, supertest API integration tests), sidebar status badges, mobile-responsive sidebar accordion, pre-push git hook
 - [x] **v0.8.1** — Back button fix (return to streaming view during active pipeline), documentation consistency audit
 - [x] **v0.8.2** — Security hardening (Helmet headers, DOMPurify sanitization), Prisma schema unification (eliminated dual-schema drift), cost tracking across all services, ProjectDetail refactor (extracted 6 components), CI expanded (application-generator tests), 592 automated tests
-- [x] **v0.8.5** — CI fix (package-lock.json version mismatch), decrypt() silent failure fix, report auth fix, Docker healthchecks and log rotation, API key rate limiting, lint cleanup (all `any` types replaced), shared utility extraction, auto-export opt-in setting, Node 24 CI migration, 595 automated tests
+- [x] **v0.8.5** — CI fix (package-lock.json version mismatch), decrypt() silent failure fix, report auth fix, Docker healthchecks and log rotation, API key rate limiting, lint cleanup (all `any` types replaced), shared utility extraction, auto-export opt-in setting, Node 24 CI migration, 599 automated tests
 
 ## Contributing
 
