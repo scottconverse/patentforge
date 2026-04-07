@@ -8,7 +8,7 @@
 # What it does:
 #   1. Nukes the SQLite dev database
 #   2. Fresh npm install in all 3 Node services + pip install claim-drafter
-#   3. Runs Prisma migrate + generate
+#   3. Runs Prisma db push + generate
 #   4. Builds all Node services (backend, feasibility, frontend)
 #   5. Runs backend unit tests (Jest)
 #   5b. Runs claim-drafter unit tests (pytest)
@@ -95,17 +95,17 @@ pass "pip install: services/compliance-checker"
 log "=== Phase 2: Prisma migrate + generate ==="
 
 cd "$BACKEND"
-npx prisma migrate deploy 2>&1 | tail -3
-pass "Prisma migrate deploy"
+npx prisma db push 2>&1 | tail -3
+pass "Prisma db push"
 
 npx prisma generate 2>&1 | tail -1
 pass "Prisma generate"
 
 # Verify DB was created
 if [ -f "$BACKEND/prisma/prisma/dev.db" ]; then
-  pass "dev.db created by migration"
+  pass "dev.db created by db push"
 else
-  fail "dev.db NOT created after migration"
+  fail "dev.db NOT created after db push"
 fi
 
 # ============================================================================
