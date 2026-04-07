@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { AppSettings } from '../types';
-import Toast from '../components/Toast';
 
 const MODELS = [
   { value: '', label: '— Select a model —' },
@@ -73,7 +72,10 @@ export default function Settings() {
       const updated = await api.settings.update(settings);
       setSettings(updated);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      setTimeout(() => {
+        document.getElementById('save-success')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => setSaved(false), 4000);
+      }, 50);
     } catch (e: any) {
       setError(e.message || 'Failed to save settings');
     } finally {
@@ -351,6 +353,12 @@ export default function Settings() {
 
         {error && <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">{error}</div>}
 
+        {saved && (
+          <div id="save-success" className="p-3 bg-green-900/40 border border-green-800 rounded text-green-300 text-sm">
+            Settings saved successfully.
+          </div>
+        )}
+
         <div className="flex justify-end">
           <button
             type="submit"
@@ -361,7 +369,6 @@ export default function Settings() {
           </button>
         </div>
       </form>
-      {saved && <Toast message="Settings saved successfully." type="success" onClose={() => setSaved(false)} />}
     </div>
   );
 }
