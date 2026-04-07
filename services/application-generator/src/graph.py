@@ -36,6 +36,8 @@ async def finalize(state: GraphState) -> GraphState:
             text = text[1:]
         return text
 
+    # Scrub API key from state — this propagates back into state_dict via the astream loop.
+    # state_dict["api_key"] will be empty string after finalize runs. Do not access it downstream.
     state.api_key = ""
     state.background = clean_section(state.background)
     state.summary = clean_section(state.summary)
@@ -107,6 +109,10 @@ async def run_application_pipeline(
     )
 
     state_dict: dict = initial_state.model_dump()
+    # Accumulate state across all nodes using .update() (not assignment).
+    # Agents must return the full accumulated GraphState (not partial dicts with None fields)
+    # for this accumulation to be safe. Partial-dict nodes (e.g. format_ids) are safe because
+    # they only add new keys — they do not set content fields to None.
     async for step_output in application_pipeline.astream(state_dict):
         for node_name, node_state in step_output.items():
             if isinstance(node_state, dict):
