@@ -65,8 +65,12 @@ func main() {
 }
 
 func onReady() {
-	// Set icon (PNG works on all platforms)
-	systray.SetIcon(assets.IconPNG)
+	// Windows systray requires .ico format; macOS/Linux use .png
+	if runtime.GOOS == "windows" {
+		systray.SetIcon(assets.IconICO)
+	} else {
+		systray.SetIcon(assets.IconPNG)
+	}
 	systray.SetTitle("PatentForge")
 	systray.SetTooltip("PatentForge — Starting...")
 
