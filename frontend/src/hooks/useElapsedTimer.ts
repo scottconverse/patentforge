@@ -18,6 +18,9 @@ export function useElapsedTimer(running: boolean): { elapsed: number; formatted:
       return;
     }
 
+    // Intentional: reset to 0 immediately when a new run starts so elapsed shows
+    // 0 synchronously on restart — not a cascading-render risk here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setElapsed(0);
     const id = setInterval(() => {
       setElapsed((prev) => prev + 1);
