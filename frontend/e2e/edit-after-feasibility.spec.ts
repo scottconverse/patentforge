@@ -125,11 +125,11 @@ async function fillInventionForm(page: Page, projectId: string, title = 'E2E Edi
   await page
     .locator('textarea[placeholder*="detailed description"]')
     .fill(
-      'Initial description of the invention for end-to-end edit-after-feasibility testing. ' +
-        'This description will be modified after the feasibility analysis completes to verify ' +
-        'that editing invention details does not wipe or invalidate previously generated ' +
-        'feasibility results. The system should preserve completed analysis data while ' +
-        'allowing inventors to refine their invention disclosure at any time.',
+      'Initial description of the invention for end-to-end edit-after-run testing. ' +
+        'This text will be modified after the pipeline finishes to verify that updating ' +
+        'invention details does not wipe or invalidate previously generated stage outputs. ' +
+        'The system should preserve prior analysis data while allowing inventors to ' +
+        'refine and improve their invention disclosure at any point in time.',
     );
 }
 
