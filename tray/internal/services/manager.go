@@ -65,7 +65,7 @@ func (m *Manager) buildServices() []*Service {
 		"NODE_ENV=production",
 		fmt.Sprintf("PORT=%d", m.cfg.PortUI),
 		fmt.Sprintf("FRONTEND_DIST_PATH=%s", filepath.Join(baseDir, "frontend", "dist")),
-		fmt.Sprintf("PRISMA_QUERY_ENGINE_LIBRARY=%s", filepath.Join(baseDir, "runtime", "prisma-engine")),
+		fmt.Sprintf("PRISMA_QUERY_ENGINE_LIBRARY=%s", findPrismaEngine(baseDir)),
 		fmt.Sprintf("FEASIBILITY_URL=%s", feasibilityURL),
 		fmt.Sprintf("CLAIM_DRAFTER_URL=%s", claimDrafterURL),
 		fmt.Sprintf("APPLICATION_GENERATOR_URL=%s", appGeneratorURL),
@@ -248,4 +248,22 @@ func (m *Manager) Context() context.Context {
 // Services returns the managed service list (read-only use).
 func (m *Manager) Services() []*Service {
 	return m.services
+}
+
+// findPrismaEngine locates the Prisma query engine library in the
+// patentforge-backend-prisma directory. The filename varies by platform
+// (e.g. query_engine-windows.dll.node on Windows).
+func findPrismaEngine(baseDir string) string {
+	prismaDir := filepath.Join(baseDir, "patentforge-backend-prisma")
+	entries, err := os.ReadDir(prismaDir)
+	if err != nil {
+		return filepath.Join(prismaDir, "query_engine-windows.dll.node") // fallback
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, "query_engine-") || strings.HasPrefix(name, "libquery_engine-") {
+			return filepath.Join(prismaDir, name)
+		}
+	}
+	return filepath.Join(prismaDir, "query_engine-windows.dll.node") // fallback
 }
