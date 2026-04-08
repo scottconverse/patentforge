@@ -31,3 +31,11 @@ export async function updateSettings(data: Record<string, unknown>): Promise<voi
     body: JSON.stringify(data),
   });
 }
+
+export async function updateInvention(projectId: string, data: Record<string, unknown>): Promise<void> {
+  await fetch(`${API_BASE}/projects/${projectId}/invention`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}

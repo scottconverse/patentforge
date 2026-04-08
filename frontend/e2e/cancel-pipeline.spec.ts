@@ -139,11 +139,15 @@ async function fillInventionForm(page: Page, projectId: string) {
 
   // Fill required fields
   await page.locator('input[placeholder="Name your invention"]').fill('E2E Cancel Test Invention');
+  // 50+ words required by the backend before a feasibility run can start
   await page
     .locator('textarea[placeholder*="detailed description"]')
     .fill(
-      'A test invention for E2E cancellation verification. This invention is designed ' +
-        'to test the pipeline cancellation mechanism during mid-stream analysis.',
+      'A test invention for end-to-end cancellation verification and pipeline interrupt testing. ' +
+        'This invention is designed to test the pipeline cancellation mechanism during mid-stream ' +
+        'analysis, ensuring the system properly handles user-initiated stops, cleans up allocated ' +
+        'resources, and allows the feasibility analysis to be restarted reliably without data ' +
+        'corruption or inconsistent application state.',
     );
 }
 

@@ -175,9 +175,13 @@ async function fillInventionForm(page: Page, projectId: string) {
 
   // Fill required fields
   await page.locator('input[placeholder="Name your invention"]').fill('E2E Test Widget');
+  // 50+ words required by the backend before a feasibility run can start
   await page.locator('textarea[placeholder*="detailed description"]').fill(
-    'A test invention for E2E pipeline verification. It uses a novel mechanism ' +
-    'to process data through a multi-stage analysis pipeline.'
+    'A test invention for end-to-end pipeline verification and automated testing purposes. ' +
+    'It uses a novel mechanism to process data through a multi-stage analysis pipeline, ' +
+    'leveraging advanced computational techniques to systematically evaluate patent claims ' +
+    'for novelty and inventiveness. The system incorporates multiple sequential processing ' +
+    'stages to generate comprehensive feasibility analysis reports suitable for patent applications.'
   );
 }
 

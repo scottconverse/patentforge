@@ -11,7 +11,19 @@
  */
 
 import { test, expect, screenshot } from './fixtures';
-import { createProject, deleteProject, updateSettings } from './helpers';
+import { createProject, deleteProject, updateSettings, updateInvention } from './helpers';
+
+/**
+ * Invention description with 50+ words, required by the feasibility service
+ * before a run can be started (backend enforces a 50-word minimum).
+ */
+const FIFTY_WORD_DESCRIPTION =
+  'This invention relates to a novel system and method for processing and ' +
+  'analyzing patent applications. The system comprises multiple interconnected ' +
+  'components that work together to systematically evaluate patent claims and ' +
+  'determine their technical validity and novelty. The method involves ' +
+  'comprehensive data collection, detailed technical analysis, and structured ' +
+  'reporting output, providing significant advantages over prior art approaches.';
 
 const API = 'http://localhost:3000/api';
 
@@ -28,6 +40,9 @@ test.describe('Cost Cap Enforcement', () => {
   });
 
   test('backend blocks new run when cumulative cost exceeds cap', async ({ page, consoleErrors }) => {
+    // Provide a 50+ word description — required by the backend before starting a run
+    await updateInvention(projectId, { title: 'Cost Cap Test', description: FIFTY_WORD_DESCRIPTION });
+
     // Step 1: Create a feasibility run with stages that have cost data
     const runRes = await fetch(`${API}/projects/${projectId}/feasibility/run`, {
       method: 'POST',
@@ -74,6 +89,9 @@ test.describe('Cost Cap Enforcement', () => {
   });
 
   test('backend allows run when cost is under cap', async ({ page, consoleErrors }) => {
+    // Provide a 50+ word description — required by the backend before starting a run
+    await updateInvention(projectId, { title: 'Cost Cap Test', description: FIFTY_WORD_DESCRIPTION });
+
     // Create a run with low cost
     const runRes = await fetch(`${API}/projects/${projectId}/feasibility/run`, {
       method: 'POST',
@@ -102,6 +120,9 @@ test.describe('Cost Cap Enforcement', () => {
   });
 
   test('patchStage returns costCapExceeded flag when cap breached', async ({ page, consoleErrors }) => {
+    // Provide a 50+ word description — required by the backend before starting a run
+    await updateInvention(projectId, { title: 'Cost Cap Test', description: FIFTY_WORD_DESCRIPTION });
+
     // Set low cap
     await updateSettings({ costCapUsd: 1.00 });
 
@@ -131,6 +152,9 @@ test.describe('Cost Cap Enforcement', () => {
   });
 
   test('UI shows cost cap error when trying to run analysis over cap', async ({ page, consoleErrors }) => {
+    // Provide a 50+ word description before starting the run (backend enforces minimum)
+    await updateInvention(projectId, { title: 'Test Widget', description: FIFTY_WORD_DESCRIPTION });
+
     // Set up a project that's already over the cap
     const runRes = await fetch(`${API}/projects/${projectId}/feasibility/run`, {
       method: 'POST',
@@ -154,13 +178,6 @@ test.describe('Cost Cap Enforcement', () => {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'COMPLETE', finalReport: 'Test report' }),
-    });
-
-    // Also need an invention form for the project page to show the run button
-    await fetch(`${API}/projects/${projectId}/invention`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: 'Test Widget', description: 'A test widget for cost cap.' }),
     });
 
     await updateSettings({ costCapUsd: 2.00, anthropicApiKey: 'sk-ant-fake-key' });

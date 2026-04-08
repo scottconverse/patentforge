@@ -166,13 +166,17 @@ async function mockClaimDraftNone(page: Page, projectId: string) {
  * Mock compliance endpoints.
  *
  * - GET /compliance returns `getResponse`
- * - POST /compliance/check returns `postResponse`
+ * - POST /compliance/stream (the SSE endpoint used by ComplianceTab) returns
+ *   an immediate SSE `complete` event when `triggerSseComplete` is true.
+ *   The component then calls loadCheck() which hits the GET mock again, so
+ *   the caller must swap the GET mock (via page.unroute + page.route) before
+ *   clicking the trigger if a different post-run response is needed.
  */
 async function mockComplianceEndpoints(
   page: Page,
   projectId: string,
   getResponse: object,
-  postResponse?: object,
+  triggerSseComplete?: boolean,
 ) {
   await page.route(`**/api/projects/${projectId}/compliance`, async (route: Route) => {
     if (route.request().method() === 'GET') {
@@ -186,12 +190,14 @@ async function mockComplianceEndpoints(
     }
   });
 
-  if (postResponse) {
-    await page.route(`**/api/projects/${projectId}/compliance/check`, async (route: Route) => {
+  if (triggerSseComplete) {
+    // ComplianceTab uses POST /compliance/stream (SSE), not /compliance/check.
+    // Return an immediate `complete` event; the component then calls loadCheck().
+    await page.route(`**/api/projects/${projectId}/compliance/stream`, async (route: Route) => {
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(postResponse),
+        contentType: 'text/event-stream',
+        body: 'event: complete\ndata: {}\n\n',
       });
     });
   }
@@ -260,9 +266,9 @@ test.describe('Compliance Checking', () => {
     await mockClaimDraftComplete(page, projectId);
 
     const completeResponse = buildMockComplianceComplete();
-    const runningResponse = buildMockComplianceRunning();
     const complianceUrl = `**/api/projects/${projectId}/compliance`;
-    const complianceCheckUrl = `**/api/projects/${projectId}/compliance/check`;
+    // ComplianceTab uses POST /compliance/stream (SSE), not /compliance/check
+    const complianceStreamUrl = `**/api/projects/${projectId}/compliance/stream`;
 
     // Helper to swap the GET /compliance mock to a specific response
     async function setComplianceGetResponse(response: object) {
@@ -283,22 +289,24 @@ test.describe('Compliance Checking', () => {
     // Phase 1: GET returns NONE (no check yet)
     await setComplianceGetResponse(buildMockComplianceNone());
 
-    // Mock POST /compliance/check → returns RUNNING
-    await page.route(complianceCheckUrl, async (route: Route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(runningResponse),
-      });
-    });
-
     await navigateToComplianceTab(page, projectId);
 
     // Verify "Run Compliance Check" button appears
     await expect(page.locator('button:has-text("Run Compliance Check")')).toBeVisible({ timeout: 10_000 });
 
-    // Phase 2: Swap GET to return RUNNING before clicking
-    await setComplianceGetResponse(runningResponse);
+    // Pre-set GET to COMPLETE — this is what loadCheck() fetches after SSE fires
+    await setComplianceGetResponse(completeResponse);
+
+    // Mock POST /compliance/stream → immediate SSE complete event.
+    // The component reads the stream, hits `complete`, calls loadCheck() which
+    // returns the COMPLETE response we just set above.
+    await page.route(complianceStreamUrl, async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: 'event: complete\ndata: {}\n\n',
+      });
+    });
 
     // Click "Run Compliance Check" — may trigger UPL modal
     await page.click('button:has-text("Run Compliance Check")');
@@ -311,9 +319,6 @@ test.describe('Compliance Checking', () => {
       // Click the "Run Compliance Check" button inside the modal
       await page.locator('.fixed button:has-text("Run Compliance Check")').click();
     }
-
-    // Phase 3: Swap GET to return COMPLETE so polling picks it up
-    await setComplianceGetResponse(completeResponse);
 
     // Wait for results to appear (polling will transition RUNNING → COMPLETE)
     // The results view shows the UPL disclaimer banner
@@ -373,7 +378,8 @@ test.describe('Compliance Checking', () => {
 
     let postCalled = false;
     const complianceUrl = `**/api/projects/${projectId}/compliance`;
-    const complianceCheckUrl = `**/api/projects/${projectId}/compliance/check`;
+    // ComplianceTab uses POST /compliance/stream (SSE), not /compliance/check
+    const complianceStreamUrl = `**/api/projects/${projectId}/compliance/stream`;
 
     // Helper to swap the GET /compliance mock to a specific response
     async function setComplianceGetResponse(response: object) {
@@ -391,18 +397,18 @@ test.describe('Compliance Checking', () => {
       });
     }
 
-    // Phase 1: GET returns COMPLETE results (already checked)
+    // GET returns COMPLETE results (already checked — shows results on load)
     await setComplianceGetResponse(buildMockComplianceComplete());
 
-    // Mock POST /compliance/check → track that it was called, return RUNNING
-    await page.route(complianceCheckUrl, async (route: Route) => {
+    // Mock POST /compliance/stream → track that it was called, return SSE complete.
+    // The component reads the `complete` event and calls loadCheck() which hits
+    // the COMPLETE GET mock, keeping results visible.
+    await page.route(complianceStreamUrl, async (route: Route) => {
       postCalled = true;
-      // Swap GET mock to RUNNING before fulfilling POST so the next poll picks it up
-      await setComplianceGetResponse(buildMockComplianceRunning());
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(buildMockComplianceRunning()),
+        contentType: 'text/event-stream',
+        body: 'event: complete\ndata: {}\n\n',
       });
     });
 
@@ -422,22 +428,12 @@ test.describe('Compliance Checking', () => {
       await page.locator('.fixed button:has-text("Run Compliance Check")').click();
     }
 
-    // Verify the POST was called (new check triggered)
-    // Wait a moment for the request to be intercepted
+    // Verify the POST /compliance/stream was called (new check triggered)
     await page.waitForTimeout(1_000);
     expect(postCalled).toBe(true);
 
-    // The component's render order means COMPLETE results stay visible while
-    // `running` is true (the COMPLETE branch at line 115 returns before the
-    // running check at line 142). Polling only updates `check` on COMPLETE
-    // or ERROR, not RUNNING. So the running spinner is not reachable via
-    // re-check when results are already shown.
-    //
-    // Instead, verify polling eventually picks up a new COMPLETE response
-    // (simulating the re-check finishing) and the results view remains.
-    await setComplianceGetResponse(buildMockComplianceComplete());
-
-    // Results should still be visible (polling picks up COMPLETE, running resets)
+    // After SSE complete, loadCheck() fetches GET → COMPLETE, running resets.
+    // Results should remain visible.
     await expect(page.locator('text=RESEARCH OUTPUT')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('button:has-text("Re-check Claims")')).toBeVisible();
 
