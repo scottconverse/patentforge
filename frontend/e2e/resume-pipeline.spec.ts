@@ -170,11 +170,14 @@ async function fillInventionForm(page: Page, projectId: string) {
     .waitFor({ state: 'visible', timeout: 10_000 });
 
   await page.locator('input[placeholder="Name your invention"]').fill('E2E Resume Test Invention');
+  // 50+ words required by the backend before a feasibility run can start
   await page
     .locator('textarea[placeholder*="detailed description"]')
     .fill(
-      'A test invention for E2E resume pipeline verification. ' +
-        'This tests the resume button that appears after an ERROR state.',
+      'A test invention for end-to-end resume pipeline verification and error recovery testing. ' +
+        'This description verifies the resume button behavior that appears after a pipeline enters ' +
+        'an ERROR state mid-run, allowing the user to restart from the failed stage without ' +
+        'losing previously completed stage outputs or needing to configure the invention again.',
     );
 }
 

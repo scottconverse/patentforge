@@ -121,11 +121,15 @@ async function fillInventionForm(page: Page, projectId: string, title = 'E2E Edi
     .waitFor({ state: 'visible', timeout: 10_000 });
 
   await page.locator('input[placeholder="Name your invention"]').fill(title);
+  // 50+ words required by the backend before a feasibility run can start
   await page
     .locator('textarea[placeholder*="detailed description"]')
     .fill(
-      'Initial description of the invention. This will be edited after feasibility runs ' +
-        'to verify that editing does not wipe feasibility results.',
+      'Initial description of the invention for end-to-end edit-after-feasibility testing. ' +
+        'This description will be modified after the feasibility analysis completes to verify ' +
+        'that editing invention details does not wipe or invalidate previously generated ' +
+        'feasibility results. The system should preserve completed analysis data while ' +
+        'allowing inventors to refine their invention disclosure at any time.',
     );
 }
 

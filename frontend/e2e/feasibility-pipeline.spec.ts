@@ -311,7 +311,14 @@ test.describe('Feasibility Pipeline', () => {
 
     await page.locator('input[placeholder="Name your invention"]').waitFor({ state: 'visible', timeout: 10_000 });
     await page.locator('input[placeholder="Name your invention"]').fill('No Key Test');
-    await page.locator('textarea[placeholder*="detailed description"]').fill('A test invention.');
+    // 50+ words required — word count check runs before API key check in startRun
+    await page.locator('textarea[placeholder*="detailed description"]').fill(
+      'A test invention created to verify the no-API-key error path in the feasibility ' +
+      'analysis pipeline. This description is deliberately long enough to satisfy the ' +
+      'fifty-word minimum requirement enforced by the backend controller before checking ' +
+      'any other preconditions, such as a valid Anthropic API key being configured and ' +
+      'available in the application settings.',
+    );
 
     // Clear the API key AFTER the page has loaded (so wizard doesn't block)
     await updateSettings({ anthropicApiKey: '' });
