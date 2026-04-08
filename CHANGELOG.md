@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Backend SSE proxy endpoints** — `POST /claims/stream`, `/compliance/stream`, `/application/stream` — forward events from Python services to the frontend while simultaneously parsing `complete` events to save results to the database.
 - **Cross-references populated** — Patent application generator now produces a "CROSS-REFERENCE TO RELATED APPLICATIONS" section, populated from project context using regex extraction of provisional applications, serial numbers, PCT references. No additional LLM call needed.
 - **Claims lazy-load** — Claims endpoint returns 200-character preview text by default; full claim text loaded on-demand when user expands a claim. Reduces initial payload from 152KB to ~15KB for 37 claims.
-- 140 new tests (44 Jest + 25 Vitest + 71 pytest), bringing total to 744 (304 Jest + 202 Vitest + 238 pytest)
+- 140 new tests (44 Jest + 25 Vitest + 71 pytest), bringing total to 799 (304 Jest + 202 Vitest + 238 pytest + 55 Playwright E2E)
 
 ### Changed
 - **Claim-drafter SSE** — `/draft` endpoint now emits realtime step events as each LangGraph node completes (planner, writer, examiner) with keepalive heartbeat.
