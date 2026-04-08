@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { slugify } from '../utils/slugify';
 import { useElapsedTimer } from '../hooks/useElapsedTimer';
 import Alert from './Alert';
+import { startSSEStream } from '../utils/sseStream';
+import StepProgress, { APPLICATION_STEPS, StepState } from './StepProgress';
 
 interface ApplicationTabProps {
   projectId: string;
@@ -46,6 +48,10 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
   const [mdLoading, setMdLoading] = useState(false);
+  // SSE streaming state
+  const [sseSteps, setSseSteps] = useState<StepState[]>([]);
+  const [useSSE, setUseSSE] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const { formatted: elapsedFormatted } = useElapsedTimer(
     generating || application?.status === 'RUNNING',
   );
@@ -91,15 +97,77 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
     }
   }
 
+  /** Start application generation via SSE stream, falling back to polling on failure. */
+  async function startGenerationSSE() {
+    setGenerating(true);
+    setError(null);
+    setUseSSE(true);
+    setSseSteps(APPLICATION_STEPS.map((s) => ({ key: s.key, status: 'pending' })));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const { stream } = await startSSEStream(
+        `/api/projects/${projectId}/application/stream`,
+        {},
+        controller.signal,
+      );
+
+      for await (const event of stream) {
+        if (event.event === 'step') {
+          const stepKey = event.data.step;
+          const stepStatus = event.data.status === 'complete' ? 'complete' : 'running';
+          setSseSteps((prev) =>
+            prev.map((s) =>
+              s.key === stepKey
+                ? { ...s, status: stepStatus, detail: event.data.detail }
+                : s.status === 'running' && stepStatus === 'running'
+                  ? { ...s, status: 'complete' }
+                  : s,
+            ),
+          );
+        } else if (event.event === 'complete') {
+          setSseSteps((prev) => prev.map((s) => ({ ...s, status: 'complete' })));
+          await loadApplication();
+          setGenerating(false);
+          setUseSSE(false);
+          return;
+        } else if (event.event === 'error') {
+          setError(event.data.message || 'Application generation failed');
+          setGenerating(false);
+          setUseSSE(false);
+          return;
+        }
+      }
+
+      // Stream ended without complete — fall back to polling
+      setUseSSE(false);
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        setGenerating(false);
+        setUseSSE(false);
+        return;
+      }
+      console.warn('Application SSE stream failed, falling back to polling:', e.message);
+      setUseSSE(false);
+      try {
+        await api.application.start(projectId);
+      } catch (fallbackErr: any) {
+        setError(fallbackErr.message);
+        setGenerating(false);
+      }
+    }
+  }
+
   async function startGeneration() {
     if (!acknowledged) {
       setShowModal(true);
       return;
     }
     try {
-      setGenerating(true);
       setError(null);
-      await api.application.start(projectId);
+      await startGenerationSSE();
     } catch (e: any) {
       setError(e.message);
       setGenerating(false);
@@ -181,6 +249,20 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
 
   // State 2: Generating
   if (generating || application?.status === 'RUNNING') {
+    // SSE mode: show real-time step progress
+    if (useSSE && sseSteps.length > 0) {
+      return (
+        <StepProgress
+          steps={APPLICATION_STEPS}
+          stepStates={sseSteps}
+          elapsed={elapsedFormatted}
+          description="Application generation typically takes 2-4 minutes. Your patent application document is being assembled."
+          error={error}
+        />
+      );
+    }
+
+    // Polling fallback: show simple spinner
     return (
       <div className="text-center py-12">
         <div className="inline-flex items-center gap-3">
@@ -191,7 +273,7 @@ export default function ApplicationTab({ projectId, hasClaims }: ApplicationTabP
           <span className="text-gray-300">Generating patent application...</span>
         </div>
         <p className="text-xs text-gray-500 mt-3">
-          Application generation typically takes 2–4 minutes. Your patent application document is being assembled.
+          Application generation typically takes 2-4 minutes. Your patent application document is being assembled.
         </p>
         <p className="text-xs text-gray-600 mt-2 font-mono">{elapsedFormatted} elapsed</p>
       </div>

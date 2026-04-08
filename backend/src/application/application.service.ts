@@ -379,6 +379,231 @@ export class ApplicationService implements OnModuleInit {
   }
 
   /**
+   * Prepare an application generation for streaming: validates the project, enforces
+   * concurrency and cost cap, builds the request body, and creates the RUNNING record.
+   * Returns the appId and the request body to send to the upstream service.
+   * Used by the controller's SSE stream endpoint.
+   */
+  async prepareGeneration(projectId: string): Promise<{ appId: string; requestBody: ApplicationGenerateRequestBody }> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { invention: true },
+    });
+    if (!project) throw new NotFoundException(`Project ${projectId} not found`);
+    if (!project.invention) throw new NotFoundException('No invention form — fill it in first');
+
+    const completedClaims = await this.prisma.claimDraft.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { claims: { orderBy: { claimNumber: 'asc' } } },
+    });
+    if (!completedClaims) {
+      throw new BadRequestException('No completed claim draft found. Run Claim Drafting first.');
+    }
+
+    const running = await this.prisma.patentApplication.findFirst({
+      where: { projectId, status: 'RUNNING' },
+    });
+    if (running) {
+      throw new ConflictException(
+        'An application generation is already running for this project. Wait for it to complete or try again later.',
+      );
+    }
+
+    const settings = await this.settingsService.getSettings();
+    if (!settings.anthropicApiKey) {
+      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
+    }
+
+    // Enforce cost cap
+    if (settings.costCapUsd > 0) {
+      const stages = await this.prisma.feasibilityStage.findMany({
+        where: { feasibilityRun: { projectId }, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const claimDrafts = await this.prisma.claimDraft.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const complianceChecks = await this.prisma.complianceCheck.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const prevApps = await this.prisma.patentApplication.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const spent =
+        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        claimDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0) +
+        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+      if (spent >= settings.costCapUsd) {
+        throw new BadRequestException(
+          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
+            `Increase the cost cap in Settings to continue.`,
+        );
+      }
+    }
+
+    const feasRun = await this.prisma.feasibilityRun.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { stages: { orderBy: { stageNumber: 'asc' } } },
+    });
+
+    const MAX_STAGE_CHARS = 15_000;
+    const rawStage1 = feasRun?.stages?.find((s) => s.stageNumber === 1)?.outputText ?? '';
+    const rawStage5 = feasRun?.stages?.find((s) => s.stageNumber === 5)?.outputText ?? '';
+    const rawStage6 = feasRun?.stages?.find((s) => s.stageNumber === 6)?.outputText ?? '';
+    const stage1 = rawStage1.length > MAX_STAGE_CHARS
+      ? rawStage1.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
+      : rawStage1;
+    const stage5 = rawStage5.length > MAX_STAGE_CHARS
+      ? rawStage5.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
+      : rawStage5;
+    const stage6 = rawStage6.length > MAX_STAGE_CHARS
+      ? rawStage6.slice(0, MAX_STAGE_CHARS) + '\n\n[...truncated for application generation context]'
+      : rawStage6;
+
+    const priorArt = await this.prisma.priorArtSearch.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { results: { orderBy: { relevanceScore: 'desc' }, take: 20 } },
+    });
+
+    const priorArtResults: Array<{
+      patent_number: string;
+      title: string;
+      abstract: string | null;
+      relevance_score: number;
+      claims_text: string | null;
+    }> = [];
+    if (priorArt?.results) {
+      for (const r of priorArt.results) {
+        const cached = await this.prisma.patentDetail.findUnique({
+          where: { patentNumber: r.patentNumber },
+          select: { claimsText: true },
+        });
+        priorArtResults.push({
+          patent_number: r.patentNumber,
+          title: r.title,
+          abstract: r.abstract,
+          relevance_score: r.relevanceScore,
+          claims_text: cached?.claimsText ?? null,
+        });
+      }
+    }
+
+    const claimsText = completedClaims.claims.map((c) => `${c.claimNumber}. ${c.text}`).join('\n\n');
+    const specLanguage = completedClaims.specLanguage ?? '';
+
+    const inv = project.invention;
+    const narrative = [
+      `Title: ${inv.title}`,
+      `Description: ${inv.description}`,
+      inv.problemSolved ? `Problem Solved: ${inv.problemSolved}` : '',
+      inv.howItWorks ? `How It Works: ${inv.howItWorks}` : '',
+      inv.aiComponents ? `AI/ML Components: ${inv.aiComponents}` : '',
+      inv.threeDPrintComponents ? `3D Print Components: ${inv.threeDPrintComponents}` : '',
+      inv.whatIsNovel ? `What Is Novel: ${inv.whatIsNovel}` : '',
+      inv.currentAlternatives ? `Current Alternatives: ${inv.currentAlternatives}` : '',
+      inv.whatIsBuilt ? `What Is Built: ${inv.whatIsBuilt}` : '',
+      inv.whatToProtect ? `What To Protect: ${inv.whatToProtect}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    const lastApp = await this.prisma.patentApplication.findFirst({
+      where: { projectId },
+      orderBy: { version: 'desc' },
+    });
+    const version = (lastApp?.version ?? 0) + 1;
+
+    const app = await this.prisma.patentApplication.create({
+      data: {
+        projectId,
+        version,
+        status: 'RUNNING',
+      },
+    });
+
+    return {
+      appId: app.id,
+      requestBody: {
+        invention_narrative: narrative,
+        feasibility_stage_1: stage1,
+        feasibility_stage_5: stage5,
+        feasibility_stage_6: stage6,
+        prior_art_results: priorArtResults,
+        claims_text: claimsText,
+        spec_language: specLanguage,
+        settings: {
+          api_key: settings.anthropicApiKey,
+          default_model: settings.defaultModel,
+          research_model: settings.researchModel || '',
+          max_tokens: settings.maxTokens,
+        },
+      },
+    };
+  }
+
+  /**
+   * Save results from an SSE `complete` event to the database.
+   * Called by the controller's stream endpoint when the upstream sends a complete event.
+   */
+  async saveStreamComplete(appId: string, payload: AppGeneratorResponse) {
+    if (payload.status === 'ERROR') {
+      console.error(`[Application] Generator returned ERROR for ${appId}: ${payload.error_message ?? 'no message'}`);
+      await this.prisma.patentApplication.update({
+        where: { id: appId },
+        data: {
+          status: 'ERROR',
+          errorMessage: payload.error_message ?? 'Application generator returned an error',
+          completedAt: new Date(),
+        },
+      });
+      return;
+    }
+
+    await this.prisma.patentApplication.update({
+      where: { id: appId },
+      data: {
+        status: 'COMPLETE',
+        title: payload.title || null,
+        abstract: payload.abstract ?? null,
+        background: payload.background ?? null,
+        summary: payload.summary ?? null,
+        detailedDescription: payload.detailed_description ?? null,
+        claims: payload.claims ?? null,
+        figureDescriptions: payload.figure_descriptions ?? null,
+        crossReferences: payload.cross_references ?? null,
+        idsTable: payload.ids_table ?? null,
+        estimatedCostUsd: payload.total_estimated_cost_usd ?? null,
+        completedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Mark an application as ERROR. Used by the stream endpoint on failure.
+   */
+  async markAppError(appId: string) {
+    try {
+      const current = await this.prisma.patentApplication.findUnique({ where: { id: appId } });
+      if (current && current.status === 'RUNNING') {
+        await this.prisma.patentApplication.update({
+          where: { id: appId },
+          data: { status: 'ERROR', errorMessage: 'Stream did not complete', completedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[Application] Failed to mark app ${appId} as error: ${msg}`);
+    }
+  }
+
+  /**
    * Get the latest patent application for a project.
    */
   async getLatest(projectId: string) {

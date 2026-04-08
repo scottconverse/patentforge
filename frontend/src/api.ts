@@ -131,6 +131,8 @@ export const api = {
       req<any>('PUT', `/projects/${projectId}/claims/edit/${claimId}`, { text }),
     regenerateClaim: (projectId: string, claimNumber: number) =>
       req<any>('POST', `/projects/${projectId}/claims/${claimNumber}/regenerate`),
+    getClaimText: (projectId: string, claimId: string) =>
+      req<{ text: string }>('GET', `/projects/${projectId}/claims/text/${claimId}`),
     exportToDocx: async (projectId: string): Promise<Blob> => {
       const res = await fetch(`${BASE}/projects/${projectId}/claims/export/docx`);
       if (!res.ok) {

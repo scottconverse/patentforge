@@ -3,6 +3,9 @@ import { api } from '../api';
 import Alert from './Alert';
 import ClaimTree from './ClaimTree';
 import { markdownToHtml } from '../utils/markdown';
+import { startSSEStream } from '../utils/sseStream';
+import StepProgress, { CLAIMS_STEPS, StepState } from './StepProgress';
+import { useElapsedTimer } from '../hooks/useElapsedTimer';
 
 interface ClaimsTabProps {
   projectId: string;
@@ -17,7 +20,8 @@ interface ClaimData {
   scopeLevel: string | null;
   statutoryType: string | null;
   parentClaimNumber: number | null;
-  text: string;
+  text?: string;
+  preview?: string;
   examinerNotes: string;
 }
 
@@ -48,7 +52,16 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
   const [docxError, setDocxError] = useState<string | null>(null);
   // Claims start collapsed — expand on click to avoid rendering all markdown at once
   const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
-  // Elapsed time counter for long-running operations
+  // Lazy-load cache: claimId → full text (fetched on expand)
+  const [claimTexts, setClaimTexts] = useState<Record<string, string>>({});
+  // Track which claims are currently loading their full text
+  const [loadingClaims, setLoadingClaims] = useState<Set<string>>(new Set());
+  // SSE streaming state
+  const [sseSteps, setSseSteps] = useState<StepState[]>([]);
+  const [useSSE, setUseSSE] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const { formatted: elapsedFormatted } = useElapsedTimer(generating || draft?.status === 'RUNNING');
+  // Legacy elapsed timer (kept for polling fallback)
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -96,11 +109,113 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
       setLoading(true);
       const d = await api.claimDraft.getLatest(projectId);
       setDraft(d.status === 'NONE' ? null : d);
+      setClaimTexts({}); // Clear cached texts — draft data may have changed
       if (d.status === 'RUNNING') setGenerating(true);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  /** Fetch full text for a claim, caching it for subsequent views. */
+  async function loadClaimText(claimId: string) {
+    if (claimTexts[claimId]) return; // already cached
+    setLoadingClaims((prev) => new Set(prev).add(claimId));
+    try {
+      const result = await api.claimDraft.getClaimText(projectId, claimId);
+      setClaimTexts((prev) => ({ ...prev, [claimId]: result.text }));
+    } catch (e: any) {
+      setError(`Failed to load claim text: ${e.message}`);
+    } finally {
+      setLoadingClaims((prev) => {
+        const next = new Set(prev);
+        next.delete(claimId);
+        return next;
+      });
+    }
+  }
+
+  /**
+   * Get the display text for a claim — returns cached full text if available,
+   * otherwise returns the preview snippet from the initial load.
+   */
+  function getClaimDisplayText(claim: ClaimData): string {
+    if (claimTexts[claim.id]) return claimTexts[claim.id];
+    if (claim.text) return claim.text; // full text from ?full=true or inline
+    return claim.preview ?? '';
+  }
+
+  /** Whether a claim's full text is available (either cached or inline). */
+  function hasFullText(claim: ClaimData): boolean {
+    return !!(claimTexts[claim.id] || claim.text);
+  }
+
+  /** Start claim generation via SSE stream, falling back to polling on failure. */
+  async function handleGenerateSSE() {
+    setGenerating(true);
+    setError(null);
+    setUseSSE(true);
+    setSseSteps(CLAIMS_STEPS.map((s) => ({ key: s.key, status: 'pending' })));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const { stream } = await startSSEStream(
+        `/api/projects/${projectId}/claims/stream`,
+        {},
+        controller.signal,
+      );
+
+      for await (const event of stream) {
+        if (event.event === 'step') {
+          const stepKey = event.data.step;
+          const stepStatus = event.data.status === 'complete' ? 'complete' : 'running';
+          setSseSteps((prev) =>
+            prev.map((s) =>
+              s.key === stepKey
+                ? { ...s, status: stepStatus, detail: event.data.detail }
+                : s.status === 'running' && stepStatus === 'running'
+                  ? { ...s, status: 'complete' } // auto-complete prior running step
+                  : s,
+            ),
+          );
+        } else if (event.event === 'complete') {
+          // Mark all steps complete
+          setSseSteps((prev) => prev.map((s) => ({ ...s, status: 'complete' })));
+          // Refresh claim data from the server
+          await loadDraft();
+          setGenerating(false);
+          setUseSSE(false);
+          return;
+        } else if (event.event === 'error') {
+          setError(event.data.message || 'Claim generation failed');
+          setGenerating(false);
+          setUseSSE(false);
+          return;
+        }
+      }
+
+      // Stream ended without complete event — fall back to polling
+      setUseSSE(false);
+      // Polling effect will take over
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        setGenerating(false);
+        setUseSSE(false);
+        return;
+      }
+      // SSE stream failed — fall back to polling
+      console.warn('Claims SSE stream failed, falling back to polling:', e.message);
+      setUseSSE(false);
+      // Start the non-SSE generation as fallback
+      try {
+        await api.claimDraft.start(projectId);
+      } catch (fallbackErr: any) {
+        setError(fallbackErr.message);
+        setGenerating(false);
+      }
     }
   }
 
@@ -110,9 +225,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
       return;
     }
     try {
-      setGenerating(true);
       setError(null);
-      await api.claimDraft.start(projectId);
+      // Try SSE streaming first
+      await handleGenerateSSE();
     } catch (e: any) {
       setError(e.message);
       setGenerating(false);
@@ -169,6 +284,20 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
 
   // State: Generating (must come before !draft check — generating can be true while draft is null)
   if (generating || draft?.status === 'RUNNING') {
+    // SSE mode: show real-time step progress
+    if (useSSE && sseSteps.length > 0) {
+      return (
+        <StepProgress
+          steps={CLAIMS_STEPS}
+          stepStates={sseSteps}
+          elapsed={elapsedFormatted}
+          description="This takes 2-5 minutes. The AI is planning, drafting, and reviewing your claims."
+          error={error}
+        />
+      );
+    }
+
+    // Polling fallback: show simple spinner
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
     return (
@@ -299,9 +428,17 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
           claims={draft.claims}
           onClaimClick={(claimId) => {
             setViewMode('list');
-            setEditingClaim(claimId);
             const claim = draft.claims.find((c) => c.id === claimId);
-            if (claim) setEditText(claim.text);
+            if (claim) {
+              // Expand the parent group and load full text before editing
+              setExpandedClaims((prev) => new Set(prev).add(claim.claimNumber));
+              if (!hasFullText(claim)) {
+                loadClaimText(claim.id);
+              } else {
+                setEditingClaim(claimId);
+                setEditText(getClaimDisplayText(claim));
+              }
+            }
           }}
         />
       )}
@@ -317,14 +454,24 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
           )}
           {independentClaims.map((indep) => (
             <div key={indep.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-              {/* Independent claim header — click to expand/collapse */}
+              {/* Independent claim header — click to expand/collapse + lazy-load full text */}
               <button
-                onClick={() => setExpandedClaims((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(indep.claimNumber)) next.delete(indep.claimNumber);
-                  else next.add(indep.claimNumber);
-                  return next;
-                })}
+                onClick={() => {
+                  setExpandedClaims((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(indep.claimNumber)) {
+                      next.delete(indep.claimNumber);
+                    } else {
+                      next.add(indep.claimNumber);
+                      // Lazy-load full text for independent claim + its dependents
+                      if (!hasFullText(indep)) loadClaimText(indep.id);
+                      dependentClaims
+                        .filter((d) => d.parentClaimNumber === indep.claimNumber)
+                        .forEach((d) => { if (!hasFullText(d)) loadClaimText(d.id); });
+                    }
+                    return next;
+                  });
+                }}
                 className="w-full px-4 py-3 border-b border-gray-800 flex items-center gap-3 hover:bg-gray-800/50 transition-colors"
               >
                 <span className={`transform transition-transform text-gray-500 text-xs ${expandedClaims.has(indep.claimNumber) ? 'rotate-90' : ''}`}>&#9654;</span>
@@ -339,14 +486,24 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                     {indep.statutoryType}
                   </span>
                 )}
-                <span className="ml-auto text-xs text-gray-600">
+                {!expandedClaims.has(indep.claimNumber) && (indep.preview || indep.text) && (
+                  <span className="text-xs text-gray-500 truncate max-w-[40%]">
+                    {(indep.preview || indep.text || '').slice(0, 80)}...
+                  </span>
+                )}
+                <span className="ml-auto text-xs text-gray-600 shrink-0">
                   {dependentClaims.filter((d) => d.parentClaimNumber === indep.claimNumber).length} dependent
                 </span>
               </button>
 
               {/* Claim body + dependent claims — only rendered when expanded */}
               {expandedClaims.has(indep.claimNumber) && <><div className="p-4">
-                {editingClaim === indep.id ? (
+                {loadingClaims.has(indep.id) ? (
+                  <div className="flex items-center gap-2 py-3">
+                    <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading claim text" />
+                    <span className="text-xs text-gray-500">Loading claim text...</span>
+                  </div>
+                ) : editingClaim === indep.id ? (
                   <div>
                     <textarea
                       value={editText}
@@ -374,8 +531,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                     <div
                       className="group relative text-sm text-gray-300 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
                       onClick={() => {
+                        if (!hasFullText(indep)) return; // don't edit while loading
                         setEditingClaim(indep.id);
-                        setEditText(indep.text);
+                        setEditText(getClaimDisplayText(indep));
                       }}
                       title="Click to edit"
                     >
@@ -394,7 +552,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                       </svg>
                       <div
                         className="markdown-content"
-                        dangerouslySetInnerHTML={{ __html: markdownToHtml(indep.text) }}
+                        dangerouslySetInnerHTML={{ __html: markdownToHtml(getClaimDisplayText(indep)) }}
                       />
                     </div>
                     <div className="flex items-center gap-3 mt-2">
@@ -417,7 +575,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                       </button>
                     </div>
                     {(() => {
-                      const overlappingArt = findOverlaps(indep.text, priorArtTitles ?? []);
+                      const overlappingArt = findOverlaps(getClaimDisplayText(indep), priorArtTitles ?? []);
                       return overlappingArt.length > 0 ? (
                         <div
                           className="mt-1 flex items-center gap-1 text-amber-400 text-xs"
@@ -447,7 +605,12 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                       <span className="text-xs text-gray-500 font-mono">Claim {dep.claimNumber}</span>
                       <span className="text-xs text-gray-600">depends on {dep.parentClaimNumber}</span>
                     </div>
-                    {editingClaim === dep.id ? (
+                    {loadingClaims.has(dep.id) ? (
+                      <div className="flex items-center gap-2 py-2">
+                        <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" aria-label="Loading claim text" />
+                        <span className="text-xs text-gray-500">Loading...</span>
+                      </div>
+                    ) : editingClaim === dep.id ? (
                       <div>
                         <textarea
                           value={editText}
@@ -475,8 +638,9 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                         <div
                           className="group relative text-xs text-gray-400 leading-relaxed cursor-text hover:bg-gray-800/50 hover:border-gray-600 border border-transparent rounded p-1 -m-1 transition-colors"
                           onClick={() => {
+                            if (!hasFullText(dep)) return; // don't edit while loading
                             setEditingClaim(dep.id);
-                            setEditText(dep.text);
+                            setEditText(getClaimDisplayText(dep));
                           }}
                           title="Click to edit"
                         >
@@ -495,7 +659,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                           </svg>
                           <div
                             className="markdown-content"
-                            dangerouslySetInnerHTML={{ __html: markdownToHtml(dep.text) }}
+                            dangerouslySetInnerHTML={{ __html: markdownToHtml(getClaimDisplayText(dep)) }}
                           />
                         </div>
                         <div className="flex items-center gap-3 mt-1">
@@ -518,7 +682,7 @@ export default function ClaimsTab({ projectId, hasFeasibility, priorArtTitles }:
                           </button>
                         </div>
                         {(() => {
-                          const overlappingArt = findOverlaps(dep.text, priorArtTitles ?? []);
+                          const overlappingArt = findOverlaps(getClaimDisplayText(dep), priorArtTitles ?? []);
                           return overlappingArt.length > 0 ? (
                             <div
                               className="mt-1 flex items-center gap-1 text-amber-400 text-xs"

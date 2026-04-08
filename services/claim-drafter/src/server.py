@@ -7,6 +7,7 @@ Endpoints:
 """
 
 from __future__ import annotations
+import asyncio
 import json
 import hashlib
 import os
@@ -18,7 +19,7 @@ from fastapi.security import APIKeyHeader
 from sse_starlette.sse import EventSourceResponse
 
 from .models import ClaimDraftRequest, ClaimDraftResult
-from .graph import run_claim_pipeline
+from .graph import run_claim_pipeline, stream_claim_pipeline
 
 app = FastAPI(title="PatentForge Claim Drafter", version="0.5.0")
 
@@ -104,14 +105,16 @@ async def draft_claims(request: ClaimDraftRequest):
     if len(prior_art_context) > 50_000:
         prior_art_context = prior_art_context[:50_000] + "\n\n(truncated — prior art context exceeds 50K characters)"
 
-    async def event_stream():
-        steps_seen = []
+    # Keepalive interval in seconds — emit SSE comment to prevent proxy/browser
+    # timeouts during long first-token waits (matches feasibility service pattern).
+    KEEPALIVE_INTERVAL_S = 20
 
-        def on_step(node_name: str, step: str):
-            steps_seen.append(node_name)
+    async def event_stream():
+        import time
+        last_event_time = time.monotonic()
 
         try:
-            result = await run_claim_pipeline(
+            pipeline = stream_claim_pipeline(
                 invention_narrative=request.invention_narrative,
                 feasibility_stage_5=request.feasibility_stage_5,
                 feasibility_stage_6=request.feasibility_stage_6,
@@ -120,22 +123,52 @@ async def draft_claims(request: ClaimDraftRequest):
                 default_model=request.settings.default_model,
                 research_model=request.settings.research_model,
                 max_tokens=request.settings.max_tokens,
-                on_step=on_step,
             )
 
-            # Emit step events for each completed step
-            for step in steps_seen:
-                yield {"event": "step", "data": json.dumps({"step": step})}
+            # We use asyncio.wait_for with a timeout to interleave keepalives
+            # between long-running pipeline nodes.
+            aiter = pipeline.__aiter__()
+            while True:
+                try:
+                    remaining = KEEPALIVE_INTERVAL_S - (time.monotonic() - last_event_time)
+                    if remaining <= 0:
+                        remaining = KEEPALIVE_INTERVAL_S
 
-            # Emit final result
-            yield {
-                "event": "complete",
-                "data": result.model_dump_json(),
-            }
+                    event = await asyncio.wait_for(aiter.__anext__(), timeout=remaining)
+                except asyncio.TimeoutError:
+                    # No event within keepalive interval — send keepalive comment
+                    yield {"comment": "keepalive"}
+                    last_event_time = time.monotonic()
+                    continue
+                except StopAsyncIteration:
+                    break
+
+                last_event_time = time.monotonic()
+
+                if event["event"] == "step":
+                    yield {
+                        "event": "step",
+                        "data": json.dumps({
+                            "step": event["node"],
+                            "status": "complete",
+                            "detail": event["detail"],
+                        }),
+                    }
+                elif event["event"] == "complete":
+                    result = event["result"]
+                    yield {
+                        "event": "complete",
+                        "data": result.model_dump_json(),
+                    }
+                elif event["event"] == "error":
+                    yield {
+                        "event": "error",
+                        "data": json.dumps({"message": event["message"]}),
+                    }
         except Exception as e:
             yield {
                 "event": "error",
-                "data": json.dumps({"error": str(e)}),
+                "data": json.dumps({"message": str(e)}),
             }
 
     return EventSourceResponse(event_stream())

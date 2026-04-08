@@ -371,15 +371,219 @@ export class ClaimDraftService implements OnModuleInit {
   }
 
   /**
-   * Get the latest claim draft for a project.
+   * Prepare a claim draft for streaming: validates the project, enforces concurrency
+   * and cost cap, builds the request body, and creates the RUNNING draft record.
+   * Returns the draftId and the request body to send to the upstream service.
+   * Used by the controller's SSE stream endpoint.
    */
-  async getLatest(projectId: string) {
+  async prepareDraft(projectId: string): Promise<{ draftId: string; requestBody: ClaimDraftRequestBody }> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { invention: true },
+    });
+    if (!project) throw new NotFoundException(`Project ${projectId} not found`);
+    if (!project.invention) throw new NotFoundException('No invention form — fill it in first');
+
+    // Prevent concurrent drafts
+    const running = await this.prisma.claimDraft.findFirst({
+      where: { projectId, status: 'RUNNING' },
+    });
+    if (running) {
+      throw new ConflictException(
+        'A claim draft is already running for this project. Wait for it to complete or try again later.',
+      );
+    }
+
+    const settings = await this.settingsService.getSettings();
+    if (!settings.anthropicApiKey) {
+      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
+    }
+
+    // Enforce cost cap
+    if (settings.costCapUsd > 0) {
+      const stages = await this.prisma.feasibilityStage.findMany({
+        where: { feasibilityRun: { projectId }, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const complianceChecks = await this.prisma.complianceCheck.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const prevApps = await this.prisma.patentApplication.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const prevDrafts = await this.prisma.claimDraft.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const spent =
+        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0) +
+        prevDrafts.reduce((sum, d) => sum + (d.estimatedCostUsd ?? 0), 0);
+      if (spent >= settings.costCapUsd) {
+        throw new BadRequestException(
+          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
+            `Increase the cost cap in Settings to continue.`,
+        );
+      }
+    }
+
+    const { stage5, stage6, priorArtResults } = await this.getFeasibilityContext(projectId);
+
+    const inv = project.invention;
+    const narrative = [
+      `Title: ${inv.title}`,
+      `Description: ${inv.description}`,
+      inv.problemSolved ? `Problem Solved: ${inv.problemSolved}` : '',
+      inv.howItWorks ? `How It Works: ${inv.howItWorks}` : '',
+      inv.aiComponents ? `AI/ML Components: ${inv.aiComponents}` : '',
+      inv.threeDPrintComponents ? `3D Print Components: ${inv.threeDPrintComponents}` : '',
+      inv.whatIsNovel ? `What Is Novel: ${inv.whatIsNovel}` : '',
+      inv.currentAlternatives ? `Current Alternatives: ${inv.currentAlternatives}` : '',
+      inv.whatIsBuilt ? `What Is Built: ${inv.whatIsBuilt}` : '',
+      inv.whatToProtect ? `What To Protect: ${inv.whatToProtect}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    const lastDraft = await this.prisma.claimDraft.findFirst({
+      where: { projectId },
+      orderBy: { version: 'desc' },
+    });
+    const version = (lastDraft?.version ?? 0) + 1;
+
+    const draft = await this.prisma.claimDraft.create({
+      data: {
+        projectId,
+        version,
+        status: 'RUNNING',
+        startedAt: new Date(),
+      },
+    });
+
+    return {
+      draftId: draft.id,
+      requestBody: {
+        invention_narrative: narrative,
+        feasibility_stage_5: stage5,
+        feasibility_stage_6: stage6,
+        prior_art_results: priorArtResults,
+        settings: {
+          api_key: settings.anthropicApiKey,
+          default_model: settings.defaultModel,
+          research_model: settings.researchModel || '',
+          max_tokens: settings.maxTokens,
+        },
+      },
+    };
+  }
+
+  /**
+   * Save results from an SSE `complete` event to the database.
+   * Called by the controller's stream endpoint when the upstream sends a complete event.
+   */
+  async saveStreamComplete(draftId: string, payload: ClaimDrafterResponse) {
+    if (payload.status === 'ERROR') {
+      console.error(
+        `[ClaimDraft] Claim drafter returned ERROR for ${draftId}: ${payload.error_message ?? 'no message'}`,
+      );
+      await this.prisma.claimDraft.update({
+        where: { id: draftId },
+        data: { status: 'ERROR', completedAt: new Date() },
+      });
+      return;
+    }
+
+    // Save claims to DB
+    for (const claim of payload.claims || []) {
+      await this.prisma.claim.create({
+        data: {
+          draftId,
+          claimNumber: claim.claim_number,
+          claimType: claim.claim_type,
+          scopeLevel: claim.scope_level ?? null,
+          statutoryType: claim.statutory_type ?? null,
+          parentClaimNumber: claim.parent_claim_number ?? null,
+          text: claim.text,
+          examinerNotes: claim.examiner_notes ?? '',
+        },
+      });
+    }
+
+    await this.prisma.claimDraft.update({
+      where: { id: draftId },
+      data: {
+        status: 'COMPLETE',
+        completedAt: new Date(),
+        specLanguage: payload.specification_language || null,
+        plannerStrategy: payload.planner_strategy || null,
+        examinerFeedback: payload.examiner_feedback || null,
+        revisionNotes: payload.revision_notes || null,
+        estimatedCostUsd: payload.total_estimated_cost_usd ?? null,
+      },
+    });
+  }
+
+  /**
+   * Mark a draft as ERROR. Used by the stream endpoint on failure.
+   */
+  async markDraftError(draftId: string) {
+    try {
+      const current = await this.prisma.claimDraft.findUnique({ where: { id: draftId } });
+      if (current && current.status === 'RUNNING') {
+        await this.prisma.claimDraft.update({
+          where: { id: draftId },
+          data: { status: 'ERROR', completedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[ClaimDraft] Failed to mark draft ${draftId} as error: ${msg}`);
+    }
+  }
+
+  /**
+   * Get the latest claim draft for a project.
+   * When `full` is false (default), each claim includes a `preview` field
+   * (first 200 chars of text) and omits the full `text` field — reducing
+   * payload from ~150KB to ~15KB for large claim sets.
+   * When `full` is true, the full `text` field is included (backwards compatible).
+   */
+  async getLatest(projectId: string, full = false) {
     const draft = await this.prisma.claimDraft.findFirst({
       where: { projectId },
       orderBy: { version: 'desc' },
       include: { claims: { orderBy: { claimNumber: 'asc' } } },
     });
-    return draft || { status: 'NONE', claims: [] };
+    if (!draft) return { status: 'NONE', claims: [] };
+    if (full) return draft;
+
+    // Strip full text from claims and add preview
+    const claims = draft.claims.map((c) => {
+      const { text, ...rest } = c;
+      return { ...rest, preview: text.slice(0, 200) };
+    });
+    return { ...draft, claims };
+  }
+
+  /**
+   * Get the full text of a single claim.
+   * Used by the frontend to lazy-load claim text when the user expands a claim.
+   */
+  async getClaimText(projectId: string, claimId: string): Promise<{ text: string }> {
+    const claim = await this.prisma.claim.findFirst({
+      where: {
+        id: claimId,
+        draft: { projectId },
+      },
+      select: { text: true },
+    });
+    if (!claim) {
+      throw new NotFoundException(`Claim ${claimId} not found in project ${projectId}`);
+    }
+    return { text: claim.text };
   }
 
   /**

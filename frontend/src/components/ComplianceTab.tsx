@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import Alert from './Alert';
+import { startSSEStream } from '../utils/sseStream';
+import StepProgress, { COMPLIANCE_STEPS, StepState } from './StepProgress';
+import { useElapsedTimer } from '../hooks/useElapsedTimer';
 
 interface ComplianceTabProps {
   projectId: string;
@@ -44,7 +47,12 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [docxLoading, setDocxLoading] = useState(false);
   const [docxError, setDocxError] = useState<string | null>(null);
-  // Elapsed time counter for long-running compliance checks
+  // SSE streaming state
+  const [sseSteps, setSseSteps] = useState<StepState[]>([]);
+  const [useSSE, setUseSSE] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const { formatted: elapsedFormatted } = useElapsedTimer(running || check?.status === 'RUNNING');
+  // Legacy elapsed timer (kept for polling fallback)
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -100,15 +108,77 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
     }
   }
 
+  /** Start compliance check via SSE stream, falling back to polling on failure. */
+  async function handleRunCheckSSE() {
+    setRunning(true);
+    setError(null);
+    setUseSSE(true);
+    setSseSteps(COMPLIANCE_STEPS.map((s) => ({ key: s.key, status: 'pending' })));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const { stream } = await startSSEStream(
+        `/api/projects/${projectId}/compliance/stream`,
+        {},
+        controller.signal,
+      );
+
+      for await (const event of stream) {
+        if (event.event === 'step') {
+          const stepKey = event.data.step;
+          const stepStatus = event.data.status === 'complete' ? 'complete' : 'running';
+          setSseSteps((prev) =>
+            prev.map((s) =>
+              s.key === stepKey
+                ? { ...s, status: stepStatus, detail: event.data.detail }
+                : s.status === 'running' && stepStatus === 'running'
+                  ? { ...s, status: 'complete' }
+                  : s,
+            ),
+          );
+        } else if (event.event === 'complete') {
+          setSseSteps((prev) => prev.map((s) => ({ ...s, status: 'complete' })));
+          await loadCheck();
+          setRunning(false);
+          setUseSSE(false);
+          return;
+        } else if (event.event === 'error') {
+          setError(event.data.message || 'Compliance check failed');
+          setRunning(false);
+          setUseSSE(false);
+          return;
+        }
+      }
+
+      // Stream ended without complete — fall back to polling
+      setUseSSE(false);
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        setRunning(false);
+        setUseSSE(false);
+        return;
+      }
+      console.warn('Compliance SSE stream failed, falling back to polling:', e.message);
+      setUseSSE(false);
+      try {
+        await api.compliance.startCheck(projectId);
+      } catch (fallbackErr: any) {
+        setError(fallbackErr.message);
+        setRunning(false);
+      }
+    }
+  }
+
   async function handleRunCheck() {
     if (!acknowledged) {
       setShowModal(true);
       return;
     }
     try {
-      setRunning(true);
       setError(null);
-      await api.compliance.startCheck(projectId);
+      await handleRunCheckSSE();
     } catch (e: any) {
       setError(e.message);
       setRunning(false);
@@ -166,6 +236,20 @@ export default function ComplianceTab({ projectId, hasClaims }: ComplianceTabPro
 
   // State 2: Running (must come before !check — running can be true while check is null)
   if (running || check?.status === 'RUNNING') {
+    // SSE mode: show real-time step progress
+    if (useSSE && sseSteps.length > 0) {
+      return (
+        <StepProgress
+          steps={COMPLIANCE_STEPS}
+          stepStates={sseSteps}
+          elapsed={elapsedFormatted}
+          description="This may take 3-7 minutes. Checking claims against patent rules."
+          error={error}
+        />
+      );
+    }
+
+    // Polling fallback: show simple spinner
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
     return (

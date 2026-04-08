@@ -9,6 +9,7 @@ vi.mock('../api', () => ({
       start: vi.fn(),
       updateClaim: vi.fn(),
       regenerateClaim: vi.fn(),
+      getClaimText: vi.fn(),
     },
   },
 }));
@@ -17,6 +18,7 @@ vi.mock('./ClaimTree', () => ({
   default: () => <div data-testid="claim-tree">ClaimTree Mock</div>,
 }));
 
+/** Mock draft with preview-only claims (default API response without ?full=true) */
 const mockDraft = {
   id: 'draft-1',
   version: 1,
@@ -29,7 +31,7 @@ const mockDraft = {
       scopeLevel: 'BROAD',
       statutoryType: 'method',
       parentClaimNumber: null,
-      text: 'A neural network method comprising training a model on patent data.',
+      preview: 'A neural network method comprising training a model on patent data.',
       examinerNotes: '',
     },
     {
@@ -39,7 +41,7 @@ const mockDraft = {
       scopeLevel: null,
       statutoryType: null,
       parentClaimNumber: 1,
-      text: 'The method of claim 1, wherein the model uses transformer architecture.',
+      preview: 'The method of claim 1, wherein the model uses transformer architecture.',
       examinerNotes: '',
     },
   ],
@@ -50,8 +52,17 @@ const mockDraft = {
 };
 
 describe('ClaimsTab', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    // Default getClaimText mock — returns full text on demand
+    const { api } = await import('../api');
+    (api.claimDraft.getClaimText as any).mockImplementation((_projId: string, claimId: string) => {
+      const fullTexts: Record<string, string> = {
+        c1: 'A neural network method comprising training a model on patent data.',
+        c2: 'The method of claim 1, wherein the model uses transformer architecture.',
+      };
+      return Promise.resolve({ text: fullTexts[claimId] ?? 'Full text not found' });
+    });
   });
 
   it('findOverlaps returns empty when no prior art — no warning icons', async () => {
@@ -99,12 +110,13 @@ describe('ClaimsTab', () => {
           scopeLevel: 'BROAD',
           statutoryType: 'method',
           parentClaimNumber: null,
-          text: 'A method comprising using a device.',
+          preview: 'A method comprising using a device.',
           examinerNotes: '',
         },
       ],
     };
     (api.claimDraft.getLatest as any).mockResolvedValue(draftStopOnly);
+    (api.claimDraft.getClaimText as any).mockResolvedValue({ text: 'A method comprising using a device.' });
     render(
       <ClaimsTab
         projectId="proj-1"
@@ -132,12 +144,13 @@ describe('ClaimsTab', () => {
           scopeLevel: 'BROAD',
           statutoryType: 'method',
           parentClaimNumber: null,
-          text: 'A method for processing data in a system.',
+          preview: 'A method for processing data in a system.',
           examinerNotes: '',
         },
       ],
     };
     (api.claimDraft.getLatest as any).mockResolvedValue(draftWithMethodOnly);
+    (api.claimDraft.getClaimText as any).mockResolvedValue({ text: 'A method for processing data in a system.' });
     render(
       <ClaimsTab
         projectId="proj-1"
@@ -248,6 +261,62 @@ describe('ClaimsTab', () => {
     await waitFor(() => {
       expect(screen.getByText('Generating claim drafts...')).toBeTruthy();
     });
+  });
+
+  it('lazy-loads full claim text when expanding a claim', async () => {
+    const { api } = await import('../api');
+    (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
+    render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    // Expand claim 1
+    fireEvent.click(screen.getByText(/Claim 1/));
+    // getClaimText should be called for both the independent claim and its dependent
+    await waitFor(() => {
+      expect(api.claimDraft.getClaimText).toHaveBeenCalledWith('proj-1', 'c1');
+      expect(api.claimDraft.getClaimText).toHaveBeenCalledWith('proj-1', 'c2');
+    });
+  });
+
+  it('does not re-fetch claim text on collapse and re-expand', async () => {
+    const { api } = await import('../api');
+    (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
+    render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    // Expand
+    fireEvent.click(screen.getByText(/Claim 1/));
+    await waitFor(() => {
+      expect(api.claimDraft.getClaimText).toHaveBeenCalledTimes(2); // c1 + c2
+    });
+    // Collapse
+    fireEvent.click(screen.getByText(/Claim 1/));
+    // Re-expand — should not re-fetch
+    fireEvent.click(screen.getByText(/Claim 1/));
+    // Wait a tick to ensure no new calls
+    await waitFor(() => {
+      expect(api.claimDraft.getClaimText).toHaveBeenCalledTimes(2); // still 2
+    });
+  });
+
+  it('shows loading indicator while fetching claim text', async () => {
+    const { api } = await import('../api');
+    (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
+    // Make getClaimText hang (never resolve) to keep loading state visible
+    (api.claimDraft.getClaimText as any).mockReturnValue(new Promise(() => {}));
+    render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    fireEvent.click(screen.getByText(/Claim 1/));
+    await waitFor(() => {
+      expect(screen.getByText('Loading claim text...')).toBeTruthy();
+    });
+  });
+
+  it('shows preview snippet in collapsed claim header', async () => {
+    const { api } = await import('../api');
+    (api.claimDraft.getLatest as any).mockResolvedValue(mockDraft);
+    render(<ClaimsTab projectId="proj-1" hasFeasibility={true} />);
+    await waitFor(() => { expect(screen.getByText(/Claim 1/)).toBeTruthy(); });
+    // Should show truncated preview text in the header
+    expect(screen.getByText(/A neural network method/)).toBeTruthy();
   });
 
   it('renders no-feasibility state correctly', async () => {

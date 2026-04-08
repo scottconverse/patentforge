@@ -10,6 +10,7 @@ Endpoints:
 """
 
 from __future__ import annotations
+import asyncio
 import json
 import hashlib
 import os
@@ -97,6 +98,19 @@ def _build_prior_art_context(request: ApplicationGenerateRequest) -> str:
     return ctx
 
 
+_STEP_DETAILS: dict[str, str] = {
+    "background": "Background section generated",
+    "summary": "Summary section generated",
+    "detailed_description": "Detailed description generated",
+    "abstract": "Abstract generated",
+    "figures": "Figure descriptions generated",
+    "format_ids": "IDS table formatted",
+    "finalize": "Output finalized",
+}
+
+KEEPALIVE_INTERVAL_SECONDS = 20
+
+
 @app.post("/generate", dependencies=[Depends(verify_internal_secret)])
 async def generate_application(request: ApplicationGenerateRequest):
     # Import here to avoid circular import at module load (graph.py imports models which is fine,
@@ -105,12 +119,18 @@ async def generate_application(request: ApplicationGenerateRequest):
 
     prior_art_context = _build_prior_art_context(request)
 
-    async def event_stream():
-        steps_seen = []
+    # Queue bridges the sync on_step callback to the async event_stream generator.
+    # Each item is either a dict (SSE event) or None (sentinel signaling completion).
+    queue: asyncio.Queue = asyncio.Queue()
 
-        def on_step(node_name: str, step: str):
-            steps_seen.append(node_name)
+    def on_step(node_name: str, step: str):
+        detail = _STEP_DETAILS.get(node_name, f"{node_name} completed")
+        queue.put_nowait({
+            "event": "step",
+            "data": json.dumps({"step": node_name, "status": "complete", "detail": detail}),
+        })
 
+    async def run_pipeline():
         try:
             result = await run_application_pipeline(
                 invention_narrative=request.invention_narrative,
@@ -127,13 +147,27 @@ async def generate_application(request: ApplicationGenerateRequest):
                 max_tokens=request.settings.max_tokens,
                 on_step=on_step,
             )
-
-            for step in steps_seen:
-                yield {"event": "step", "data": json.dumps({"step": step, "status": "complete"})}
-
-            yield {"event": "complete", "data": result.model_dump_json()}
+            queue.put_nowait({"event": "complete", "data": result.model_dump_json()})
         except Exception as e:
-            yield {"event": "error", "data": json.dumps({"message": str(e)})}
+            queue.put_nowait({"event": "error", "data": json.dumps({"message": str(e)})})
+        finally:
+            queue.put_nowait(None)  # sentinel
+
+    async def event_stream():
+        task = asyncio.create_task(run_pipeline())
+        try:
+            while True:
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=KEEPALIVE_INTERVAL_SECONDS)
+                except asyncio.TimeoutError:
+                    yield {"comment": "keepalive"}
+                    continue
+                if item is None:
+                    break
+                yield item
+        finally:
+            if not task.done():
+                task.cancel()
 
     return EventSourceResponse(event_stream())
 

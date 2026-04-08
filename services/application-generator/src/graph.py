@@ -16,6 +16,7 @@ from .agents.detailed_description import run_detailed_description
 from .agents.abstract import run_abstract
 from .agents.figures import run_figures
 from .formatter import format_ids_table
+from .cross_references import build_cross_references
 
 
 async def format_ids(state: GraphState) -> dict:
@@ -92,6 +93,11 @@ async def run_application_pipeline(
     """Run the full application generation pipeline."""
 
     ids_table = format_ids_table(prior_art_results)
+    cross_references = build_cross_references(
+        invention_narrative=invention_narrative,
+        feasibility_stage_1=feasibility_stage_1,
+        claims_text=claims_text,
+    )
 
     initial_state = GraphState(
         invention_narrative=invention_narrative,
@@ -106,6 +112,7 @@ async def run_application_pipeline(
         research_model=research_model,
         max_tokens=max_tokens,
         ids_table=ids_table,
+        cross_references=cross_references,
     )
 
     state_dict: dict = initial_state.model_dump()

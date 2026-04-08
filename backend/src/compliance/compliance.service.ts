@@ -306,6 +306,186 @@ export class ComplianceService implements OnModuleInit {
   }
 
   /**
+   * Prepare a compliance check for streaming: validates the project, enforces concurrency
+   * and cost cap, builds the request body, and creates the RUNNING check record.
+   * Returns the checkId and the request body to send to the upstream service.
+   * Used by the controller's SSE stream endpoint.
+   */
+  async prepareCheck(projectId: string, draftVersion?: number): Promise<{ checkId: string; requestBody: ComplianceCheckRequestBody }> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { invention: true },
+    });
+    if (!project) throw new NotFoundException(`Project ${projectId} not found`);
+
+    const draft = draftVersion
+      ? await this.prisma.claimDraft.findFirst({
+          where: { projectId, version: draftVersion, status: 'COMPLETE' },
+          include: { claims: { orderBy: { claimNumber: 'asc' } } },
+        })
+      : await this.prisma.claimDraft.findFirst({
+          where: { projectId, status: 'COMPLETE' },
+          orderBy: { version: 'desc' },
+          include: { claims: { orderBy: { claimNumber: 'asc' } } },
+        });
+
+    if (!draft || !draft.claims.length) {
+      throw new NotFoundException('No completed claim draft found. Generate claims first.');
+    }
+
+    const running = await this.prisma.complianceCheck.findFirst({
+      where: { projectId, status: 'RUNNING' },
+    });
+    if (running) {
+      throw new ConflictException('A compliance check is already running for this project.');
+    }
+
+    const settings = await this.settingsService.getSettings();
+    if (!settings.anthropicApiKey) {
+      throw new NotFoundException('No Anthropic API key configured. Add one in Settings.');
+    }
+
+    // Enforce cost cap
+    if (settings.costCapUsd > 0) {
+      const stages = await this.prisma.feasibilityStage.findMany({
+        where: { feasibilityRun: { projectId }, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const complianceChecks = await this.prisma.complianceCheck.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const prevApps = await this.prisma.patentApplication.findMany({
+        where: { projectId, estimatedCostUsd: { not: null } },
+        select: { estimatedCostUsd: true },
+      });
+      const spent =
+        stages.reduce((sum, s) => sum + (s.estimatedCostUsd ?? 0), 0) +
+        complianceChecks.reduce((sum, c) => sum + (c.estimatedCostUsd ?? 0), 0) +
+        prevApps.reduce((sum, a) => sum + (a.estimatedCostUsd ?? 0), 0);
+      if (spent >= settings.costCapUsd) {
+        throw new BadRequestException(
+          `Cost cap exceeded. You have spent $${spent.toFixed(2)} of your $${settings.costCapUsd.toFixed(2)} cap. ` +
+            `Increase the cost cap in Settings to continue.`,
+        );
+      }
+    }
+
+    const inv = project.invention;
+    const narrative = inv
+      ? [
+          `Title: ${inv.title}`,
+          `Description: ${inv.description}`,
+          inv.problemSolved ? `Problem Solved: ${inv.problemSolved}` : '',
+          inv.howItWorks ? `How It Works: ${inv.howItWorks}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+      : '';
+
+    const feasRun = await this.prisma.feasibilityRun.findFirst({
+      where: { projectId, status: 'COMPLETE' },
+      orderBy: { version: 'desc' },
+      include: { stages: { where: { stageNumber: 1 }, take: 1 } },
+    });
+    const specText = feasRun?.stages?.[0]?.outputText ?? '';
+
+    const lastCheck = await this.prisma.complianceCheck.findFirst({
+      where: { projectId },
+      orderBy: { version: 'desc' },
+    });
+    const version = (lastCheck?.version ?? 0) + 1;
+
+    const check = await this.prisma.complianceCheck.create({
+      data: {
+        projectId,
+        version,
+        status: 'RUNNING',
+        draftVersion: draft.version,
+        startedAt: new Date(),
+      },
+    });
+
+    return {
+      checkId: check.id,
+      requestBody: {
+        claims: draft.claims.map((c) => ({
+          claim_number: c.claimNumber,
+          claim_type: c.claimType,
+          parent_claim_number: c.parentClaimNumber,
+          text: c.text.slice(0, 10_000),
+        })),
+        specification_text: specText,
+        invention_narrative: narrative,
+        prior_art_context: '',
+        settings: {
+          api_key: settings.anthropicApiKey,
+          default_model: settings.defaultModel,
+          research_model: settings.researchModel || '',
+          max_tokens: settings.maxTokens,
+        },
+      },
+    };
+  }
+
+  /**
+   * Save results from an SSE `complete` event to the database.
+   * Called by the controller's stream endpoint when the upstream sends a complete event.
+   */
+  async saveStreamComplete(checkId: string, payload: ComplianceCheckerResponse) {
+    if (payload.status === 'ERROR') {
+      await this.prisma.complianceCheck.update({
+        where: { id: checkId },
+        data: { status: 'ERROR', completedAt: new Date() },
+      });
+      return;
+    }
+
+    for (const r of payload.results) {
+      await this.prisma.complianceResult.create({
+        data: {
+          checkId,
+          rule: r.rule,
+          status: r.status,
+          claimNumber: r.claim_number ?? null,
+          detail: r.detail,
+          citation: r.citation ?? null,
+          suggestion: r.suggestion ?? null,
+        },
+      });
+    }
+
+    const hasFailure = payload.results.some((r) => r.status === 'FAIL');
+    await this.prisma.complianceCheck.update({
+      where: { id: checkId },
+      data: {
+        status: 'COMPLETE',
+        completedAt: new Date(),
+        overallPass: !hasFailure,
+        estimatedCostUsd: payload.total_estimated_cost_usd ?? null,
+      },
+    });
+  }
+
+  /**
+   * Mark a compliance check as ERROR. Used by the stream endpoint on failure.
+   */
+  async markCheckError(checkId: string) {
+    try {
+      const current = await this.prisma.complianceCheck.findUnique({ where: { id: checkId } });
+      if (current && current.status === 'RUNNING') {
+        await this.prisma.complianceCheck.update({
+          where: { id: checkId },
+          data: { status: 'ERROR', completedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[Compliance] Failed to mark check ${checkId} as error: ${msg}`);
+    }
+  }
+
+  /**
    * Get the latest compliance check for a project.
    */
   async getLatest(projectId: string) {

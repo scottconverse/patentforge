@@ -134,6 +134,91 @@ describe('ClaimDraftService', () => {
     });
   });
 
+  describe('getLatest — preview vs full', () => {
+    const draftWithClaims = {
+      id: 'draft-1',
+      version: 1,
+      status: 'COMPLETE',
+      claims: [
+        {
+          id: 'c1',
+          claimNumber: 1,
+          claimType: 'INDEPENDENT',
+          scopeLevel: 'BROAD',
+          parentClaimNumber: null,
+          text: 'A'.repeat(400), // 400-char text to verify truncation
+          examinerNotes: '',
+        },
+        {
+          id: 'c2',
+          claimNumber: 2,
+          claimType: 'DEPENDENT',
+          scopeLevel: null,
+          parentClaimNumber: 1,
+          text: 'Short dependent claim text.',
+          examinerNotes: '',
+        },
+      ],
+    };
+
+    it('returns preview (first 200 chars) by default, without text field', async () => {
+      mockPrisma.claimDraft.findFirst.mockResolvedValue(draftWithClaims);
+
+      const result = await service.getLatest('project-1') as any;
+      expect(result.claims).toHaveLength(2);
+      // First claim: 400 chars → preview should be 200 chars
+      expect(result.claims[0].preview).toBe('A'.repeat(200));
+      expect(result.claims[0].text).toBeUndefined();
+      // Second claim: short text → preview equals full text
+      expect(result.claims[1].preview).toBe('Short dependent claim text.');
+      expect(result.claims[1].text).toBeUndefined();
+    });
+
+    it('returns full text when full=true, without preview field', async () => {
+      mockPrisma.claimDraft.findFirst.mockResolvedValue(draftWithClaims);
+
+      const result = await service.getLatest('project-1', true) as any;
+      expect(result.claims).toHaveLength(2);
+      expect(result.claims[0].text).toBe('A'.repeat(400));
+      expect(result.claims[0].preview).toBeUndefined();
+      expect(result.claims[1].text).toBe('Short dependent claim text.');
+    });
+
+    it('returns NONE status when no draft exists', async () => {
+      mockPrisma.claimDraft.findFirst.mockResolvedValue(null);
+
+      const result = await service.getLatest('project-1');
+      expect(result.status).toBe('NONE');
+      expect(result.claims).toEqual([]);
+    });
+  });
+
+  describe('getClaimText', () => {
+    it('returns full text for a valid claim', async () => {
+      mockPrisma.claim.findFirst.mockResolvedValue({ text: 'Full claim text content here.' });
+
+      const result = await service.getClaimText('project-1', 'claim-1');
+      expect(result).toEqual({ text: 'Full claim text content here.' });
+      expect(mockPrisma.claim.findFirst).toHaveBeenCalledWith({
+        where: { id: 'claim-1', draft: { projectId: 'project-1' } },
+        select: { text: true },
+      });
+    });
+
+    it('throws NotFoundException when claim does not exist', async () => {
+      mockPrisma.claim.findFirst.mockResolvedValue(null);
+
+      await expect(service.getClaimText('project-1', 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getClaimText('project-1', 'nonexistent')).rejects.toThrow(/not found/);
+    });
+
+    it('throws NotFoundException when claim belongs to a different project', async () => {
+      mockPrisma.claim.findFirst.mockResolvedValue(null);
+
+      await expect(service.getClaimText('wrong-project', 'claim-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('regenerateClaim', () => {
     it('throws NotFoundException when no completed draft exists', async () => {
       mockPrisma.claimDraft.findFirst.mockResolvedValue(null);
