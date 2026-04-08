@@ -5,6 +5,22 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-04-07
+
+### Added
+- **Real-time SSE progress for all pipeline services** — Claims, Compliance, and Application tabs now show step-by-step progress during generation instead of a silent spinner. Claims shows "Planning claim strategy... → Drafting claims... → Reviewing claims..."; Compliance shows progress through each of 4 rule checks; Application shows progress through 5 document sections. Automatic fallback to polling if SSE unavailable.
+- **StepProgress component** — Reusable UI component with checkmark/spinner/circle/X icons for multi-step progress visualization, shared across all three tabs.
+- **Shared SSE parser** — `sseStream.ts` utility for parsing Server-Sent Events from ReadableStream responses, extracted as a reusable module.
+- **Backend SSE proxy endpoints** — `POST /claims/stream`, `/compliance/stream`, `/application/stream` — forward events from Python services to the frontend while simultaneously parsing `complete` events to save results to the database.
+- **Cross-references populated** — Patent application generator now produces a "CROSS-REFERENCE TO RELATED APPLICATIONS" section, populated from project context using regex extraction of provisional applications, serial numbers, PCT references. No additional LLM call needed.
+- **Claims lazy-load** — Claims endpoint returns 200-character preview text by default; full claim text loaded on-demand when user expands a claim. Reduces initial payload from 152KB to ~15KB for 37 claims.
+- 140 new tests (44 Jest + 25 Vitest + 71 pytest), bringing total to 744 (304 Jest + 202 Vitest + 238 pytest)
+
+### Changed
+- **Claim-drafter SSE** — `/draft` endpoint now emits realtime step events as each LangGraph node completes (planner, writer, examiner) with keepalive heartbeat.
+- **Compliance-checker SSE** — New `/check/stream` endpoint emits per-rule progress events.
+- **Application-generator SSE** — `/generate` endpoint now emits realtime node events (background, summary, detailed_description, abstract, figures) with keepalive heartbeat.
+
 ## [0.9.1] - 2026-04-07
 
 ### Changed
