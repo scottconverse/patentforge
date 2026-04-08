@@ -236,6 +236,7 @@ docker compose up --build
 - [x] **v0.8.1** — Back button fix (return to streaming view during active pipeline), documentation consistency audit
 - [x] **v0.8.2** — Security hardening (Helmet headers, DOMPurify sanitization), Prisma schema unification (eliminated dual-schema drift), cost tracking across all services, ProjectDetail refactor (extracted 6 components), CI expanded (application-generator tests), 592 automated tests
 - [x] **v0.8.5** — CI fix (package-lock.json version mismatch), decrypt() silent failure fix, report auth fix, Docker healthchecks and log rotation, API key rate limiting, lint cleanup (all `any` types replaced), shared utility extraction, auto-export opt-in setting, Node 24 CI migration, 599 automated tests
+- [x] **v0.9.1** — Assessment labels aligned to v1.2.0 legal posture, enhanced AI disclaimers across all services, 50-word minimum description validation (frontend + backend), 665 automated tests
 - [x] **v0.9.0** — Application sections fix (astream state accumulation bug), Application tab elapsed timer, streaming scrollbar fix, 7 new E2E test scenarios (multi-project, cancel, resume, edit-after-feasibility, draft persistence, downloads), 628 automated tests
 
 ## Security

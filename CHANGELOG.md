@@ -5,6 +5,16 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-04-07
+
+### Changed
+- **Assessment labels aligned to v1.2.0 legal posture** — "INDICATORS FAVOR FILING" became "LANDSCAPE FAVORS FILING", "GATHER MORE EVIDENCE" became "MORE DOCUMENTATION WOULD STRENGTHEN POSITION", "INDICATORS SUGGEST NOT FILING" became "SIGNIFICANT OBSTACLES IDENTIFIED", "CONSIDER DESIGN PATENT ONLY" became "DESIGN PATENT AVENUE WORTH EXPLORING". Labels now match patent-analyzer-app v1.2.0 across all three repos.
+- **Enhanced AI disclaimer across all services** — All 4 services' common-rules.md updated to v1.2.0 disclaimer text, adding explicit warnings about fabricated patent numbers, inaccurate legal citations, and incorrect statutory interpretations presented with high confidence.
+
+### Added
+- **50-word minimum description validation** — Feasibility pipeline now requires at least 50 words in the invention description before running. Frontend shows inline error with guidance on what detail to add. Backend returns 400 with word count and actionable message. Prevents low-quality pipeline runs on vague descriptions.
+- 37 new tests (17 Jest backend + 20 Vitest frontend), bringing total to 665 (254 Jest + 173 Vitest + 183 pytest + 55 Playwright E2E)
+
 ## [0.9.0] - 2026-04-07
 
 ### Fixed

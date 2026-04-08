@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.9.0):**
+**Current status (v0.9.1):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -27,10 +27,15 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 628 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
+- 665 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
 - ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v0.9.1:**
+- **Assessment labels aligned to v1.2.0 legal posture** — all three repos now use the same softened labels: "LANDSCAPE FAVORS FILING", "MORE DOCUMENTATION WOULD STRENGTHEN POSITION", "KEEP AS TRADE SECRET", "SIGNIFICANT OBSTACLES IDENTIFIED", "DESIGN PATENT AVENUE WORTH EXPLORING"
+- **Enhanced AI disclaimers** — all 4 services now include v1.2.0 disclaimer text with explicit warnings about fabricated patent numbers and inaccurate legal citations
+- **50-word minimum validation** — feasibility pipeline requires at least 50 words in the invention description before running, with inline error guidance on what detail to add
 
 **What's new in v0.9.0:**
 - **Fix: Application sections empty** — Application tab's 9-section structured navigation now works end-to-end. The `astream` loop was replacing accumulated state instead of merging it, causing all generated section content to be lost.
@@ -237,7 +242,7 @@ Added first-run disclaimer modal (unskippable clickwrap agreement), API key entr
 
 **Body:**
 
-Comprehensive prompt language overhaul. AI now identifies as "patent landscape research assistant" instead of role-playing as an attorney. Assessment labels softened from "FILE NOW" to "INDICATORS FAVOR FILING". Stage disclaimers embedded in every output. Added LEGAL_NOTICE.md and dual licensing (MIT code, CC BY-SA 4.0 prompts so disclaimers survive forks).
+Comprehensive prompt language overhaul. AI now identifies as "patent landscape research assistant" instead of role-playing as an attorney. Assessment labels softened from "FILE NOW" to "INDICATORS FAVOR FILING" (later further refined to "LANDSCAPE FAVORS FILING" in v0.9.1). Stage disclaimers embedded in every output. Added LEGAL_NOTICE.md and dual licensing (MIT code, CC BY-SA 4.0 prompts so disclaimers survive forks).
 
 ### Title: v0.3.0 — USPTO Patent Detail, Stage Re-run, CSV Export
 
