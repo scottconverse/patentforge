@@ -7,6 +7,7 @@ import anthropic
 
 from ..models import GraphState
 from ..cost import estimate_cost, format_api_error
+from ..retry import call_anthropic_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -40,7 +41,8 @@ Generate the Brief Description of the Drawings. Create 3-8 placeholder figure de
 
     client = anthropic.AsyncAnthropic(api_key=state.api_key)
     try:
-        response = await client.messages.create(
+        response = await call_anthropic_with_retry(
+            client,
             model=model,
             max_tokens=4000,
             system=prompt,

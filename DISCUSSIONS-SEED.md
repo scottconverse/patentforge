@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.9.2):**
+**Current status (v0.9.3):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -27,10 +27,15 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 802 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
+- 829 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
 - ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v0.9.3:**
+- **0 npm vulnerabilities** — NestJS v11 + Vite v8 upgrade eliminates all npm vulnerabilities across all packages (previously 21 total, including 7 HIGH in backend)
+- **Retry/backoff standardized** — All three Python pipeline services (claim-drafter, compliance-checker, application-generator) now retry on rate limits (60s/90s/120s) and server errors (30s/45s/60s). Previously these services had no retry logic and would fail permanently on transient API errors.
+- 829 automated tests
 
 **What's new in v0.9.2:**
 - **Real-time SSE progress** — Claims, Compliance, and Application tabs now show step-by-step progress during generation instead of a silent spinner

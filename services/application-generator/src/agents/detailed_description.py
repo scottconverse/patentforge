@@ -7,6 +7,7 @@ import anthropic
 
 from ..models import GraphState
 from ..cost import estimate_cost, format_api_error
+from ..retry import call_anthropic_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -60,7 +61,8 @@ Generate the Detailed Description of Preferred Embodiments section."""
 
     client = anthropic.AsyncAnthropic(api_key=state.api_key)
     try:
-        response = await client.messages.create(
+        response = await call_anthropic_with_retry(
+            client,
             model=model,
             max_tokens=state.max_tokens,
             system=prompt,

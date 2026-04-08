@@ -14,6 +14,7 @@ import anthropic
 
 from ..models import GraphState
 from ..cost import estimate_cost
+from ..retry import call_anthropic_with_retry
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -62,7 +63,8 @@ Check all claims against MPEP 608 formalities requirements."""
     client = anthropic.AsyncAnthropic(api_key=state.api_key)
 
     try:
-        response = await client.messages.create(
+        response = await call_anthropic_with_retry(
+            client,
             model=model,
             max_tokens=state.max_tokens,
             system=prompt,

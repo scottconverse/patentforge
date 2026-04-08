@@ -5,6 +5,19 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-04-08
+
+### Changed
+- **NestJS v11 migration** — Backend upgraded from NestJS v10 to v11, resolving all transitive HIGH-severity npm vulnerabilities. Includes `@nestjs/serve-static` v5, `reflect-metadata` v0.2.2 (required by NestJS v11), and a `path-to-regexp` override pinning to v8.4.2 to resolve a ReDoS vulnerability in the serve-static transitive dependency. Backend now has 0 npm vulnerabilities.
+- **Vite v8 upgrade** — Frontend upgraded from Vite v5 to v8 (Rolldown-powered bundler), resolving the esbuild CORS vulnerability. `@vitejs/plugin-react` upgraded to v6. Frontend now has 0 npm vulnerabilities. Production build time unchanged at ~800ms.
+- **Retry/backoff standardization** — All three Python pipeline services (claim-drafter, compliance-checker, application-generator) now use a shared retry utility (`retry.py`) for Anthropic API calls. Standardized delays match the feasibility service: 60s/90s/120s on 429 rate limits, 30s/45s/60s on 500/502/503/529 server errors, max 3 retries. Non-retryable errors (401, 403, 404, etc.) fail immediately. Previously these services had no retry logic and would fail permanently on transient API errors.
+
+### Security
+- **0 npm vulnerabilities** across all Node.js packages (backend + frontend). Previously: 20 vulnerabilities in backend (7 high, 9 moderate, 4 low), 1 vulnerability in frontend (moderate esbuild CORS).
+
+### Added
+- 27 new tests (9 per Python service) covering retry/backoff logic: success on first attempt, success after rate limit, correct delay sequence, 429 exhaustion, 502/503 retry, immediate failure on non-retryable 4xx, delay constant validation. Total: 829 automated tests (304 Jest + 202 Vitest + 265 pytest + 58 Playwright E2E).
+
 ## [0.9.2] - 2026-04-07
 
 ### Added
