@@ -54,7 +54,7 @@ check_dir  "runtime/python"
 check_dir  "services/claim-drafter/src"
 check_dir  "services/application-generator/src"
 check_dir  "services/compliance-checker/src"
-check_dir  "services/frontend/dist"
+check_dir  "frontend/dist"
 check_file "LICENSE"
 check_file "installer/assets/icon.ico"
 
@@ -74,7 +74,9 @@ echo ""
 echo "Compiling installer..."
 "$ISCC" "$REPO_ROOT/installer/windows/patentforge.iss"
 
-OUTPUT="$REPO_ROOT/build/PatentForge-0.7.0-Setup.exe"
+# Read version from the .iss file to find the output filename
+ISS_VERSION=$(grep '#define MyAppVersion' "$REPO_ROOT/installer/windows/patentforge.iss" | sed 's/.*"\(.*\)"/\1/')
+OUTPUT="$REPO_ROOT/build/PatentForge-${ISS_VERSION}-Setup.exe"
 if [ -f "$OUTPUT" ]; then
     SIZE=$(du -h "$OUTPUT" | cut -f1)
     echo ""
@@ -84,5 +86,8 @@ if [ -f "$OUTPUT" ]; then
 else
     echo ""
     echo "ERROR: Expected output not found at $OUTPUT"
+    echo "Looked for: $OUTPUT"
+    echo "Contents of build/:"
+    ls -la "$REPO_ROOT/build/" 2>/dev/null || echo "  (build/ does not exist)"
     exit 1
 fi

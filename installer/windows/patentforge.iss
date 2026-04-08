@@ -3,7 +3,7 @@
 ; https://jrsoftware.org/ishelp/
 
 #define MyAppName "PatentForge"
-#define MyAppVersion "0.7.0"
+#define MyAppVersion "0.9.2"
 #define MyAppPublisher "Scott Converse"
 #define MyAppURL "https://scottconverse.github.io/patentforge/"
 #define MyAppExeName "patentforge-tray.exe"
@@ -57,8 +57,8 @@ Source: "..\..\services\claim-drafter\src\*"; DestDir: "{app}\services\claim-dra
 Source: "..\..\services\application-generator\src\*"; DestDir: "{app}\services\application-generator\src"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\..\services\compliance-checker\src\*"; DestDir: "{app}\services\compliance-checker\src"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Frontend static files
-Source: "..\..\services\frontend\dist\*"; DestDir: "{app}\services\frontend\dist"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Frontend static files (path matches tray FRONTEND_DIST_PATH)
+Source: "..\..\frontend\dist\*"; DestDir: "{app}\frontend\dist"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Dirs]
 ; User data directories — survive uninstall unless user explicitly deletes

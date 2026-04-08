@@ -61,11 +61,7 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Copy frontend dist
-        run: |
-          mkdir -p services/frontend
-          cp -r frontend/dist services/frontend/
-        shell: bash
+      # Frontend dist stays at frontend/dist/ — .iss and tray both reference it there
 
       # Bundle portable Python
       - name: Bundle Python
@@ -130,10 +126,8 @@ jobs:
         run: npm install
 
       - name: Build frontend
-        run: |
-          cd frontend && npm run build
-          mkdir -p ../services/frontend
-          cp -r dist ../services/frontend/
+        working-directory: frontend
+        run: npm run build
 
       - name: Bundle Python (Mac)
         run: bash scripts/bundle-python.sh mac
@@ -194,10 +188,8 @@ jobs:
         run: npm install
 
       - name: Build frontend
-        run: |
-          cd frontend && npm run build
-          mkdir -p ../services/frontend
-          cp -r dist ../services/frontend/
+        working-directory: frontend
+        run: npm run build
 
       - name: Bundle Python (Linux)
         run: bash scripts/bundle-python.sh linux
