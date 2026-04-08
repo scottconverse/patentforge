@@ -53,6 +53,8 @@ interface ProjectSidebarProps {
   claimDraftStatus: { status: string; claims?: any[] } | null;
   complianceStatus: { status: string } | null;
   applicationStatus: { status: string } | null;
+  /** Inline validation error shown near the Run Feasibility button */
+  descriptionError?: string | null;
   // Handlers
   onViewModeChange: (vm: ViewMode) => void;
   onRunFeasibility: () => void;
@@ -76,6 +78,7 @@ export default function ProjectSidebar({
   claimDraftStatus,
   complianceStatus,
   applicationStatus,
+  descriptionError,
   onViewModeChange,
   onRunFeasibility,
   onResume,
@@ -222,6 +225,11 @@ export default function ProjectSidebar({
                 </button>
               );
             })()}
+          {descriptionError && !isRunning && (
+            <p className="text-xs text-red-400 leading-snug" role="alert">
+              {descriptionError}
+            </p>
+          )}
           {isRunning && (
             <button
               onClick={onCancel}

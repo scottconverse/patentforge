@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { InventionInput } from '../types';
 import Alert from '../components/Alert';
+import { validateDescriptionWordCount } from '../utils/validation';
 
 interface InventionFormProps {
   projectId: string;
@@ -113,6 +114,12 @@ export default function InventionForm({ projectId, initialData, onSaved, onRunFe
 
   async function handleSaveAndRun(e: React.FormEvent) {
     e.preventDefault();
+    // Validate description word count before saving + running
+    const descError = validateDescriptionWordCount(description);
+    if (descError) {
+      setError(descError);
+      return;
+    }
     setRunningAfterSave(true);
     const result = await save();
     setRunningAfterSave(false);

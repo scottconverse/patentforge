@@ -94,7 +94,7 @@ Brief intro: 'Every patent application faces risks. Here are yours, ranked by se
 |------|---------------|--------|------------|
 
 ## 9. Overall Assessment
-One assessment label: INDICATORS FAVOR FILING / GATHER MORE EVIDENCE / CONSIDER TRADE SECRET / INDICATORS SUGGEST NOT FILING / CONSIDER DESIGN PATENT ONLY
+One assessment label: LANDSCAPE FAVORS FILING / MORE DOCUMENTATION WOULD STRENGTHEN POSITION / KEEP AS TRADE SECRET / SIGNIFICANT OBSTACLES IDENTIFIED / DESIGN PATENT AVENUE WORTH EXPLORING
 
 With 2-3 sentences summarizing why the indicators point this direction. Remind the inventor that a registered patent attorney should review this assessment before making filing decisions.
 

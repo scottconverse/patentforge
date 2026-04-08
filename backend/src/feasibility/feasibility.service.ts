@@ -382,6 +382,18 @@ export class FeasibilityService {
     );
   }
 
+  /**
+   * Fetch the invention description for a project.
+   * Returns null if no invention input exists.
+   */
+  async getInventionDescription(projectId: string): Promise<string | null> {
+    const invention = await this.prisma.inventionInput.findUnique({
+      where: { projectId },
+      select: { description: true },
+    });
+    return invention?.description ?? null;
+  }
+
   async startRun(projectId: string) {
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) {

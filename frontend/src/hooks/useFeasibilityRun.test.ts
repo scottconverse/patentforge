@@ -29,7 +29,8 @@ const mockInvention: InventionInput = {
   id: 'inv-1',
   projectId: 'proj-1',
   title: 'Test Invention',
-  description: 'A device that does things',
+  description:
+    'A device that solves the fundamental problem of automated patent analysis by leveraging advanced natural language processing techniques to parse and evaluate invention disclosures against existing prior art databases. The system uses a multi-stage pipeline architecture to progressively refine its understanding of the invention and produce comprehensive feasibility reports for patent attorneys and inventors.',
   problemSolved: 'Solves problem X',
   howItWorks: undefined,
   aiComponents: 'Uses ML for Y',
@@ -97,7 +98,7 @@ describe('toNarrative', () => {
     const result = toNarrative(mockInvention);
 
     expect(result).toContain('**Invention Title:** Test Invention');
-    expect(result).toContain('**Description:** A device that does things');
+    expect(result).toContain('**Description:** A device that solves the fundamental problem');
     expect(result).toContain('**Problem Solved:** Solves problem X');
     expect(result).toContain('**AI / ML Components:** Uses ML for Y');
     expect(result).toContain('**What I Believe Is Novel:** Novel approach to Z');
@@ -304,6 +305,64 @@ describe('useFeasibilityRun', () => {
     expect(modalArg).toHaveProperty('model', 'claude-sonnet-4-20250514');
     expect(modalArg).toHaveProperty('source', 'static');
     expect(modalArg).toHaveProperty('runsUsed', 0);
+  });
+
+  it('handleRunFeasibility blocks when description is under 50 words and sets descriptionError', async () => {
+    const shortInvention: InventionInput = {
+      id: 'inv-short',
+      projectId: 'proj-1',
+      title: 'Short Invention',
+      description: 'This is a short description.',
+    };
+    const params = makeDefaultParams({
+      project: {
+        id: 'proj-1',
+        title: 'Test',
+        status: 'FEASIBILITY',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        invention: shortInvention,
+        feasibility: [],
+      },
+    });
+
+    const { result } = renderHook(() => useFeasibilityRun(params));
+
+    await act(async () => {
+      await result.current.handleRunFeasibility();
+    });
+
+    // Should NOT have called settings (validation blocks before that)
+    expect(api.settings.get).not.toHaveBeenCalled();
+    // Should have set the description error
+    expect(result.current.descriptionError).not.toBeNull();
+    expect(result.current.descriptionError).toContain('at least 50 words');
+  });
+
+  it('handleRunFeasibility clears descriptionError when description meets minimum', async () => {
+    (api.settings.get as any).mockResolvedValue({
+      anthropicApiKey: 'sk-test-key',
+      defaultModel: 'claude-sonnet-4-20250514',
+      costCapUsd: 5.0,
+    });
+    (api.feasibility.costEstimate as any).mockResolvedValue({
+      hasHistory: false,
+      runsUsed: 0,
+      stagesUsed: 0,
+      avgInputTokens: 50000,
+      avgOutputTokens: 10000,
+      avgCostPerStage: 0,
+    });
+
+    const params = makeDefaultParams();
+    const { result } = renderHook(() => useFeasibilityRun(params));
+
+    await act(async () => {
+      await result.current.handleRunFeasibility();
+    });
+
+    // descriptionError should be null since mockInvention has 50+ words
+    expect(result.current.descriptionError).toBeNull();
   });
 
   it('pendingRunRef is accessible and starts as null', () => {

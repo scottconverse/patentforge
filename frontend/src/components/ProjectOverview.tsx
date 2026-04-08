@@ -3,6 +3,8 @@ import { Project, FeasibilityRun } from '../types';
 interface ProjectOverviewProps {
   project: Project;
   latestRun: FeasibilityRun | null;
+  /** Inline validation error shown near the Run Feasibility button */
+  descriptionError?: string | null;
   onEditInvention: () => void;
   onRunFeasibility: () => void;
   onViewReport: () => void;
@@ -11,6 +13,7 @@ interface ProjectOverviewProps {
 export default function ProjectOverview({
   project,
   latestRun,
+  descriptionError,
   onEditInvention,
   onRunFeasibility,
   onViewReport,
@@ -72,46 +75,65 @@ export default function ProjectOverview({
           >
             Run Feasibility Analysis
           </button>
+          {descriptionError && (
+            <p className="text-xs text-red-400 mt-3 leading-snug max-w-md mx-auto" role="alert">
+              {descriptionError}
+            </p>
+          )}
         </div>
       )}
 
       {latestRun && latestRun.status === 'COMPLETE' && (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-green-400">Feasibility analysis complete</p>
-            <p className="text-xs text-gray-500 mt-0.5">Version {latestRun.version}</p>
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-400">Feasibility analysis complete</p>
+              <p className="text-xs text-gray-500 mt-0.5">Version {latestRun.version}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={onViewReport}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+              >
+                View Report
+              </button>
+              <button
+                onClick={onRunFeasibility}
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
+              >
+                Re-run
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={onViewReport}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
-            >
-              View Report
-            </button>
-            <button
-              onClick={onRunFeasibility}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm transition-colors"
-            >
-              Re-run
-            </button>
-          </div>
+          {descriptionError && (
+            <p className="text-xs text-red-400 mt-3 leading-snug" role="alert">
+              {descriptionError}
+            </p>
+          )}
         </div>
       )}
 
       {latestRun && (latestRun.status === 'ERROR' || latestRun.status === 'CANCELLED') && (
-        <div className="bg-gray-900 border border-red-900 rounded-lg p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-red-400">
-              {latestRun.status === 'CANCELLED' ? 'Analysis was cancelled' : 'Analysis failed'}
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5">Version {latestRun.version}</p>
+        <div className="bg-gray-900 border border-red-900 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-red-400">
+                {latestRun.status === 'CANCELLED' ? 'Analysis was cancelled' : 'Analysis failed'}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">Version {latestRun.version}</p>
+            </div>
+            <button
+              onClick={onRunFeasibility}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+            >
+              Re-run
+            </button>
           </div>
-          <button
-            onClick={onRunFeasibility}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
-          >
-            Re-run
-          </button>
+          {descriptionError && (
+            <p className="text-xs text-red-400 mt-3 leading-snug" role="alert">
+              {descriptionError}
+            </p>
+          )}
         </div>
       )}
     </div>

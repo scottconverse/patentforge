@@ -37,6 +37,9 @@ const mockPrisma = {
   claimDraft: {
     findMany: jest.fn(),
   },
+  inventionInput: {
+    findUnique: jest.fn(),
+  },
 };
 
 // Mock SettingsService
@@ -109,6 +112,13 @@ describe('Cost Cap Enforcement', () => {
   // ─── Controller: startRun pre-flight check ──────────────────────────
 
   describe('startRun cost cap enforcement', () => {
+    // All startRun tests need a valid invention description (>= 50 words)
+    const validDescription = Array(50).fill('word').join(' ');
+
+    beforeEach(() => {
+      mockPrisma.inventionInput.findUnique.mockResolvedValue({ description: validDescription });
+    });
+
     it('blocks run when cumulative cost exceeds cap', async () => {
       mockSettings.getSettings.mockResolvedValue({
         costCapUsd: 5.0,

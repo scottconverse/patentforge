@@ -22,6 +22,7 @@ import { PatchStageDto } from './dto/patch-stage.dto';
 import { PatchRunDto } from './dto/patch-run.dto';
 import { StartRunDto } from './dto/start-run.dto';
 import { RerunFromStageDto } from './dto/rerun-from-stage.dto';
+import { countWords } from '../utils/word-count';
 
 @Controller('projects/:id/feasibility')
 export class FeasibilityController {
@@ -34,6 +35,15 @@ export class FeasibilityController {
   @Post('run')
   @HttpCode(HttpStatus.CREATED)
   async startRun(@Param('id') projectId: string, @Body() body: StartRunDto) {
+    // Enforce minimum invention description length before starting
+    const description = await this.feasibilityService.getInventionDescription(projectId);
+    const wordCount = description ? countWords(description) : 0;
+    if (wordCount < 50) {
+      throw new BadRequestException(
+        `Invention description must be at least 50 words before running feasibility analysis. Current word count: ${wordCount}.`,
+      );
+    }
+
     // Enforce cost cap before starting a new run
     const settings = await this.settingsService.getSettings();
     if (settings.costCapUsd > 0) {

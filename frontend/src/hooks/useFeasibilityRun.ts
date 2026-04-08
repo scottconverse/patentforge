@@ -12,6 +12,7 @@ import {
 import { ViewMode } from './useProjectDetail';
 import { formatCost } from '../utils/format';
 import { getModelPricing } from '../utils/modelPricing';
+import { validateDescriptionWordCount } from '../utils/validation';
 
 // ----- Narrative builder -----
 export function toNarrative(inv: InventionInput): string {
@@ -130,6 +131,8 @@ export interface UseFeasibilityRunReturn {
   handleResume: () => Promise<void>;
   handleCancel: () => Promise<void>;
   displayStages: FeasibilityStage[];
+  /** Inline validation error for the description word count check. Cleared on next successful run. */
+  descriptionError: string | null;
   proceedWithRun: (
     appSettings: AppSettings,
     inv: InventionInput,
@@ -165,6 +168,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
   const [runError, setRunError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [isPipelineStreaming, setIsPipelineStreaming] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const isRunningRef = useRef(false);
@@ -197,6 +201,14 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
       setViewMode('invention-form');
       return;
     }
+
+    // Validate description meets minimum word count
+    const descError = validateDescriptionWordCount(inv.description);
+    if (descError) {
+      setDescriptionError(descError);
+      return;
+    }
+    setDescriptionError(null);
 
     // Load settings first to show cost modal
     let appSettings: AppSettings;
@@ -691,6 +703,7 @@ export function useFeasibilityRun(params: UseFeasibilityRunParams): UseFeasibili
     handleResume,
     handleCancel,
     displayStages,
+    descriptionError,
     proceedWithRun,
   };
 }

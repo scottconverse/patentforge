@@ -67,11 +67,11 @@ Note: These cost estimates are approximate as of 2025. The inventor should verif
 ### H. Overall Assessment
 One assessment label from the list below, followed by 2-3 sentences summarizing why the indicators point this direction. Remind the inventor that a registered patent attorney should review this assessment before making filing decisions.
 
-1. **INDICATORS FAVOR FILING** — analysis suggests strong patent potential, timing may matter
-2. **GATHER MORE EVIDENCE** — promising indicators but more technical detail needed before assessment is conclusive
-3. **CONSIDER TRADE SECRET** — indicators suggest secrecy may offer stronger protection than patents
-4. **INDICATORS SUGGEST NOT FILING** — analysis does not support patent protection based on current landscape
-5. **CONSIDER DESIGN PATENT ONLY** — ornamental aspects appear protectable, functional aspects face significant obstacles
+1. **LANDSCAPE FAVORS FILING** — prior art landscape appears favorable; discuss timing with counsel
+2. **MORE DOCUMENTATION WOULD STRENGTHEN POSITION** — promising indicators but additional technical detail would strengthen a filing
+3. **KEEP AS TRADE SECRET** — indicators suggest secrecy may offer stronger protection than patents
+4. **SIGNIFICANT OBSTACLES IDENTIFIED** — prior art landscape presents significant obstacles; consult counsel before investing in filing
+5. **DESIGN PATENT AVENUE WORTH EXPLORING** — ornamental aspects appear protectable; utility patent faces significant obstacles
 
 ### I. Plain-English Summary for the Inventor
 Write 3-5 sentences in simple, non-legal language that any inventor can understand. Explain:

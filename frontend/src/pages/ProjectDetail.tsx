@@ -102,6 +102,7 @@ export default function ProjectDetail() {
     handleResume,
     handleCancel,
     displayStages,
+    descriptionError,
     proceedWithRun,
   } = useFeasibilityRun({
     projectId: id,
@@ -205,6 +206,7 @@ export default function ProjectDetail() {
           claimDraftStatus={claimDraftStatus}
           complianceStatus={complianceStatus}
           applicationStatus={applicationStatus}
+          descriptionError={descriptionError}
           onViewModeChange={setViewMode}
           onRunFeasibility={() => handleRunFeasibility()}
           onResume={() => handleResume()}
@@ -257,6 +259,7 @@ export default function ProjectDetail() {
             <ProjectOverview
               project={project}
               latestRun={latestRun}
+              descriptionError={descriptionError}
               onEditInvention={() => setViewMode('invention-form')}
               onRunFeasibility={() => handleRunFeasibility()}
               onViewReport={() => setViewMode('report')}
