@@ -18,6 +18,34 @@ PatentForge v0.9.2 is pushed to GitHub but has **outstanding QA debt** that must
 
 ---
 
+## TASK 0: Fix Known Bugs From External Review (MUST DO BEFORE QA)
+
+An external review identified these real issues. Fix ALL of them before running QA:
+
+### Bug 1: README download links point to v0.9.0
+- **File:** `README.md` lines 44-46
+- **Problem:** Download table links to `PatentForge-0.9.0-Setup.exe`, `.dmg`, `.AppImage`
+- **Fix:** Update to `PatentForge-0.9.2-*`
+
+### Bug 2: ARCHITECTURE.md is stale
+- **File:** `ARCHITECTURE.md`
+- **Problem:** Version header says 0.9.0, figure caption says v0.6.0, and the document explicitly admits "The actual v0.6.0 implementation differs in several ways" with specific discrepancies (Prior Art handled by backend not separate service, no standalone USPTO Data service, MPEP RAG uses LangGraph not FAISS/BM25, Application Generator not shown in diagram)
+- **Fix:** Update version to 0.9.2, update or remove the "differs" disclaimer by correcting the architecture description, update the figure caption, add Application Generator (port 3003) to the architecture description
+
+### Bug 3: Prisma sqlite provider vs Docker PostgreSQL mismatch
+- **File:** `backend/prisma/schema.prisma` has `provider = "sqlite"`, `docker-compose.yml` injects `DATABASE_URL: postgresql://...`
+- **Problem:** Prisma will fail to connect to PostgreSQL with an sqlite provider. Docker deployment is broken.
+- **Fix:** Either (a) add a separate `schema.docker.prisma` with `provider = "postgresql"` and a Docker build step that swaps it, or (b) use an environment variable to switch providers, or (c) document that Docker requires a schema edit. Option (a) is cleanest — add a docker-specific schema and a Dockerfile step that copies it over the sqlite schema before `prisma generate`.
+
+### Bug 4: Default internal secret is a known public value
+- **File:** `README.md` documents this. Backend code at `backend/src/main.ts` or `.env.example`
+- **Problem:** `INTERNAL_SERVICE_SECRET` defaults to `patentforge-internal` which is committed to the repo. Any attacker who reads the source code knows the secret.
+- **Fix:** Generate a random secret at install/first-run time instead of using a hardcoded default. The installer (`PatentForge.ps1`) should generate one with `openssl rand -hex 32` or equivalent. For Docker, the `docker-compose.yml` should require the secret be set (fail if missing, don't default).
+
+After fixing all 4 bugs: run all test suites, verify they pass, then proceed to Task 1.
+
+---
+
 ## TASK 1: Full QA Recheck (MUST DO FIRST)
 
 ### What needs to happen:
