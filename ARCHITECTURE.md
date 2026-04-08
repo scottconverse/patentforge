@@ -1,7 +1,7 @@
 # PatentForge — Architecture & Design Document
 
-**Version**: 0.9.0
-**Last Updated**: 2026-04-05
+**Version**: 0.9.2
+**Last Updated**: 2026-04-07
 **Status**: Active Development
 
 ---
@@ -15,72 +15,83 @@ PatentForge is an open-source, full-lifecycle patent platform that takes an inve
 ## 2. System Architecture
 
 ![System Architecture](diagrams/architecture.png)
-*Figure 1: PatentForge System Architecture (v0.6.0)*
-
-> **Note:** This document was written as the initial architecture plan. The actual v0.6.0 implementation differs in several ways: Prior Art search is handled by the backend (not a separate service), there is no standalone USPTO Data service, and the MPEP RAG compliance checker uses LangGraph agents with Anthropic API calls (not FAISS/BM25). The Application Generator (port 3003) was added in v0.6.0 and is not shown in the original diagram below. See README.md for the current service topology.
+*Figure 1: PatentForge System Architecture (v0.9.2)*
 
 ### 2.1 Federated Service Model
 
 PatentForge uses a **federated architecture**: a central backend orchestrates independent specialized services that each own one capability. Services communicate over HTTP/JSON and can be developed, deployed, scaled, and replaced independently.
 
+The current service topology as of v0.9.2:
+
 ```
                           ┌──────────────────────────┐
                           │      React Frontend       │
-                          │   (AutoBE SDK client)     │
+                          │    (Vite + TypeScript)    │
                           │                           │
                           │  • Invention intake form  │
                           │  • Pipeline dashboard     │
-                          │  • Live streaming output  │
+                          │  • Live SSE streaming     │
                           │  • Prior art explorer     │
-                          │  • Claim editor           │
+                          │  • Claim editor + tree    │
                           │  • Compliance report      │
                           │  • Application preview    │
-                          │  • Portfolio tracker      │
+                          │  • Patent family lookup   │
+                          │                           │
+                          │  Port: 8080               │
                           └────────────┬──────────────┘
                                        │ HTTP + SSE
                           ┌────────────▼──────────────┐
                           │                           │
                           │     CENTRAL BACKEND       │
-                          │    (AutoBE-generated)     │
                           │                           │
-                          │  NestJS + Prisma + PG     │
+                          │  NestJS + Prisma + SQLite │
+                          │  (PostgreSQL via Docker)  │
                           │                           │
-                          │  Responsibilities:        │
                           │  • Project state machine  │
                           │  • Pipeline routing       │
-                          │  • Unified event bus      │
-                          │  • Document versioning    │
-                          │  • Export engine           │
+                          │  • SSE proxy to frontend  │
+                          │  • Prior art search       │
+                          │    (USPTO ODP API)        │
+                          │  • Export engine          │
                           │  • Service adapters       │
                           │                           │
                           │  Port: 3000               │
-                          └──┬────┬────┬────┬────┬───┘
-                             │    │    │    │    │
-           ┌─────────────────┘    │    │    │    └─────────────────┐
-           ▼                      ▼    │    ▼                     ▼
- ┌──────────────────┐  ┌────────────┐  │  ┌───────────────┐  ┌────────────┐
- │ FEASIBILITY SVC  │  │ PRIOR ART  │  │  │ COMPLIANCE    │  │ USPTO DATA │
- │                  │  │ SVC        │  │  │ SVC           │  │ SVC        │
- │ 6-stage patent   │  │            │  │  │               │  │            │
- │ feasibility      │  │ USPTO ODP  │  │  │ MPEP/USC/CFR  │  │ USPTO-CLI  │
- │ analysis via     │  │ search     │  │  │ RAG with      │  │ + pyUSPTO  │
- │ Anthropic API    │  │ over 100M+ │  │  │ FAISS/BM25    │  │ wrapped    │
- │                  │  │ patents    │  │  │               │  │            │
- │ TypeScript       │  │ Python     │  │  │ Python        │  │ Go/Python  │
- │ Port: 3001       │  │ Port: 3002 │  │  │ Port: 3004    │  │ Port: 3005 │
- └──────────────────┘  └────────────┘  │  └───────────────┘  └────────────┘
-                                       │
-                            ┌──────────▼──────────┐
-                            │ CLAIM DRAFTING SVC   │
-                            │                      │
-                            │ Multi-agent          │
-                            │ Planner/Writer/      │
-                            │ Examiner pattern     │
-                            │                      │
-                            │ Python + LangGraph   │
-                            │ Port: 3003           │
-                            └──────────────────────┘
+                          └──┬────────┬───────┬───────┘
+                             │        │       │
+           ┌─────────────────┘        │       └──────────────────┐
+           ▼                          ▼                          ▼
+ ┌──────────────────┐    ┌──────────────────────┐   ┌────────────────────┐
+ │ FEASIBILITY SVC  │    │  CLAIM DRAFTER SVC   │   │  COMPLIANCE SVC    │
+ │                  │    │                      │   │                    │
+ │ 6-stage patent   │    │ Multi-agent pipeline │   │ 35 USC 112(a/b),   │
+ │ analysis via     │    │ Planner → Writer →   │   │ MPEP 608, 35 USC   │
+ │ Anthropic API    │    │ Examiner             │   │ 101 (Alice/Mayo)   │
+ │                  │    │                      │   │ via LangGraph +    │
+ │ TypeScript       │    │ FastAPI/Python        │   │ Anthropic API      │
+ │ Port: 3001       │    │ SSE + sync endpoints │   │                    │
+ └──────────────────┘    │ Port: 3002           │   │ FastAPI/Python     │
+                         └──────────────────────┘   │ SSE + sync         │
+                                                     │ Port: 3004         │
+                                    ┌────────────────┴────────────────┐
+                                    │      APPLICATION GENERATOR      │
+                                    │                                 │
+                                    │  5-agent LangGraph pipeline     │
+                                    │  assembles USPTO-formatted      │
+                                    │  patent application (37 CFR     │
+                                    │  1.52): background, summary,    │
+                                    │  detailed description, abstract,│
+                                    │  figure descriptions, IDS       │
+                                    │                                 │
+                                    │  FastAPI/Python                 │
+                                    │  SSE + sync endpoints           │
+                                    │  Port: 3003                     │
+                                    └─────────────────────────────────┘
 ```
+
+**Notes on current implementation:**
+- Prior art search is integrated into the central backend (not a separate service). It calls the USPTO Open Data Portal API directly.
+- The compliance checker uses LangGraph agents with Anthropic API calls — not FAISS/BM25 vector search.
+- All Python services (claim-drafter, compliance-checker, application-generator) expose both SSE streaming endpoints and synchronous fallback endpoints. The backend proxies SSE events to the frontend.
 
 ### 2.2 Central Backend (AutoBE-Generated)
 

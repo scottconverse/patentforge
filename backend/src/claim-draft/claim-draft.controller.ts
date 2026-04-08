@@ -5,7 +5,15 @@ import { UpdateClaimDto } from './dto/update-claim.dto';
 import { SettingsService } from '../settings/settings.service';
 
 const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:3002';
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
+const INTERNAL_SECRET =
+  process.env.INTERNAL_SERVICE_SECRET ||
+  (() => {
+    console.warn(
+      '[PatentForge] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
+        'Add it to backend/.env for any networked deployment. Generate one: openssl rand -hex 32',
+    );
+    return 'patentforge-internal';
+  })();
 
 @Controller('projects/:id/claims')
 export class ClaimDraftController {

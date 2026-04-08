@@ -1,3 +1,10 @@
+# Claude Code tooling (local dev config, not project files)
+.claude/
+
+# Session context files
+V0*-*-CONTEXT.md
+V0*-*-PLANNING-CONTEXT.md
+
 # Dependencies
 node_modules/
 .pnp

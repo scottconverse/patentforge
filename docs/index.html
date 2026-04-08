@@ -256,7 +256,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <p>5-agent sequential pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52 with paragraph numbering, page numbers, and draft watermark.</p>
       </div>
       <div class="feature-card">
-        <h3>799 Automated Tests</h3>
+        <h3>802 Automated Tests</h3>
         <p>Jest backend tests with supertest API integration coverage, Vitest component tests, pytest for claim-drafter, compliance-checker, and application-generator, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. ESLint + Prettier enforcement, TypeScript strict mode across all services, and coverage thresholds enforced in CI. GitHub Actions CI on every push.</p>
       </div>
       <div class="feature-card">
@@ -336,7 +336,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
       <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.9.2</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
-        <li><strong>v0.9.2:</strong> <strong>Real-time SSE progress &amp; UX completion</strong> — Claims, Compliance, and Application tabs show step-by-step progress during generation. Cross-references populated in patent applications. Claims lazy-load reduces initial payload from 152KB to ~15KB. 799 automated tests.</li>
+        <li><strong>v0.9.2:</strong> <strong>Real-time SSE progress &amp; UX completion</strong> — Claims, Compliance, and Application tabs show step-by-step progress during generation. Cross-references populated in patent applications. Claims lazy-load reduces initial payload from 152KB to ~15KB. 802 automated tests.</li>
         <li><strong>v0.9.1:</strong> <strong>Legal posture alignment &amp; input validation</strong> — Assessment labels aligned to v1.2.0 across all three repos. Enhanced AI disclaimers in all 4 services. 50-word minimum description validation (frontend + backend). 665 automated tests.</li>
         <li><strong>v0.9.0:</strong> <strong>Application sections fix &amp; E2E hardening</strong> — Application tab's 9-section structured navigation now works end-to-end (astream state accumulation bug fixed). Application tab elapsed timer added. Streaming horizontal scrollbar eliminated. 7 new Playwright E2E scenarios (multi-project, cancel, resume, edit-after-feasibility, draft persistence, downloads). 628 automated tests.</li>
         <li><strong>v0.8.5:</strong> <strong>Critical installer fix &amp; UX overhaul</strong> — CRITICAL: Python services (Claims, Compliance, Application) returned 403 on every fresh install due to trailing space in env var; fixed. Claims tab collapse-by-default prevents browser freeze (37 claims). Compliance sections collapsed by default (154 results). Stage data preserved through view transitions. Elapsed timers on Claims/Compliance spinners. Settings save confirmation banner. Error detail surfacing for failed claim/compliance runs. Pipeline interrupted message fix for stages that never ran. 11 bugs fixed total. 599 automated tests.</li>
@@ -352,7 +352,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
         <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
         <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
-        <li>799 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>802 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>

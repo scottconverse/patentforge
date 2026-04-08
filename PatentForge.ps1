@@ -63,12 +63,26 @@ if ($python) {
 # ─── Create backend .env if missing ───────────────────────────────────────────
 $envFile = Join-Path $root "backend\.env"
 if (-not (Test-Path $envFile)) {
+    # Generate a cryptographically random secret for internal service auth.
+    # This is unique per installation — never a known public value.
+    $secretBytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
+    $generatedSecret = [System.BitConverter]::ToString($secretBytes).Replace('-','').ToLower()
     @(
         'DATABASE_URL="file:./prisma/dev.db"',
         'NODE_ENV=development',
-        'INTERNAL_SERVICE_SECRET=patentforge-internal'
+        "INTERNAL_SERVICE_SECRET=$generatedSecret"
     ) | Out-File -FilePath $envFile -Encoding utf8
-    Write-Host "  Created backend/.env" -ForegroundColor DarkGray
+    Write-Host "  Created backend/.env with generated INTERNAL_SERVICE_SECRET" -ForegroundColor DarkGray
+}
+
+# Read the internal secret from the .env file (handles both new and existing installs)
+$internalSecret = 'patentforge-internal'  # fallback if .env parse fails
+$envContent = Get-Content $envFile -ErrorAction SilentlyContinue
+if ($envContent) {
+    $secretLine = $envContent | Where-Object { $_ -match '^INTERNAL_SERVICE_SECRET=' }
+    if ($secretLine) {
+        $internalSecret = ($secretLine -split '=', 2)[1].Trim().Trim('"')
+    }
 }
 
 # ─── npm install for Node packages ────────────────────────────────────────────
@@ -183,7 +197,7 @@ if ($pythonOk) {
         Write-Host "  Starting $($svc.Name) (port $($svc.Port))..."
         $svcDir = Join-Path $root "services\$($svc.Dir)"
         Start-Process -FilePath "cmd.exe" `
-            -ArgumentList "/c set INTERNAL_SERVICE_SECRET=patentforge-internal&& `"$python`" -m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
+            -ArgumentList "/c set INTERNAL_SERVICE_SECRET=$internalSecret&& `"$python`" -m uvicorn src.server:app --host 0.0.0.0 --port $($svc.Port)" `
             -WorkingDirectory $svcDir `
             -WindowStyle Minimized
     }

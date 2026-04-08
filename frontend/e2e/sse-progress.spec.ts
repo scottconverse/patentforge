@@ -149,20 +149,22 @@ async function setupProjectWithFeasibilityAndClaims(page: Page, projectId: strin
 test.describe('SSE Step Progress — Claims Tab', () => {
   let projectId: string;
 
-  test.beforeAll(async ({ request }) => {
-    await updateSettings(request);
-    projectId = await createProject(request, 'SSE Progress Test');
+  test.beforeAll(async () => {
+    await updateSettings({ anthropicApiKey: 'sk-ant-test-e2e-key-not-real', defaultModel: 'claude-haiku-4-5-20251001' });
+    projectId = await createProject('SSE Progress Test');
     // Save invention with 50+ word description
-    await request.put(`/api/projects/${projectId}/invention`, {
-      data: {
+    await fetch(`http://localhost:3000/api/projects/${projectId}/invention`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         title: 'SSE Progress Test Invention',
         description: 'A machine learning system that predicts patent examination outcomes using natural language processing to analyze patent claims and specifications. The system processes historical USPTO examination data to identify patterns in claim rejections and allowances. It uses transformer-based models fine-tuned on patent text to evaluate novelty, non-obviousness, and enablement. The system outputs a probability score for each claim.',
-      },
+      }),
     });
   });
 
-  test.afterAll(async ({ request }) => {
-    if (projectId) await deleteProject(request, projectId);
+  test.afterAll(async () => {
+    if (projectId) await deleteProject(projectId);
   });
 
   test('claims SSE stream shows step progress then renders claims', async ({ page }) => {
@@ -217,19 +219,21 @@ test.describe('SSE Step Progress — Claims Tab', () => {
 test.describe('SSE Step Progress — Compliance Tab', () => {
   let projectId: string;
 
-  test.beforeAll(async ({ request }) => {
-    await updateSettings(request);
-    projectId = await createProject(request, 'SSE Compliance Test');
-    await request.put(`/api/projects/${projectId}/invention`, {
-      data: {
+  test.beforeAll(async () => {
+    await updateSettings({ anthropicApiKey: 'sk-ant-test-e2e-key-not-real', defaultModel: 'claude-haiku-4-5-20251001' });
+    projectId = await createProject('SSE Compliance Test');
+    await fetch(`http://localhost:3000/api/projects/${projectId}/invention`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         title: 'SSE Compliance Test Invention',
         description: 'A machine learning system that predicts patent examination outcomes using natural language processing to analyze patent claims and specifications. The system processes historical USPTO examination data to identify patterns in claim rejections and allowances. It uses transformer-based models fine-tuned on patent text to evaluate novelty, non-obviousness, and enablement. The system outputs a probability score for each claim.',
-      },
+      }),
     });
   });
 
-  test.afterAll(async ({ request }) => {
-    if (projectId) await deleteProject(request, projectId);
+  test.afterAll(async () => {
+    if (projectId) await deleteProject(projectId);
   });
 
   test('compliance SSE stream shows 4-step progress', async ({ page }) => {
@@ -268,19 +272,21 @@ test.describe('SSE Step Progress — Compliance Tab', () => {
 test.describe('SSE Step Progress — Application Tab', () => {
   let projectId: string;
 
-  test.beforeAll(async ({ request }) => {
-    await updateSettings(request);
-    projectId = await createProject(request, 'SSE Application Test');
-    await request.put(`/api/projects/${projectId}/invention`, {
-      data: {
+  test.beforeAll(async () => {
+    await updateSettings({ anthropicApiKey: 'sk-ant-test-e2e-key-not-real', defaultModel: 'claude-haiku-4-5-20251001' });
+    projectId = await createProject('SSE Application Test');
+    await fetch(`http://localhost:3000/api/projects/${projectId}/invention`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         title: 'SSE Application Test Invention',
         description: 'A machine learning system that predicts patent examination outcomes using natural language processing to analyze patent claims and specifications. The system processes historical USPTO examination data to identify patterns in claim rejections and allowances. It uses transformer-based models fine-tuned on patent text to evaluate novelty, non-obviousness, and enablement. The system outputs a probability score for each claim.',
-      },
+      }),
     });
   });
 
-  test.afterAll(async ({ request }) => {
-    if (projectId) await deleteProject(request, projectId);
+  test.afterAll(async () => {
+    if (projectId) await deleteProject(projectId);
   });
 
   test('application SSE stream shows 5-step progress', async ({ page }) => {

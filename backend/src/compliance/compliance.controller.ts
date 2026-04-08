@@ -5,7 +5,15 @@ import { StartComplianceDto } from './dto/start-compliance.dto';
 import { SettingsService } from '../settings/settings.service';
 
 const COMPLIANCE_CHECKER_URL = process.env.COMPLIANCE_CHECKER_URL || 'http://localhost:3004';
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
+const INTERNAL_SECRET =
+  process.env.INTERNAL_SERVICE_SECRET ||
+  (() => {
+    console.warn(
+      '[PatentForge] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
+        'Add it to backend/.env for any networked deployment. Generate one: openssl rand -hex 32',
+    );
+    return 'patentforge-internal';
+  })();
 
 @Controller('projects/:id/compliance')
 export class ComplianceController {

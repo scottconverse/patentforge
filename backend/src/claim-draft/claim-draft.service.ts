@@ -4,7 +4,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, Header, Footer, AlignmentType } from 'docx';
 const CLAIM_DRAFTER_URL = process.env.CLAIM_DRAFTER_URL || 'http://localhost:3002';
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'patentforge-internal';
+const INTERNAL_SECRET =
+  process.env.INTERNAL_SERVICE_SECRET ||
+  (() => {
+    console.warn(
+      '[PatentForge] INTERNAL_SERVICE_SECRET is not set — using insecure default. ' +
+        'Add it to backend/.env for any networked deployment. Generate one: openssl rand -hex 32',
+    );
+    return 'patentforge-internal';
+  })();
 
 /** Shape of a single claim returned by the Python claim-drafter. */
 interface ClaimDrafterClaim {
