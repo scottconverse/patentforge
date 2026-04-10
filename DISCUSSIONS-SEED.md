@@ -110,11 +110,11 @@ Hey everyone! PatentForge is now open source.
 
 **What's new in v0.7.0:**
 - **One-click installer** — Windows (.exe), Mac (.dmg, beta), Linux (.AppImage, beta). Download, install, launch. No Node.js, Python, or git required.
-- **System tray app** — Go binary manages all 5 services with health monitoring, auto-restart, and log rotation
+- **System tray app** — Go binary manages all 6 services with health monitoring, auto-restart, and log rotation
 - **First-run wizard** — guides new users through API key setup on first launch
 
 **What's next:**
-- v0.9 — ProjectDetail further decomposition, auto-update mechanism, expanded platform support
+- v1.0.0 is here — settings save toast, mobile/tablet E2E viewport tests, documentation v1.0 pass, 835 automated tests
 
 If you're an inventor who's been through the patent process before, I'd love your feedback on whether this output would have been useful at the start of your journey.
 
@@ -180,7 +180,7 @@ Think of PatentForge like doing homework before a meeting. You'll walk in with y
 
 **Body:**
 
-I'm planning the v0.7+ roadmap and would love input from people who've actually been through the patent process.
+I'm planning the post-v1.0 roadmap and would love input from people who've actually been through the patent process.
 
 Some features I'm considering:
 - **USPTO data integration** — pull in more structured patent data (classifications, citation trees, examiner statistics)
@@ -430,7 +430,7 @@ PatentForge now has a proper installer. Download, double-click, and you're runni
 - **Windows installer** (.exe via Inno Setup) — full installer with Start Menu shortcuts and uninstaller
 - **Mac installer** (.dmg, beta) — drag to Applications
 - **Linux installer** (.AppImage, beta) — chmod +x and run
-- **System tray app** (Go) — manages all 5 services with health monitoring, auto-restart on crash, and log rotation
+- **System tray app** (Go) — manages all 6 services with health monitoring, auto-restart on crash, and log rotation
 - **Node SEA binaries** — backend and feasibility compiled to standalone executables (no Node.js runtime)
 - **Portable Python 3.12** — bundled for the 3 Python services
 - **First-run wizard** — walks new users through API key setup on first launch

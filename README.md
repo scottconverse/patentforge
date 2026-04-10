@@ -78,7 +78,7 @@ echo 'DATABASE_URL="file:./prisma/dev.db"' > backend/.env
 cd backend && npx prisma db push && npx prisma generate && cd ..
 ```
 
-**On Windows** — double-click `PatentForge.bat` (builds and starts all 5 services, opens browser).
+**On Windows** — double-click `PatentForge.bat` (builds and starts all 6 services, opens browser).
 
 The launcher automatically checks for missing `node_modules` and installs them, verifies Python dependencies, and confirms each service port is bound before opening the browser.
 
@@ -143,7 +143,7 @@ Each stage builds on the output of all previous stages. Stages 2, 3, and 4 use A
 ## Architecture
 
 ![PatentForge System Architecture](diagrams/architecture.png)
-*Figure 1: System Architecture (v0.9.0) — 6 services + system tray + 3 external APIs*
+*Figure 1: System Architecture (v1.0.0) — 6 services + system tray + 3 external APIs*
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -236,11 +236,11 @@ docker compose up --build
 - [x] **v0.8.1** — Back button fix (return to streaming view during active pipeline), documentation consistency audit
 - [x] **v0.8.2** — Security hardening (Helmet headers, DOMPurify sanitization), Prisma schema unification (eliminated dual-schema drift), cost tracking across all services, ProjectDetail refactor (extracted 6 components), CI expanded (application-generator tests), 592 automated tests
 - [x] **v0.8.5** — CI fix (package-lock.json version mismatch), decrypt() silent failure fix, report auth fix, Docker healthchecks and log rotation, API key rate limiting, lint cleanup (all `any` types replaced), shared utility extraction, auto-export opt-in setting, Node 24 CI migration, 599 automated tests
-- [x] **v1.0.0** — Settings save toast, mobile/tablet Playwright E2E viewport tests (375px + 768px), documentation v1.0 pass, 835 automated tests
-- [x] **v0.9.3** — NestJS v11 + Vite v8 (0 npm vulnerabilities across all packages), retry/backoff standardized across all Python pipeline services (60s/90s/120s), 829 automated tests
-- [x] **v0.9.2** — Real-time SSE progress for Claims/Compliance/Application tabs, cross-references populated in patent applications, claims lazy-load (preview + on-demand full text), 802 automated tests
-- [x] **v0.9.1** — Assessment labels aligned to v1.2.0 legal posture, enhanced AI disclaimers across all services, 50-word minimum description validation (frontend + backend), 665 automated tests
 - [x] **v0.9.0** — Application sections fix (astream state accumulation bug), Application tab elapsed timer, streaming scrollbar fix, 7 new E2E test scenarios (multi-project, cancel, resume, edit-after-feasibility, draft persistence, downloads), 628 automated tests
+- [x] **v0.9.1** — Assessment labels aligned to v1.2.0 legal posture, enhanced AI disclaimers across all services, 50-word minimum description validation (frontend + backend), 665 automated tests
+- [x] **v0.9.2** — Real-time SSE progress for Claims/Compliance/Application tabs, cross-references populated in patent applications, claims lazy-load (preview + on-demand full text), 802 automated tests
+- [x] **v0.9.3** — NestJS v11 + Vite v8 (0 npm vulnerabilities across all packages), retry/backoff standardized across all Python pipeline services (60s/90s/120s), 829 automated tests
+- [x] **v1.0.0** — Settings save toast, mobile/tablet Playwright E2E viewport tests (375px + 768px), documentation v1.0 pass, 835 automated tests
 
 ## Security
 

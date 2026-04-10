@@ -108,6 +108,10 @@ patentforge/
 │   │   ├── src/agents/   # Planner, Writer, Examiner agents
 │   │   ├── src/prompts/  # Agent prompt templates (CC BY-SA 4.0)
 │   │   └── tests/        # pytest test suite
+│   ├── application-generator/ # Python + LangGraph application assembly service (port 3003)
+│   │   ├── src/agents/   # 5-agent pipeline (background, summary, description, abstract, IDS)
+│   │   ├── src/prompts/  # Agent prompt templates
+│   │   └── tests/        # pytest test suite
 │   └── compliance-checker/ # Python + LangGraph compliance checking service (port 3004)
 │       ├── src/agents/   # 112a, 112b, 608, 101 checker agents
 │       ├── src/prompts/  # Checker prompt templates
@@ -145,7 +149,7 @@ bash scripts/cleanroom-e2e.sh
 
 ### Playwright E2E Setup
 
-The E2E tests launch all five services (backend, feasibility, claim-drafter, compliance-checker, frontend) automatically via Playwright's `webServer` config. Tests run with `workers: 1` because they share a SQLite database that can't handle concurrent writes.
+The E2E tests launch all six services (backend, feasibility, claim-drafter, application-generator, compliance-checker, frontend) automatically via Playwright's `webServer` config. Tests run with `workers: 1` because they share a SQLite database that can't handle concurrent writes.
 
 First run requires Chromium and Python dependencies:
 

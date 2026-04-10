@@ -31,15 +31,15 @@ The simplest way to install PatentForge is to download the installer for your pl
 
 | Platform | Download | Size |
 |----------|----------|------|
-| **Windows** | [PatentForge-0.9.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.0-Setup.exe) | ~100 MB |
-| **Mac (Beta)** | [PatentForge-0.9.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.0.dmg) | ~100 MB |
-| **Linux (Beta)** | [PatentForge-0.9.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.0.AppImage) | ~120 MB |
+| **Windows** | [PatentForge-1.0.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0-Setup.exe) | ~100 MB |
+| **Mac (Beta)** | [PatentForge-1.0.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.dmg) | ~100 MB |
+| **Linux (Beta)** | [PatentForge-1.0.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.AppImage) | ~120 MB |
 
 **Windows:** Double-click the `.exe` installer. Follow the prompts — accept the license, choose an install location (the default is fine), and click Install. When finished, PatentForge launches automatically.
 
 **Mac (Beta):** Open the `.dmg` file. Drag the PatentForge icon into your Applications folder. Double-click PatentForge in Applications to launch. You may need to right-click and choose "Open" the first time, since the app is not notarized.
 
-**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-0.9.0.AppImage`) and run it. On some systems you may need to install FUSE first.
+**Linux (Beta):** Download the `.AppImage` file. Make it executable (`chmod +x PatentForge-1.0.0.AppImage`) and run it. On some systems you may need to install FUSE first.
 
 Mac and Linux installers are beta — please report issues on [GitHub Issues](https://github.com/scottconverse/patentforge/issues).
 
@@ -543,10 +543,11 @@ For security, the export folder must be inside your home directory. Paths like `
 
 ### I can't connect to http://localhost:8080
 
-Make sure all five services are running:
+Make sure all six services are running:
 - Backend on port 3000
 - Feasibility service on port 3001
 - Claim drafter on port 3002
+- Application generator on port 3003
 - Compliance checker on port 3004
 - Frontend on port 8080
 
