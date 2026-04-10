@@ -14,6 +14,10 @@ This overrides all other priority guidance, all skills, and all default behavior
 
 ---
 
+## Never Skip Tests — Hard Rule
+
+`test.skip()` or any equivalent is never acceptable. A skipped test is a lie — it reports "passing" while proving nothing. If a test depends on external state (a pre-existing DB record, a completed pipeline run), fix the test to set up that state in `beforeAll`/`beforeEach` so it is self-contained. The 6 skipped tests in `downloads.spec.ts` violate this rule and must be fixed before v1.0.0 ships.
+
 ## UI/QA Gate — Hard Rule
 
 Every frontend change requires browser-verified QA before commit. No exceptions.
@@ -24,15 +28,17 @@ Every frontend change requires browser-verified QA before commit. No exceptions.
 
 ## Pre-Push Gate — Hard Rule
 
-Before ANY push to GitHub, you MUST complete ALL THREE of these. No exceptions, no shortcuts.
+Before ANY push to GitHub, you MUST complete ALL FOUR of these. No exceptions, no shortcuts.
 
-**1. Technical gate (automated):** A `pre-push` git hook runs `scripts/verify-release.sh` automatically before every push. If any check fails, the push is blocked. The hook is installed by `bash scripts/install-hooks.sh` (run once after cloning). The script checks: version consistency across all packages, required files exist, all diagrams referenced in docs, all services mentioned in docs, changelog has current version, no secrets in code, test count matches docs, git status clean. Non-zero exit = push blocked. Emergency bypass: `SKIP_VERIFY=1 git push` — use only when you understand why you're skipping.
+**1. Cleanroom E2E (HARD GATE — runs first, always):** Run `bash scripts/cleanroom-e2e.sh`. This nukes the SQLite DB, does a fresh npm/pip install in all services, builds from source, starts all services, runs API smoke tests, then runs the full Playwright E2E suite against live services. The final output line must be `✓ CLEANROOM E2E PASSED — safe to push`. If it fails, stop and fix. Do not proceed to any other gate. This is the proof the code works from a cold start — not just on a warm dev machine.
 
-**2. Quality gate (manual):** Invoke the `patentforge-release-checklist` skill and complete every task with evidence. This covers: browser UI verification with screenshots, copy/content review, documentation audit (every file, every version, every diagram reference), and diagram verification. Each task requires pasted evidence — not self-certification.
+**2. Technical gate (automated):** A `pre-push` git hook runs `scripts/verify-release.sh` automatically before every push. If any check fails, the push is blocked. The hook is installed by `bash scripts/install-hooks.sh` (run once after cloning). The script checks: version consistency across all packages, required files exist, all diagrams referenced in docs, all services mentioned in docs, changelog has current version, no secrets in code, test count matches docs, git status clean. Non-zero exit = push blocked. Emergency bypass: `SKIP_VERIFY=1 git push` — use only when you understand why you're skipping.
 
-**3. User approval gate (HARD GATE):** After gates 1 and 2 pass, report results and STOP. Say "Ready to push — awaiting your approval." Do NOT push until the user explicitly says "push", "yes push", "go ahead", or equivalent in the current conversation turn. This applies to every push — initial, patch, hotfix, all of them. No exceptions. A push is irreversible and public. The user must see the final state and explicitly authorize it.
+**3. Quality gate (manual):** Invoke the `patentforge-release-checklist` skill and complete every task with evidence. The skill includes cleanroom E2E as Task 1 — if you have already run it for gate 1, paste that output again as evidence. This covers: browser UI verification with screenshots, copy/content review, documentation audit (every file, every version, every diagram reference), and diagram verification. Each task requires pasted evidence — not self-certification.
 
-All three gates must pass in order. The hook enforces gate 1 automatically. Gate 2 is your responsibility. Gate 3 is non-negotiable — never push without explicit user approval.
+**4. User approval gate (HARD GATE):** After gates 1, 2, and 3 pass, report results and STOP. Do NOT write "Ready to push: YES" — write "Checklist complete — awaiting your approval to push." Do NOT push until the user explicitly says "push", "yes push", "go ahead", or equivalent in the current conversation turn. This applies to every push — initial, patch, hotfix, all of them. No exceptions. A push is irreversible and public. The user decides when to push.
+
+All four gates must pass in order. Gate 1 is your first action. Gate 4 is the user's decision, not yours.
 
 ---
 

@@ -187,9 +187,9 @@
       USPTO-formatted patent application draft — all before your first attorney meeting.
     </p>
     <div class="hero-cta">
-      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.3-Setup.exe" class="btn btn-primary">Download for Windows</a>
-      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.3.dmg" class="btn btn-secondary">Mac (Beta)</a>
-      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.3.AppImage" class="btn btn-secondary">Linux (Beta)</a>
+      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0-Setup.exe" class="btn btn-primary">Download for Windows</a>
+      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.dmg" class="btn btn-secondary">Mac (Beta)</a>
+      <a href="https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.AppImage" class="btn btn-secondary">Linux (Beta)</a>
     </div>
     <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
       Windows .exe (~100 MB) &bull; Mac .dmg (~100 MB) &bull; Linux .AppImage (~120 MB)<br>
@@ -256,7 +256,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <p>5-agent sequential pipeline generates a complete USPTO-formatted patent application: background, summary, detailed description, abstract, and figure descriptions. Word export follows 37 CFR 1.52 with paragraph numbering, page numbers, and draft watermark.</p>
       </div>
       <div class="feature-card">
-        <h3>829 Automated Tests</h3>
+        <h3>835 Automated Tests</h3>
         <p>Jest backend tests with supertest API integration coverage, Vitest component tests, pytest for claim-drafter, compliance-checker, and application-generator, Playwright browser E2E with screenshots and console checks, responsive viewport testing, and automated doc/version auditing. ESLint + Prettier enforcement, TypeScript strict mode across all services, and coverage thresholds enforced in CI. GitHub Actions CI on every push.</p>
       </div>
       <div class="feature-card">
@@ -334,8 +334,9 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
 
   <section style="max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem;">
     <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem 2rem;">
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v0.9.3</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Current Release: v1.0.0</h3>
       <ul style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8; padding-left: 1.25rem;">
+        <li><strong>v1.0.0:</strong> <strong>First stable release</strong> — Settings save now shows a toast notification instead of a silent banner. Mobile and tablet Playwright E2E tests added (375px + 768px), clearing QA debt from v0.9.2 (StepProgress component now verified live at mobile width). Documentation v1.0 pass: all version numbers, download links, and diagrams current. 835 automated tests.</li>
         <li><strong>v0.9.3:</strong> <strong>Security &amp; reliability hardening</strong> — NestJS v11 + Vite v8 upgrade eliminates all npm vulnerabilities (0 across all packages, down from 21). Retry/backoff standardized across all 3 Python pipeline services: 60s/90s/120s on rate limits, 30s/45s/60s on server errors — previously these services had no retry logic. 829 automated tests.</li>
         <li><strong>v0.9.2:</strong> <strong>Real-time SSE progress &amp; UX completion</strong> — Claims, Compliance, and Application tabs show step-by-step progress during generation. Cross-references populated in patent applications. Claims lazy-load reduces initial payload from 152KB to ~15KB. 802 automated tests.</li>
         <li><strong>v0.9.1:</strong> <strong>Legal posture alignment &amp; input validation</strong> — Assessment labels aligned to v1.2.0 across all three repos. Enhanced AI disclaimers in all 4 services. 50-word minimum description validation (frontend + backend). 665 automated tests.</li>
@@ -353,7 +354,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
         <li><strong>v0.5.2:</strong> Quality patch — 13 items from external tech/UI/QA review: shared Alert component, styled delete modal, claim edit discoverability (pencil icon), tablet layout, encryption self-test, 60s API timeout, Docker secret hardening, CI compliance-checker tests</li>
         <li><strong>v0.5.0–0.5.1:</strong> Compliance checking (112a, 112b, MPEP 608, 101), claims + compliance Word export, accurate cost estimates, ODP usage tracking, individual claim regeneration, prior art overlap warnings</li>
         <li><strong>v0.4.x:</strong> AI-assisted claim drafting (3-agent pipeline), claim tree visualization, patent family tree lookup</li>
-        <li>802 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
+        <li>835 automated tests — GitHub Actions CI (Jest + Vitest + pytest + Playwright E2E)</li>
       </ul>
       <p style="margin-top: 0.75rem; font-size: 0.85rem;"><a href="https://github.com/scottconverse/patentforge/blob/master/CHANGELOG.md">Full changelog &rarr;</a></p>
     </div>
@@ -365,7 +366,7 @@ cd backend && npx prisma db push && npx prisma generate && cd ..
 
     <div style="margin: 2rem 0; text-align: center;">
       <img src="../diagrams/architecture.png" alt="PatentForge System Architecture — 6 services" style="max-width: 100%; border-radius: 0.5rem; border: 1px solid #334155;" />
-      <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">Figure 1: System Architecture (v0.9.3) — 6 services + system tray + 3 external APIs</p>
+      <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">Figure 1: System Architecture (v1.0.0) — 6 services + system tray + 3 external APIs</p>
     </div>
 
     <div style="margin: 2rem 0; text-align: center;">

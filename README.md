@@ -41,9 +41,9 @@ The easiest way to get started is to download the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| **Windows** | [PatentForge-0.9.3-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.3-Setup.exe) | Inno Setup installer (~100 MB) |
-| **Mac (Beta)** | [PatentForge-0.9.3.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.3.dmg) | Drag to Applications (~100 MB) |
-| **Linux (Beta)** | [PatentForge-0.9.3.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-0.9.3.AppImage) | chmod +x and run (~120 MB) |
+| **Windows** | [PatentForge-1.0.0-Setup.exe](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0-Setup.exe) | Inno Setup installer (~100 MB) |
+| **Mac (Beta)** | [PatentForge-1.0.0.dmg](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.dmg) | Drag to Applications (~100 MB) |
+| **Linux (Beta)** | [PatentForge-1.0.0.AppImage](https://github.com/scottconverse/patentforge/releases/latest/download/PatentForge-1.0.0.AppImage) | chmod +x and run (~120 MB) |
 
 The installer bundles everything — no Node.js, Python, or git required. On first launch, the system tray icon appears and your browser opens to the setup wizard, which walks you through entering your Anthropic API key.
 
@@ -236,6 +236,7 @@ docker compose up --build
 - [x] **v0.8.1** — Back button fix (return to streaming view during active pipeline), documentation consistency audit
 - [x] **v0.8.2** — Security hardening (Helmet headers, DOMPurify sanitization), Prisma schema unification (eliminated dual-schema drift), cost tracking across all services, ProjectDetail refactor (extracted 6 components), CI expanded (application-generator tests), 592 automated tests
 - [x] **v0.8.5** — CI fix (package-lock.json version mismatch), decrypt() silent failure fix, report auth fix, Docker healthchecks and log rotation, API key rate limiting, lint cleanup (all `any` types replaced), shared utility extraction, auto-export opt-in setting, Node 24 CI migration, 599 automated tests
+- [x] **v1.0.0** — Settings save toast, mobile/tablet Playwright E2E viewport tests (375px + 768px), documentation v1.0 pass, 835 automated tests
 - [x] **v0.9.3** — NestJS v11 + Vite v8 (0 npm vulnerabilities across all packages), retry/backoff standardized across all Python pipeline services (60s/90s/120s), 829 automated tests
 - [x] **v0.9.2** — Real-time SSE progress for Claims/Compliance/Application tabs, cross-references populated in patent applications, claims lazy-load (preview + on-demand full text), 802 automated tests
 - [x] **v0.9.1** — Assessment labels aligned to v1.2.0 legal posture, enhanced AI disclaimers across all services, 50-word minimum description validation (frontend + backend), 665 automated tests

@@ -1,6 +1,6 @@
 [project]
 name = "patentforge-compliance-checker"
-version = "0.9.3"
+version = "1.0.0"
 description = "Patent claim compliance checking service for PatentForge"
 requires-python = ">=3.11"
 dependencies = [

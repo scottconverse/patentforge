@@ -16,7 +16,7 @@ Hey everyone! PatentForge is now open source.
 
 **What it doesn't do:** This is a research tool, not a legal service. The author isn't a lawyer, the AI isn't a lawyer, and none of the output is legal advice. It's designed to help you prepare for a meeting with a real patent attorney — not replace one.
 
-**Current status (v0.9.3):**
+**Current status (v1.0.0):**
 - **Feasibility analysis** — 6-stage AI pipeline: technical intake, prior art research, patentability review, deep-dive analysis, strategy notes, consolidated report
 - **Prior art search** — USPTO Open Data Portal integration with relevance scoring (stop-word filtering, title weighting), plus AI web search
 - **Claim drafting** — 3-agent pipeline (Planner, Writer, Examiner) generates independent and dependent patent claims
@@ -27,10 +27,14 @@ Hey everyone! PatentForge is now open source.
 - API keys encrypted at rest (AES-256-GCM)
 - Cost transparency with configurable cost cap
 - Optional Bearer token authentication for network deployments
-- 829 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
+- 835 automated tests (Jest + Vitest + supertest + Playwright E2E + pytest) with GitHub Actions CI
 - ESLint + Prettier + TypeScript strict mode + coverage thresholds enforced in CI
 - Resume from interruption, individual stage re-run
 - Legal guardrails — clickwrap, embedded disclaimers, watermarked exports, CC BY-SA prompt licensing
+
+**What's new in v1.0.0:**
+- **First stable release** — Settings save now shows a toast notification instead of the previous silent inline banner. Mobile and tablet Playwright E2E tests (375px + 768px) added, clearing v0.9.2 QA debt. Documentation v1.0 pass with all version numbers and download links current.
+- 835 automated tests
 
 **What's new in v0.9.3:**
 - **0 npm vulnerabilities** — NestJS v11 + Vite v8 upgrade eliminates all npm vulnerabilities across all packages (previously 21 total, including 7 HIGH in backend)

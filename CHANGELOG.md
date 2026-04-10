@@ -5,6 +5,20 @@ All notable changes to PatentForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-04-08
+
+### Added
+- **Settings save confirmation toast** — saving settings now shows a fixed-position toast notification ("Settings saved") instead of the previous inline green banner that required scrolling to see. Uses the shared `Toast` component already present in the app; banner appearance is consistent with all other confirmation toasts.
+- **Mobile and tablet Playwright E2E tests** — 6 new smoke tests covering 375px (iPhone-width) and 768px (iPad-portrait) viewports: project list with horizontal overflow assertion, project detail sidebar, and full feasibility pipeline run-to-completion with mocked SSE. Clears QA debt from v0.9.2: the `StepProgress` component is now verified rendering live at mobile width; 768px tablet layout verified for the first time.
+
+### Changed
+- **Documentation v1.0 pass** — README, USER-MANUAL, ARCHITECTURE, landing page, and discussion seeds updated for the v1.0.0 release. Download links updated. Version numbers consistent across all files.
+
+### Added (tests)
+- Total: 835 automated tests (304 Jest + 202 Vitest + 265 pytest + 64 Playwright E2E)
+
+---
+
 ## [0.9.3] - 2026-04-08
 
 ### Changed

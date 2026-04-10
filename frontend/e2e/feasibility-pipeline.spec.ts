@@ -156,6 +156,45 @@ async function setupMocks(page: Page, sseBody: string) {
       }),
     });
   });
+
+  // Mock the disk-export endpoint — avoids file-system side effects in cleanroom.
+  // The real endpoint writes to ~/Desktop which may not exist in CI; the browser
+  // also logs the resulting 500 to the console even when JS catches it.
+  await page.route('**/api/projects/*/feasibility/export', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        folderPath: '/tmp/patentforge-e2e-export',
+        mdFile: '/tmp/patentforge-e2e-export/report.md',
+        htmlFile: '/tmp/patentforge-e2e-export/report.html',
+      }),
+    });
+  });
+
+  // Mock the report-text endpoint — returns mock content so the report view
+  // renders without waiting for a real backend round-trip.
+  await page.route('**/api/projects/*/feasibility/report', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        report: '# E2E Mock Feasibility Report\n\nThis is the mock feasibility analysis report for end-to-end testing purposes. It contains multiple sections covering prior art, patentability, and IP strategy.',
+        html: '<h1>E2E Mock Feasibility Report</h1><p>This is the mock feasibility analysis report for end-to-end testing purposes.</p>',
+      }),
+    });
+  });
+
+  // Mock the report-HTML endpoint — serves the iframe without a backend round-trip.
+  // The browser logs a 500 to the console even if JS catches it, which fails the
+  // consoleErrors fixture.
+  await page.route('**/api/projects/*/feasibility/report/html', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      body: '<!DOCTYPE html><html><body style="background:#030712;color:#f3f4f6;padding:2rem;font-family:sans-serif"><h1 style="color:#60a5fa">E2E Mock Feasibility Report</h1><p>Mock feasibility analysis report for end-to-end testing.</p></body></html>',
+    });
+  });
 }
 
 /** Navigate to a project and fill the invention form with minimal data. */

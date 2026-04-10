@@ -1,8 +1,8 @@
 # PatentForge — Architecture & Design Document
 
-**Version**: 0.9.2
-**Last Updated**: 2026-04-07
-**Status**: Active Development
+**Version**: 1.0.0
+**Last Updated**: 2026-04-08
+**Status**: Stable
 
 ---
 
@@ -15,13 +15,13 @@ PatentForge is an open-source, full-lifecycle patent platform that takes an inve
 ## 2. System Architecture
 
 ![System Architecture](diagrams/architecture.png)
-*Figure 1: PatentForge System Architecture (v0.9.2)*
+*Figure 1: PatentForge System Architecture (v1.0.0)*
 
 ### 2.1 Federated Service Model
 
 PatentForge uses a **federated architecture**: a central backend orchestrates independent specialized services that each own one capability. Services communicate over HTTP/JSON and can be developed, deployed, scaled, and replaced independently.
 
-The current service topology as of v0.9.2:
+The current service topology as of v1.0.0:
 
 ```
                           ┌──────────────────────────┐

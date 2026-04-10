@@ -1,6 +1,6 @@
 [project]
 name = "patentforge-claim-drafter"
-version = "0.9.3"
+version = "1.0.0"
 description = "AI-assisted patent claim drafting service for PatentForge"
 requires-python = ">=3.11"
 dependencies = [

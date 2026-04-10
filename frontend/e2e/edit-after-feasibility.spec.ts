@@ -104,6 +104,40 @@ async function setupMocks(page: Page, sseBody: string) {
       }),
     });
   });
+
+  // Mock the disk-export endpoint — avoids file-system side effects in cleanroom.
+  await page.route('**/api/projects/*/feasibility/export', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        folderPath: '/tmp/patentforge-e2e-export',
+        mdFile: '/tmp/patentforge-e2e-export/report.md',
+        htmlFile: '/tmp/patentforge-e2e-export/report.html',
+      }),
+    });
+  });
+
+  // Mock the report-text endpoint.
+  await page.route('**/api/projects/*/feasibility/report', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        report: '# E2E Mock Feasibility Report\n\nMock report for end-to-end testing.',
+        html: '<h1>E2E Mock Feasibility Report</h1><p>Mock report for end-to-end testing.</p>',
+      }),
+    });
+  });
+
+  // Mock the report-HTML endpoint — browser logs 500s to console even when JS catches them.
+  await page.route('**/api/projects/*/feasibility/report/html', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      body: '<!DOCTYPE html><html><body style="background:#030712;color:#f3f4f6;padding:2rem;font-family:sans-serif"><h1 style="color:#60a5fa">E2E Mock Feasibility Report</h1><p>Mock report for end-to-end testing.</p></body></html>',
+    });
+  });
 }
 
 /** Fill invention form with required fields. */

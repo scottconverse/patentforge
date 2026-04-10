@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { AppSettings } from '../types';
+import Toast from '../components/Toast';
 
 const MODELS = [
   { value: '', label: '— Select a model —' },
@@ -30,7 +31,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showUsptoKey, setShowUsptoKey] = useState(false);
   const [odpUsage, setOdpUsage] = useState<{
@@ -71,11 +72,7 @@ export default function Settings() {
       setError(null);
       const updated = await api.settings.update(settings);
       setSettings(updated);
-      setSaved(true);
-      setTimeout(() => {
-        document.getElementById('save-success')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => setSaved(false), 4000);
-      }, 50);
+      setToast({ message: 'Settings saved', type: 'success' });
     } catch (e: any) {
       setError(e.message || 'Failed to save settings');
     } finally {
@@ -353,12 +350,6 @@ export default function Settings() {
 
         {error && <div className="p-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">{error}</div>}
 
-        {saved && (
-          <div id="save-success" className="p-3 bg-green-900/40 border border-green-800 rounded text-green-300 text-sm">
-            Settings saved successfully.
-          </div>
-        )}
-
         <div className="flex justify-end">
           <button
             type="submit"
@@ -369,6 +360,10 @@ export default function Settings() {
           </button>
         </div>
       </form>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      )}
     </div>
   );
 }
