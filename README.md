@@ -118,6 +118,10 @@ Migration is silent: open the app after upgrading and everything looks the same.
 - [Changelog](CHANGELOG.md) — version history and release notes
 - [Legal Notice](LEGAL_NOTICE.md) — disclaimers and legal posture
 
+## Other PatentForge tools
+
+- **[patentforge-prompts](https://github.com/scottconverse/patentforge-prompts)** — the same 6-stage feasibility analysis as prompts you paste into any AI (Claude, Gemini Advanced). No install, no API keys, no cost beyond your chatbot subscription. The entry tier of the PatentForge family — try the pipeline before committing to a desktop install.
+
 ## Credits
 
 PatentForge builds on excellent open-source projects:
