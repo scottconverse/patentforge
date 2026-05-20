@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2026-05-20
+
+- **Python minimum bumped from 3.11 to 3.12 across all 3 services.**
+  `services/application-generator/pyproject.toml`,
+  `services/claim-drafter/pyproject.toml`, and
+  `services/compliance-checker/pyproject.toml` now declare
+  `requires-python = ">=3.12"`. Reconciliation: the installer has shipped
+  portable Python 3.12 since the merged-product release, CI matrix tests
+  3.12 only, and CONTRIBUTING.md has long documented `Python 3.12+` as
+  the prerequisite. The pyproject `>=3.11` was the lone divergent claim;
+  claim now follows reality. No supported runtime is removed — end users
+  never install services via pip (services run inside the installer's
+  bundled Python 3.12 sandbox).
+- **Doc rationalization.** `v0.4-SCOPE.md` updated from `Python 3.11+` to
+  `Python 3.12+` at both occurrences (Tech stack section + Dependencies
+  list). `README.md` gains a one-line bundle disclosure: `Bundled
+  portable Python 3.12 (services run in the installer's sandboxed
+  runtime).` so the support claim is visible to install-flow readers.
+
+### Admin
+
+- **PR #10 (`pipeline-cw: Verify and complete the v0.4 Phase 1 contract...`)
+  closed with comment.** The PR's framing depended on the deleted
+  `pipeline-cw` repo (removed in the prior github-cleanup-2026-05-18
+  sweep). Original head SHA is preserved in the GitHub reflog (~90 days).
+  Reopen as a fresh PR framed against `agent-pipeline-claude` v2.x if the
+  underlying work is still needed.
+
 ## [0.5.0] - 2026-05-15
 
 The merged-product release. PatentForgeLocal (the local-only fork) and the original PatentForge (the cloud-only product) are now one application called **PatentForge**. Pick Local mode (Ollama + Gemma 4 on your hardware) or Cloud mode (Anthropic Claude via your own API key) at install time and switch any time in Settings.

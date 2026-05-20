@@ -43,6 +43,8 @@ Two installer editions:
 | **Lean** | Frontend + backend + 3 Python services. No Ollama runtime. | You only want Cloud mode (smaller download, no GPU needed). |
 | **Full** | Everything in Lean + Ollama runtime + Gemma 4 model. | You want Local mode, or you want the option to switch between Cloud and Local. |
 
+Bundled portable Python 3.12 (services run in the installer's sandboxed runtime).
+
 1. **Download** the installer for your platform + edition from [GitHub Releases](https://github.com/scottconverse/patentforge/releases/latest).
 2. **Run** the installer and launch the app.
 3. On first launch, the wizard asks "Local or Cloud?" (Full edition) or jumps straight to Cloud setup (Lean edition).
