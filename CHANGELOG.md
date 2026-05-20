@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed - 2026-05-20
+### Changed - 2026-05-19
 
 - **Python minimum bumped from 3.11 to 3.12 across all 3 services.**
   `services/application-generator/pyproject.toml`,
