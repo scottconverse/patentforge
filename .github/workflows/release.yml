@@ -1,5 +1,9 @@
 name: Release
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     tags: ['v*']
@@ -83,6 +87,7 @@ jobs:
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: windows-installer
           path: build/PatentForge-*-Setup.exe
 
@@ -170,6 +175,7 @@ jobs:
       - name: Upload Mac installers
         uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: mac-dmg
           path: build/PatentForge-*.dmg
 
@@ -240,6 +246,7 @@ jobs:
       - name: Upload Linux installers
         uses: actions/upload-artifact@v4
         with:
+          retention-days: 14
           name: linux-appimage
           path: build/PatentForge-*.AppImage
 
