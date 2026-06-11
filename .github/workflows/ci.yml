@@ -1,6 +1,10 @@
 name: CI
 
 # Preemptively opt in to Node 24 runner before June 2026 forced migration
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -177,5 +181,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
+          retention-days: 7
           name: playwright-results
           path: frontend/e2e-results/
